@@ -9,6 +9,11 @@ public sealed class BitbucketOptions
     : IValidatableObject
 {
     /// <summary>
+    /// Gets a value indicating whether the UI should load synthetic demo data instead of calling Bitbucket.
+    /// </summary>
+    public bool DemoMode { get; init; }
+
+    /// <summary>
     /// Base Bitbucket API URL.
     /// </summary>
     [Required]
@@ -17,23 +22,17 @@ public sealed class BitbucketOptions
     /// <summary>
     /// Bitbucket workspace identifier.
     /// </summary>
-    [Required]
-    [MinLength(1)]
-    public required string Workspace { get; init; }
+    public string Workspace { get; init; } = string.Empty;
 
     /// <summary>
     /// Authentication email for Bitbucket API.
     /// </summary>
-    [Required]
-    [MinLength(1)]
-    public required string AuthEmail { get; init; }
+    public string AuthEmail { get; init; } = string.Empty;
 
     /// <summary>
     /// Authentication API token for Bitbucket API.
     /// </summary>
-    [Required]
-    [MinLength(1)]
-    public required string AuthApiToken { get; init; }
+    public string AuthApiToken { get; init; } = string.Empty;
 
     /// <summary>
     /// Number of repositories per page.
@@ -70,6 +69,14 @@ public sealed class BitbucketOptions
     {
         ArgumentNullException.ThrowIfNull(validationContext);
 
+        if (!DemoMode)
+        {
+            foreach (var result in ValidateRequiredBitbucketCredentials())
+            {
+                yield return result;
+            }
+        }
+
         foreach (var result in ValidateNestedOptions(PullRequestDetails))
         {
             yield return result;
@@ -83,6 +90,24 @@ public sealed class BitbucketOptions
         foreach (var result in ValidateNestedOptions(Telemetry))
         {
             yield return result;
+        }
+    }
+
+    private IEnumerable<ValidationResult> ValidateRequiredBitbucketCredentials()
+    {
+        if (string.IsNullOrWhiteSpace(Workspace))
+        {
+            yield return new ValidationResult("Bitbucket workspace is required when DemoMode is false.", [nameof(Workspace)]);
+        }
+
+        if (string.IsNullOrWhiteSpace(AuthEmail))
+        {
+            yield return new ValidationResult("Bitbucket auth email is required when DemoMode is false.", [nameof(AuthEmail)]);
+        }
+
+        if (string.IsNullOrWhiteSpace(AuthApiToken))
+        {
+            yield return new ValidationResult("Bitbucket auth API token is required when DemoMode is false.", [nameof(AuthApiToken)]);
         }
     }
 

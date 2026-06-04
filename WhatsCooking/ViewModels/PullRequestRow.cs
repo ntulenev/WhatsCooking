@@ -177,7 +177,7 @@ internal sealed class PullRequestRow : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(detail, nameof(detail));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
-        _workspace = new BitbucketWorkspace(options.Workspace);
+        _workspace = new BitbucketWorkspace(GetWorkspace(options));
         Number = number;
         RepositoryName = detail.RepositoryName;
         RepositorySlug = detail.RepositorySlug;
@@ -219,7 +219,7 @@ internal sealed class PullRequestRow : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(pullRequest, nameof(pullRequest));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
-        _workspace = new BitbucketWorkspace(options.Workspace);
+        _workspace = new BitbucketWorkspace(GetWorkspace(options));
         Number = number;
         RepositoryName = pullRequest.RepositoryName;
         RepositorySlug = pullRequest.RepositorySlug;
@@ -310,6 +310,11 @@ internal sealed class PullRequestRow : ObservableObject
         }
         return "-";
     }
+
+    private static string GetWorkspace(BitbucketOptions options) =>
+        string.IsNullOrWhiteSpace(options.Workspace) && options.DemoMode
+            ? "demo-workspace"
+            : options.Workspace;
 
     private readonly BitbucketWorkspace _workspace;
 
