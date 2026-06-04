@@ -792,9 +792,6 @@
                             <DataGridTemplateColumn CellTemplate="{StaticResource DescriptionLengthCellTemplate}" SortMemberPath="DescriptionLength" Width="96">
                                 <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Desc. len" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.DescriptionLength" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedDescriptionLengthFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Binding="{Binding OpenFor}" SortMemberPath="OpenForMinutes" Width="110">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Open for" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.OpenFor" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedOpenForFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
                             <DataGridTemplateColumn CellTemplate="{StaticResource TimeToFirstResponseCellTemplate}" SortMemberPath="TimeToFirstResponseMinutes" Width="110">
                                 <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="TTFR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.TimeToFirstResponse" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedTimeToFirstResponseFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
