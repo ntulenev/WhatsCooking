@@ -1,0 +1,42 @@
+using BBRepoList.Models;
+
+namespace BBRepoList.Abstractions;
+
+/// <summary>
+/// Bitbucket API client abstraction for pull request operations.
+/// </summary>
+public interface IBitbucketPRApiClient
+{
+    /// <summary>
+    /// Populates repository open pull requests count when available.
+    /// </summary>
+    /// <param name="repository">Repository to enrich.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task PopulateOpenPullRequestCountAsync(Repository repository, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Loads open pull request details for repository report.
+    /// </summary>
+    /// <param name="repository">Repository to inspect.</param>
+    /// <param name="currentUserId">Authenticated user identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Open pull request details list for provided repository.</returns>
+    Task<IReadOnlyList<PullRequestDetail>> GetOpenPullRequestDetailsAsync(
+        Repository repository,
+        BitbucketId currentUserId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Loads recently merged pull requests for repository report.
+    /// </summary>
+    /// <param name="repository">Repository to inspect.</param>
+    /// <param name="mergedSince">Inclusive lower bound for pull request merge timestamp.</param>
+    /// <param name="currentUserId">Authenticated user identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Recently merged pull requests for provided repository.</returns>
+    Task<IReadOnlyList<MergedPullRequest>> GetMergedPullRequestsAsync(
+        Repository repository,
+        DateTimeOffset mergedSince,
+        BitbucketId currentUserId,
+        CancellationToken cancellationToken);
+}

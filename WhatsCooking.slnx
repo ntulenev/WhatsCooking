@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BBRepoList/BBRepoList.csproj" />
+  <Project Path="WhatsCooking/WhatsCooking.csproj" />
+</Solution>

@@ -1,0 +1,116 @@
+namespace BBRepoList.Models;
+
+/// <summary>
+/// Repository domain model.
+/// </summary>
+public sealed class Repository
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Repository"/> class.
+    /// </summary>
+    /// <param name="name">Repository display name.</param>
+    /// <param name="createdOn">Repository creation date/time.</param>
+    /// <param name="lastUpdatedOn">Repository last update date/time.</param>
+    /// <param name="slug">Repository slug in workspace scope.</param>
+    public Repository(
+        string name,
+        DateTimeOffset? createdOn = null,
+        DateTimeOffset? lastUpdatedOn = null,
+        string? slug = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Repository name cannot be empty.", nameof(name));
+        }
+
+        Name = name.Trim();
+        CreatedOn = createdOn;
+        LastUpdatedOn = lastUpdatedOn;
+        Slug = string.IsNullOrWhiteSpace(slug) ? null : slug.Trim();
+        CanCalculateInactivityTiming = createdOn is not null && lastUpdatedOn is not null;
+    }
+
+    /// <summary>
+    /// Repository display name.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
+    /// Repository creation date/time.
+    /// </summary>
+    public DateTimeOffset? CreatedOn { get; }
+
+    /// <summary>
+    /// Repository last update date/time.
+    /// </summary>
+    public DateTimeOffset? LastUpdatedOn { get; }
+
+    /// <summary>
+    /// Open pull requests count.
+    /// </summary>
+    public int OpenPullRequestsCount { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether open pull requests count can be populated.
+    /// </summary>
+    public bool CanPopulateOpenPullRequestsCount => !string.IsNullOrWhiteSpace(Slug);
+
+    /// <summary>
+    /// Gets a value indicating whether open pull request details can be loaded.
+    /// </summary>
+    public bool CanLoadPullRequests => !string.IsNullOrWhiteSpace(Slug);
+
+    /// <summary>
+    /// Updates open pull requests count.
+    /// </summary>
+    /// <param name="openPullRequestsCount">Open pull requests count value.</param>
+    public void UpdateOpenPullRequestsCount(int openPullRequestsCount)
+    {
+        if (openPullRequestsCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(openPullRequestsCount),
+                openPullRequestsCount,
+                "Open pull requests count cannot be negative.");
+        }
+
+        OpenPullRequestsCount = openPullRequestsCount;
+    }
+
+    /// <summary>
+    /// Repository slug in workspace scope.
+    /// </summary>
+    public string? Slug { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether inactivity timing can be calculated.
+    /// </summary>
+    public bool CanCalculateInactivityTiming { get; }
+
+    /// <summary>
+    /// Calculates number of full inactive months since last update.
+    /// </summary>
+    /// <param name="asOf">Boundary date/time for the calculation.</param>
+    /// <returns>Number of full inactive months.</returns>
+    public int CalculateMonthsWithoutActivity(DateTimeOffset asOf) =>
+        CanCalculateInactivityTiming
+            ? CalculateFullMonthsBetween(LastUpdatedOn!.Value, asOf)
+            : 0;
+
+    private static int CalculateFullMonthsBetween(DateTimeOffset from, DateTimeOffset to)
+    {
+        if (to <= from)
+        {
+            return 0;
+        }
+
+        var months = ((to.Year - from.Year) * 12) + to.Month - from.Month;
+
+        if (to.Day < from.Day)
+        {
+            months--;
+        }
+
+        return Math.Max(months, 0);
+    }
+}

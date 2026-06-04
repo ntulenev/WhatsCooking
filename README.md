@@ -1,1 +1,111 @@
-# WhatsCooking
+# What's Cooking
+
+<p align="center">
+  <img src="WhatsCooking/Assets/whats-cooking-logo.png" alt="What's Cooking logo" width="280" />
+</p>
+
+What's Cooking is a WPF desktop application for reviewing Bitbucket pull requests across a filtered set of repositories.
+
+This project is a logical continuation of my CLI/reporting project [ntulenev/BBRepoList](https://github.com/ntulenev/BBRepoList). The original tool collected Bitbucket repository and pull request data and generated HTML reports. What's Cooking keeps the Bitbucket data-loading core, but moves the daily PR review workflow into an interactive desktop UI.
+
+## Features
+
+- Filter repositories by `StartWith` or `Contains`.
+- Choose the period for recently merged pull requests directly in the UI.
+- View open pull requests and recently merged pull requests in separate tabs.
+- Filter and sort table columns.
+- Open repositories and pull requests in Bitbucket from the table.
+- Track Bitbucket API telemetry in a dedicated tab.
+- Show a loading overlay with current progress while data is being loaded.
+
+## Project Structure
+
+- `BBRepoList` - core library for Bitbucket API access, pull request loading, caching, telemetry, models, and registrations.
+- `WhatsCooking` - WPF UI application.
+
+## Configuration
+
+Runtime settings are stored in:
+
+```text
+WhatsCooking/appsettings.json
+```
+
+Only infrastructure and loading behavior are configured in `appsettings.json`. Repository filter mode, filter phrase, and the merged PR period are entered in the UI.
+
+### Bitbucket
+
+| Setting | Description |
+| --- | --- |
+| `Bitbucket:BaseUrl` | Bitbucket API base URL. Usually `https://api.bitbucket.org/2.0`. |
+| `Bitbucket:Workspace` | Bitbucket workspace key used to query repositories and build browser links. |
+| `Bitbucket:AuthEmail` | Bitbucket account email used for API authentication. |
+| `Bitbucket:AuthApiToken` | Bitbucket API token or app password. Do not commit a real token. |
+| `Bitbucket:PageLen` | Bitbucket page size for paged API requests. Valid range is `1..100`. |
+| `Bitbucket:RetryCount` | Number of retries for transient Bitbucket API failures. |
+
+### Telemetry
+
+| Setting | Description |
+| --- | --- |
+| `Bitbucket:Telemetry:Enabled` | Enables counting Bitbucket API requests. The results are shown in the `Telemetry` tab and in the top request counter. |
+
+### Pull Request Details
+
+| Setting | Description |
+| --- | --- |
+| `Bitbucket:PullRequestDetails:TtfrThresholdHours` | Threshold for time-to-first-response highlighting. |
+| `Bitbucket:PullRequestDetails:MinimalDescriptionTextLength` | Minimal PR description length expected by the report. Shorter descriptions are marked in the UI. |
+| `Bitbucket:PullRequestDetails:LoadThreshold` | Maximum number of repositories loaded in parallel when collecting open PR details. |
+
+### Merged Pull Requests
+
+| Setting | Description |
+| --- | --- |
+| `Bitbucket:MergedPullRequests:LoadThreshold` | Maximum number of repositories loaded in parallel when collecting recently merged PRs. |
+
+### Logging
+
+| Setting | Description |
+| --- | --- |
+| `Logging:LogLevel:Default` | Default application log level. |
+| `Logging:LogLevel:System.Net.Http.HttpClient` | Log level for HTTP client infrastructure. |
+| `Logging:LogLevel:Microsoft` | Log level for Microsoft framework components. |
+
+Example shape:
+
+```json
+{
+  "Bitbucket": {
+    "BaseUrl": "https://api.bitbucket.org/2.0",
+    "Workspace": "your-workspace",
+    "AuthEmail": "name@example.com",
+    "AuthApiToken": "<secret>",
+    "PageLen": 50,
+    "RetryCount": 2,
+    "Telemetry": {
+      "Enabled": true
+    },
+    "PullRequestDetails": {
+      "TtfrThresholdHours": 4,
+      "MinimalDescriptionTextLength": 10,
+      "LoadThreshold": 4
+    },
+    "MergedPullRequests": {
+      "LoadThreshold": 4
+    }
+  }
+}
+```
+
+## Build
+
+```powershell
+dotnet build .\WhatsCooking.slnx
+```
+
+## Run
+
+```powershell
+dotnet run --project .\WhatsCooking\WhatsCooking.csproj
+```
