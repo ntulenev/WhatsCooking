@@ -13,7 +13,7 @@ This project is a logical continuation of my CLI/reporting project [ntulenev/BBR
 - Filter repositories by `StartWith` or `Contains`.
 - Choose the period for recently merged pull requests directly in the UI.
 - View open pull requests and recently merged pull requests in separate tabs.
-- Filter and sort table columns.
+- Use global search, per-column filters, column sorting, and one-click filter reset.
 - Open repositories and pull requests in Bitbucket from the table.
 - Mark reviewed pull requests so they stay visible but no longer draw attention.
 - Track Bitbucket API telemetry in a dedicated tab.
@@ -56,13 +56,13 @@ Only infrastructure and loading behavior are configured in `appsettings.json`. R
 | `Bitbucket:PageLen` | Bitbucket page size for paged API requests. Valid range is `1..100`. |
 | `Bitbucket:RetryCount` | Number of retries for transient Bitbucket API failures. |
 
-When `Bitbucket:DemoMode` is `true`, `Workspace`, `AuthEmail`, and `AuthApiToken` can be left empty. This is intended for demos and screenshots where the UI should look realistic without exposing real Bitbucket projects, pull requests, or people.
+When `Bitbucket:DemoMode` is `false`, `Workspace`, `AuthEmail`, and `AuthApiToken` are required. When `DemoMode` is `true`, those values can be left empty. This is intended for demos and screenshots where the UI should look realistic without exposing real Bitbucket projects, pull requests, or people.
 
 ### Telemetry
 
 | Setting | Description |
 | --- | --- |
-| `Bitbucket:Telemetry:Enabled` | Enables counting Bitbucket API requests. The results are shown in the `Telemetry` tab. |
+| `Bitbucket:Telemetry:Enabled` | Enables counting Bitbucket API requests. The request summary and endpoint breakdown are shown in the `Telemetry` tab. |
 
 ### Pull Request Details
 
@@ -77,14 +77,6 @@ When `Bitbucket:DemoMode` is `true`, `Workspace`, `AuthEmail`, and `AuthApiToken
 | Setting | Description |
 | --- | --- |
 | `Bitbucket:MergedPullRequests:LoadThreshold` | Maximum number of repositories loaded in parallel when collecting recently merged PRs. |
-
-### Logging
-
-| Setting | Description |
-| --- | --- |
-| `Logging:LogLevel:Default` | Default application log level. |
-| `Logging:LogLevel:System.Net.Http.HttpClient` | Log level for HTTP client infrastructure. |
-| `Logging:LogLevel:Microsoft` | Log level for Microsoft framework components. |
 
 Example shape:
 
