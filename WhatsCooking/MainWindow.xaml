@@ -539,6 +539,23 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+            <Style.Triggers>
+                <Trigger Property="AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="#28282B" />
+                </Trigger>
+                <DataTrigger Binding="{Binding IsReviewed}" Value="True">
+                    <Setter Property="Background" Value="#665E5E5E" />
+                    <Setter Property="Opacity" Value="0.58" />
+                </DataTrigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#173B57" />
+                    <Setter Property="Opacity" Value="1" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <Grid Background="{StaticResource BgBrush}">
@@ -558,15 +575,9 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="What's Cooking" FontSize="18" FontWeight="SemiBold" />
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <TextBlock Text="Requests:" Style="{StaticResource MutedTextStyle}" Margin="0,0,4,0" />
-                        <TextBlock Text="{Binding TelemetryRequestsCount}" FontWeight="SemiBold" />
-                    </StackPanel>
-                    <TextBlock Grid.Column="3" Text="{Binding Status}" Style="{StaticResource MutedTextStyle}" />
+                    <TextBlock Grid.Column="1" Text="{Binding Status}" Style="{StaticResource MutedTextStyle}" />
                 </Grid>
 
                 <Grid Grid.Row="1" Margin="0,8,0,0">
@@ -686,6 +697,15 @@
                             <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
                                 <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenCurrentUserActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Reviewed" Width="86">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsReviewed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>
@@ -747,6 +767,15 @@
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
                                 <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.CurrentUserActivity" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedCurrentUserActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Reviewed" Width="86">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsReviewed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>

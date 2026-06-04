@@ -6,8 +6,16 @@ namespace WhatsCooking.ViewModels;
 /// <summary>
 /// Pull request row displayed in the dashboard grids.
 /// </summary>
-internal sealed class PullRequestRow
+internal sealed class PullRequestRow : ObservableObject
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether the pull request has already been reviewed in the dashboard.
+    /// </summary>
+    public bool IsReviewed {
+        get => _isReviewed;
+        set => SetProperty(ref _isReviewed, value);
+    }
+
     /// <summary>
     /// Row number in the current report table.
     /// </summary>
@@ -304,6 +312,8 @@ internal sealed class PullRequestRow
     }
 
     private readonly BitbucketWorkspace _workspace;
+
+    private bool _isReviewed;
 
     private RepositorySlug? RepositorySlug { get; }
 }
