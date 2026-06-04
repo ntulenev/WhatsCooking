@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abstractions\BBRepoList.Abstractions.csproj" />
+    <ProjectReference Include="..\Models\BBRepoList.Models.csproj" />
+  </ItemGroup>
+
+</Project>

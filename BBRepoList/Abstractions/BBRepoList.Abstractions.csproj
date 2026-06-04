@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Compile Remove="IBitbucketJsonParser.cs" />
+    <Compile Remove="IPullRequestFingerprintBuilder.cs" />
+    <Compile Remove="IPullRequestSnapshotMapper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Models\BBRepoList.Models.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -34,7 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BBRepoList\BBRepoList.csproj" />
+    <ProjectReference Include="..\BBRepoList\Abstractions\BBRepoList.Abstractions.csproj" />
+    <ProjectReference Include="..\BBRepoList\Configuration\BBRepoList.Configuration.csproj" />
+    <ProjectReference Include="..\BBRepoList\Models\BBRepoList.Models.csproj" />
+    <ProjectReference Include="..\BBRepoList\Registrations\BBRepoList.Registrations.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abstractions\BBRepoList.Abstractions.csproj" />
+    <ProjectReference Include="..\Configuration\BBRepoList.Configuration.csproj" />
+    <ProjectReference Include="..\Models\BBRepoList.Models.csproj" />
+    <ProjectReference Include="..\Transport\BBRepoList.Transport.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,13 @@
 <Solution>
-  <Project Path="BBRepoList/BBRepoList.csproj" />
+  <Project Path="BBRepoList/Abstractions/BBRepoList.Abstractions.csproj" />
+  <Project Path="BBRepoList/API/BBRepoList.API.csproj" />
+  <Project Path="BBRepoList/API.Helpers/BBRepoList.API.Helpers.csproj" />
+  <Project Path="BBRepoList/Caching/BBRepoList.Caching.csproj" />
+  <Project Path="BBRepoList/Configuration/BBRepoList.Configuration.csproj" />
+  <Project Path="BBRepoList/Logic/BBRepoList.Logic.csproj" />
+  <Project Path="BBRepoList/Models/BBRepoList.Models.csproj" />
+  <Project Path="BBRepoList/Registrations/BBRepoList.Registrations.csproj" />
+  <Project Path="BBRepoList/Telemetry/BBRepoList.Telemetry.csproj" />
+  <Project Path="BBRepoList/Transport/BBRepoList.Transport.csproj" />
   <Project Path="WhatsCooking/WhatsCooking.csproj" />
 </Solution>

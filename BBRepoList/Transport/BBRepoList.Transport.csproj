@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Compile Include="..\Abstractions\IBitbucketJsonParser.cs" Link="Abstractions\IBitbucketJsonParser.cs" />
+    <Compile Include="..\Abstractions\IPullRequestFingerprintBuilder.cs" Link="Abstractions\IPullRequestFingerprintBuilder.cs" />
+    <Compile Include="..\Abstractions\IPullRequestSnapshotMapper.cs" Link="Abstractions\IPullRequestSnapshotMapper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Abstractions\BBRepoList.Abstractions.csproj" />
+    <ProjectReference Include="..\Configuration\BBRepoList.Configuration.csproj" />
+    <ProjectReference Include="..\Models\BBRepoList.Models.csproj" />
+  </ItemGroup>
+
+</Project>
