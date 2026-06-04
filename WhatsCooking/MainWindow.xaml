@@ -186,6 +186,115 @@
             <Setter Property="FontSize" Value="11" />
         </Style>
 
+        <DataTemplate x:Key="DescriptionLengthCellTemplate">
+            <TextBlock Text="{Binding DescriptionLength}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsDescriptionShort}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                <Setter Property="FontWeight" Value="Bold" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </DataTemplate>
+
+        <DataTemplate x:Key="TimeToFirstResponseCellTemplate">
+            <Border x:Name="Badge"
+                    Padding="8,2"
+                    HorizontalAlignment="Left"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="1">
+                <TextBlock x:Name="BadgeText" Text="{Binding TimeToFirstResponse}" />
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsTtfrAlert}" Value="True">
+                    <Setter TargetName="Badge" Property="BorderBrush" Value="#FF2D20" />
+                    <Setter TargetName="Badge" Property="Background" Value="#2AFF2D20" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="{StaticResource DangerBrush}" />
+                    <Setter TargetName="BadgeText" Property="FontWeight" Value="Bold" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate x:Key="RequestChangesCellTemplate">
+            <Grid>
+                <TextBlock x:Name="EmptyText" Text="-" />
+                <Border x:Name="Badge"
+                        Visibility="Collapsed"
+                        Padding="7,2"
+                        HorizontalAlignment="Left"
+                        Background="#32221F"
+                        BorderBrush="#5A2D26"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <TextBlock Text="{Binding RequestChanges}" Foreground="#FF8A65" />
+                </Border>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding HasRequestChanges}" Value="True">
+                    <Setter TargetName="EmptyText" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ApprovalsCellTemplate">
+            <Grid>
+                <TextBlock x:Name="EmptyText" Text="-" />
+                <Border x:Name="Badge"
+                        Visibility="Collapsed"
+                        Padding="7,2"
+                        HorizontalAlignment="Left"
+                        Background="#1D3324"
+                        BorderBrush="#2F5F3B"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <TextBlock Text="{Binding Approvals}" Foreground="{StaticResource SuccessBrush}" />
+                </Border>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding HasApprovals}" Value="True">
+                    <Setter TargetName="EmptyText" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate x:Key="CurrentUserActivityCellTemplate">
+            <Grid>
+                <TextBlock x:Name="EmptyText" Text="-" />
+                <Border x:Name="Badge"
+                        Visibility="Collapsed"
+                        Padding="7,2"
+                        HorizontalAlignment="Left"
+                        Background="#2A2636"
+                        BorderBrush="#4F4568"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        ToolTip="{Binding CurrentUserActivity}">
+                    <TextBlock Text="{Binding CurrentUserActivity}" Foreground="#D7BAFF" />
+                </Border>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding HasCurrentUserActivity}" Value="True">
+                    <Setter TargetName="EmptyText" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasCurrentUserRequestChanges}" Value="True">
+                    <Setter TargetName="Badge" Property="Background" Value="#32221F" />
+                    <Setter TargetName="Badge" Property="BorderBrush" Value="#5A2D26" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasCurrentUserApproval}" Value="True">
+                    <Setter TargetName="Badge" Property="Background" Value="#1D3324" />
+                    <Setter TargetName="Badge" Property="BorderBrush" Value="#2F5F3B" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <Style TargetType="TabControl">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -341,6 +450,10 @@
             <Setter Property="HeadersVisibility" Value="Column" />
             <Setter Property="RowHeight" Value="36" />
             <Setter Property="ColumnHeaderHeight" Value="58" />
+            <Setter Property="EnableRowVirtualization" Value="True" />
+            <Setter Property="EnableColumnVirtualization" Value="True" />
+            <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
             <Setter Property="Background" Value="{StaticResource PanelBrush}" />
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrushDark}" />
@@ -380,6 +493,16 @@
                                            FontSize="10"
                                            FontWeight="Bold"
                                            Foreground="{StaticResource AccentBrush}" />
+                                <Thumb x:Name="PART_LeftHeaderGripper"
+                                       Width="8"
+                                       HorizontalAlignment="Left"
+                                       Cursor="SizeWE"
+                                       Background="Transparent" />
+                                <Thumb x:Name="PART_RightHeaderGripper"
+                                       Width="8"
+                                       HorizontalAlignment="Right"
+                                       Cursor="SizeWE"
+                                       Background="Transparent" />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -390,12 +513,12 @@
                             <Trigger Property="SortDirection" Value="Ascending">
                                 <Setter TargetName="HeaderBorder" Property="Background" Value="#173B57" />
                                 <Setter TargetName="HeaderBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
-                                <Setter TargetName="SortGlyph" Property="Text" Value="▲" />
+                                <Setter TargetName="SortGlyph" Property="Text" Value="&#x25B2;" />
                             </Trigger>
                             <Trigger Property="SortDirection" Value="Descending">
                                 <Setter TargetName="HeaderBorder" Property="Background" Value="#173B57" />
                                 <Setter TargetName="HeaderBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
-                                <Setter TargetName="SortGlyph" Property="Text" Value="▼" />
+                                <Setter TargetName="SortGlyph" Property="Text" Value="&#x25BC;" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -495,7 +618,7 @@
                                 <DataGridTextColumn.Header>
                                     <StackPanel>
                                         <TextBlock Text="#" />
-                                        <TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.NumberFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenNumberFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
                                 </DataGridTextColumn.Header>
                             </DataGridTextColumn>
@@ -503,7 +626,7 @@
                                 <DataGridTemplateColumn.Header>
                                     <StackPanel>
                                         <TextBlock Text="Repository" />
-                                        <TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.RepositoryFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenRepositoryFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
@@ -520,7 +643,7 @@
                                 <DataGridTemplateColumn.Header>
                                     <StackPanel>
                                         <TextBlock Text="PR" />
-                                        <TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.PullRequestFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenPullRequestFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
@@ -537,32 +660,32 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Binding="{Binding Author}" SortMemberPath="Author" Width="170">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Author" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.AuthorFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Author" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenAuthorFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding DescriptionLength}" SortMemberPath="DescriptionLength" Width="96">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Desc. len" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.DescriptionLengthFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource DescriptionLengthCellTemplate}" SortMemberPath="DescriptionLength" Width="96">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Desc. len" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenDescriptionLengthFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Binding="{Binding OpenFor}" SortMemberPath="OpenForMinutes" Width="110">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Open for" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenForFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Open for" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenOpenForFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding TimeToFirstResponse}" SortMemberPath="TimeToFirstResponseMinutes" Width="110">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="TTFR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.TimeToFirstResponseFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource TimeToFirstResponseCellTemplate}" SortMemberPath="TimeToFirstResponseMinutes" Width="110">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="TTFR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenTimeToFirstResponseFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Binding="{Binding ActivityAgeOrMerged}" SortMemberPath="ActivityAgeOrMergedMinutes" Width="110">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Updated" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.ActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Updated" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
                             <DataGridTextColumn Binding="{Binding CommentsCount}" SortMemberPath="CommentsCount" Width="96">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Comments" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.CommentsFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Comments" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenCommentsFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding RequestChanges}" SortMemberPath="RequestChanges" Width="100">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="RC" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.RequestChangesFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding Approvals}" SortMemberPath="Approvals" Width="100">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="AP" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.ApprovalsFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding CurrentUserActivity}" SortMemberPath="CurrentUserActivity" Width="140">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.CurrentUserActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource RequestChangesCellTemplate}" SortMemberPath="RequestChanges" Width="100">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="RC" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenRequestChangesFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource ApprovalsCellTemplate}" SortMemberPath="Approvals" Width="100">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="AP" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenApprovalsFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenCurrentUserActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>
@@ -573,10 +696,10 @@
                     <DataGrid ItemsSource="{Binding MergedPullRequestsView}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Number}" SortMemberPath="Number" Width="64">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="#" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.NumberFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="#" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.Number" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedNumberFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
                             <DataGridTemplateColumn SortMemberPath="RepositoryName" Width="220">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Repository" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.RepositoryFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Repository" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.Repository" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedRepositoryFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Style="{StaticResource LinkButtonStyle}" Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding RepositoryUrl}">
@@ -586,7 +709,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn SortMemberPath="PullRequestId" Width="380">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="PR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.PullRequestFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="PR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.PullRequest" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedPullRequestFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Style="{StaticResource LinkButtonStyle}" Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding PullRequestUrl}">
@@ -599,32 +722,32 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Binding="{Binding Author}" SortMemberPath="Author" Width="170">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Author" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.AuthorFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Author" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.Author" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedAuthorFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding DescriptionLength}" SortMemberPath="DescriptionLength" Width="96">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Desc. len" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.DescriptionLengthFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource DescriptionLengthCellTemplate}" SortMemberPath="DescriptionLength" Width="96">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Desc. len" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.DescriptionLength" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedDescriptionLengthFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Binding="{Binding OpenFor}" SortMemberPath="OpenForMinutes" Width="110">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Open for" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenForFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Open for" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.OpenFor" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedOpenForFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding TimeToFirstResponse}" SortMemberPath="TimeToFirstResponseMinutes" Width="110">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="TTFR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.TimeToFirstResponseFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource TimeToFirstResponseCellTemplate}" SortMemberPath="TimeToFirstResponseMinutes" Width="110">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="TTFR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.TimeToFirstResponse" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedTimeToFirstResponseFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Binding="{Binding ActivityAgeOrMerged}" SortMemberPath="ActivityAgeOrMergedMinutes" Width="110">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Merged" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.ActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Merged" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.Activity" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
                             <DataGridTextColumn Binding="{Binding CommentsCount}" SortMemberPath="CommentsCount" Width="96">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Comments" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.CommentsFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Comments" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.Comments" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedCommentsFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding RequestChanges}" SortMemberPath="RequestChanges" Width="100">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="RC" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.RequestChangesFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding Approvals}" SortMemberPath="Approvals" Width="100">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="AP" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.ApprovalsFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding CurrentUserActivity}" SortMemberPath="CurrentUserActivity" Width="140">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.CurrentUserActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
-                            </DataGridTextColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource RequestChangesCellTemplate}" SortMemberPath="RequestChanges" Width="100">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="RC" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.RequestChanges" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedRequestChangesFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource ApprovalsCellTemplate}" SortMemberPath="Approvals" Width="100">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="AP" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.Approvals" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedApprovalsFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.CurrentUserActivity" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedCurrentUserActivityFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>

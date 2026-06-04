@@ -44,6 +44,11 @@ internal sealed class PullRequestRow
     public int DescriptionLength { get; }
 
     /// <summary>
+    /// Gets a value indicating whether pull request description should be highlighted as short.
+    /// </summary>
+    public bool IsDescriptionShort { get; }
+
+    /// <summary>
     /// Formatted pull request open duration.
     /// </summary>
     public string OpenFor { get; }
@@ -57,6 +62,11 @@ internal sealed class PullRequestRow
     /// Formatted time to first response.
     /// </summary>
     public string TimeToFirstResponse { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether missing TTFR should be highlighted as overdue.
+    /// </summary>
+    public bool IsTtfrAlert { get; }
 
     /// <summary>
     /// Time to first response in minutes for sorting.
@@ -79,14 +89,54 @@ internal sealed class PullRequestRow
     public int CommentsCount { get; }
 
     /// <summary>
+    /// Active request changes count.
+    /// </summary>
+    public int RequestChangesCount { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether pull request has active request changes.
+    /// </summary>
+    public bool HasRequestChanges => RequestChangesCount > 0;
+
+    /// <summary>
     /// Request changes badge text.
     /// </summary>
     public string RequestChanges { get; }
 
     /// <summary>
+    /// Active approvals count.
+    /// </summary>
+    public int ApprovalsCount { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether pull request has active approvals.
+    /// </summary>
+    public bool HasApprovals => ApprovalsCount > 0;
+
+    /// <summary>
     /// Approvals badge text.
     /// </summary>
     public string Approvals { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether current authenticated user has commented in activity.
+    /// </summary>
+    public bool HasCurrentUserDiscussion { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether current authenticated user currently requests changes.
+    /// </summary>
+    public bool HasCurrentUserRequestChanges { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether current authenticated user currently approves the pull request.
+    /// </summary>
+    public bool HasCurrentUserApproval { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether current authenticated user has any tracked pull request activity.
+    /// </summary>
+    public bool HasCurrentUserActivity { get; }
 
     /// <summary>
     /// Current authenticated user activity summary.
@@ -127,18 +177,27 @@ internal sealed class PullRequestRow
         Title = detail.Title;
         Author = detail.AuthorDisplayName ?? "-";
         DescriptionLength = detail.DescriptionText?.Length ?? 0;
+        IsDescriptionShort = detail.HasShortOrMissingDescription(options.PullRequestDetails.MinimalDescriptionTextLength);
         var openFor = detail.GetOpenDuration(asOf);
         var timeToFirstResponse = detail.TimeToFirstResponse;
         var activityAge = detail.GetLastActivityAge(asOf);
         OpenFor = FormatDuration(openFor);
         OpenForMinutes = openFor.TotalMinutes;
-        TimeToFirstResponse = FormatDuration(timeToFirstResponse);
+        IsTtfrAlert = timeToFirstResponse is null
+                      && openFor > TimeSpan.FromHours(options.PullRequestDetails.TtfrThresholdHours);
+        TimeToFirstResponse = timeToFirstResponse is null && IsTtfrAlert ? "ALERT" : FormatDuration(timeToFirstResponse);
         TimeToFirstResponseMinutes = FormatSortMinutes(timeToFirstResponse);
         ActivityAgeOrMerged = FormatDuration(activityAge);
         ActivityAgeOrMergedMinutes = FormatSortMinutes(activityAge);
         CommentsCount = detail.CommentsCount;
-        RequestChanges = FormatBadge("RC", detail.RequestChangesCount, detail.HasCurrentUserRequestChanges);
-        Approvals = FormatBadge("AP", detail.ApprovalsCount, detail.HasCurrentUserApproval);
+        RequestChangesCount = detail.RequestChangesCount;
+        RequestChanges = FormatBadge("RC", detail.RequestChangesCount);
+        ApprovalsCount = detail.ApprovalsCount;
+        Approvals = FormatBadge("AP", detail.ApprovalsCount);
+        HasCurrentUserDiscussion = detail.HasCurrentUserDiscussion;
+        HasCurrentUserRequestChanges = detail.HasCurrentUserRequestChanges;
+        HasCurrentUserApproval = detail.HasCurrentUserApproval;
+        HasCurrentUserActivity = detail.HasCurrentUserActivity;
         CurrentUserActivity = FormatCurrentUserActivity(detail.HasCurrentUserDiscussion, detail.HasCurrentUserRequestChanges, detail.HasCurrentUserApproval);
     }
 
@@ -160,6 +219,7 @@ internal sealed class PullRequestRow
         Title = pullRequest.Title;
         Author = pullRequest.AuthorDisplayName ?? "-";
         DescriptionLength = pullRequest.DescriptionText?.Length ?? 0;
+        IsDescriptionShort = pullRequest.HasShortOrMissingDescription(options.PullRequestDetails.MinimalDescriptionTextLength);
         var openFor = pullRequest.GetOpenDuration();
         var timeToFirstResponse = pullRequest.TimeToFirstResponse;
         var mergedAge = DateTimeOffset.Now - pullRequest.MergedOn;
@@ -170,8 +230,14 @@ internal sealed class PullRequestRow
         ActivityAgeOrMerged = FormatDuration(mergedAge);
         ActivityAgeOrMergedMinutes = mergedAge.TotalMinutes;
         CommentsCount = pullRequest.CommentsCount;
-        RequestChanges = FormatBadge("RC", pullRequest.RequestChangesCount, pullRequest.HasCurrentUserRequestChanges);
-        Approvals = FormatBadge("AP", pullRequest.ApprovalsCount, pullRequest.HasCurrentUserApproval);
+        RequestChangesCount = pullRequest.RequestChangesCount;
+        RequestChanges = FormatBadge("RC", pullRequest.RequestChangesCount);
+        ApprovalsCount = pullRequest.ApprovalsCount;
+        Approvals = FormatBadge("AP", pullRequest.ApprovalsCount);
+        HasCurrentUserDiscussion = pullRequest.HasCurrentUserDiscussion;
+        HasCurrentUserRequestChanges = pullRequest.HasCurrentUserRequestChanges;
+        HasCurrentUserApproval = pullRequest.HasCurrentUserApproval;
+        HasCurrentUserActivity = pullRequest.HasCurrentUserActivity;
         CurrentUserActivity = FormatCurrentUserActivity(pullRequest.HasCurrentUserDiscussion, pullRequest.HasCurrentUserRequestChanges, pullRequest.HasCurrentUserApproval);
     }
 
@@ -211,13 +277,13 @@ internal sealed class PullRequestRow
         return new Uri($"https://bitbucket.org/{encodedWorkspace}/{encodedSlug}/pull-requests/{pullRequestId}");
     }
 
-    private static string FormatBadge(string label, int count, bool isCurrentUser)
+    private static string FormatBadge(string label, int count)
     {
         if (count <= 0)
         {
             return "-";
         }
-        return isCurrentUser ? $"{label} ({count}) me" : $"{label} ({count})";
+        return $"{label} ({count})";
     }
 
     private static string FormatCurrentUserActivity(bool hasDiscussion, bool hasRequestChanges, bool hasApproval)

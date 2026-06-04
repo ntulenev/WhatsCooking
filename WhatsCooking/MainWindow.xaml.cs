@@ -42,7 +42,9 @@ internal sealed partial class MainWindow : Window
 
     private void OnColumnHeaderPreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        if (sender is not DataGridColumnHeader header || IsFromFilterTextBox(e.OriginalSource))
+        if (sender is not DataGridColumnHeader header
+            || IsFromFilterTextBox(e.OriginalSource)
+            || IsFromColumnResizeGrip(e.OriginalSource))
         {
             return;
         }
@@ -76,7 +78,25 @@ internal sealed partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void OnHeaderFilterTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is not TextBox { Tag: string tag } textBox || DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        var parts = tag.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2)
+        {
+            return;
+        }
+
+        viewModel.ApplyPullRequestFilter(parts[0], parts[1], textBox.Text);
+    }
+
     private static bool IsFromFilterTextBox(object source) => FindVisualParent<TextBox>(source as DependencyObject) is not null;
+
+    private static bool IsFromColumnResizeGrip(object source) => FindVisualParent<Thumb>(source as DependencyObject) is not null;
 
     private static T? FindVisualParent<T>(DependencyObject? source)
         where T : DependencyObject

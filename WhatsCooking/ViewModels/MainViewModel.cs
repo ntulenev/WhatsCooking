@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 using BBRepoList.Abstractions;
 using BBRepoList.Configuration;
@@ -42,11 +43,23 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         _selectedSearchMode = RepositorySearchMode.StartWith;
         _searchPhrase = string.Empty;
         _mergedPullRequestsDays = 1;
+        OpenPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
+        MergedPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
         OpenPullRequestsView = CollectionViewSource.GetDefaultView(OpenPullRequests);
         MergedPullRequestsView = CollectionViewSource.GetDefaultView(MergedPullRequests);
         TelemetryView = CollectionViewSource.GetDefaultView(Telemetry);
-        OpenPullRequestsView.Filter = FilterPullRequestRow;
-        MergedPullRequestsView.Filter = FilterPullRequestRow;
+        _pullRequestFilterRefreshTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = _filterRefreshDelay
+        };
+        _pullRequestFilterRefreshTimer.Tick += OnPullRequestFilterRefreshTimerTick;
+        _telemetryFilterRefreshTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = _filterRefreshDelay
+        };
+        _telemetryFilterRefreshTimer.Tick += OnTelemetryFilterRefreshTimerTick;
+        OpenPullRequestsView.Filter = FilterOpenPullRequestRow;
+        MergedPullRequestsView.Filter = FilterMergedPullRequestRow;
         TelemetryView.Filter = FilterTelemetryRow;
         LoadCommand = new RelayCommand(async () => await LoadAsync().ConfigureAwait(false), CanLoad);
         CancelCommand = new RelayCommand(Cancel, () => IsLoading);
@@ -107,107 +120,202 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref field, value))
             {
-                OpenPullRequestsView.Refresh();
-                MergedPullRequestsView.Refresh();
+                SchedulePullRequestFilterRefresh();
             }
         }
     } = string.Empty;
 
     /// <summary>
-    /// Filter for the row number column.
+    /// Filter for the open pull request row number column.
     /// </summary>
-    public string NumberFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenNumberFilter {
+        get => OpenPullRequestFilters.Number;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.Number = filter);
+    }
 
     /// <summary>
-    /// Filter for the repository column.
+    /// Filter for the open pull request repository column.
     /// </summary>
-    public string RepositoryFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenRepositoryFilter {
+        get => OpenPullRequestFilters.Repository;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.Repository = filter);
+    }
 
     /// <summary>
-    /// Filter for the pull request column.
+    /// Filter for the open pull request column.
     /// </summary>
-    public string PullRequestFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenPullRequestFilter {
+        get => OpenPullRequestFilters.PullRequest;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.PullRequest = filter);
+    }
 
     /// <summary>
-    /// Filter for the author column.
+    /// Filter for the open pull request author column.
     /// </summary>
-    public string AuthorFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenAuthorFilter {
+        get => OpenPullRequestFilters.Author;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.Author = filter);
+    }
 
     /// <summary>
-    /// Filter for the description length column.
+    /// Filter for the open pull request description length column.
     /// </summary>
-    public string DescriptionLengthFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenDescriptionLengthFilter {
+        get => OpenPullRequestFilters.DescriptionLength;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.DescriptionLength = filter);
+    }
 
     /// <summary>
-    /// Filter for the open duration column.
+    /// Filter for the open pull request open duration column.
     /// </summary>
-    public string OpenForFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenOpenForFilter {
+        get => OpenPullRequestFilters.OpenFor;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.OpenFor = filter);
+    }
 
     /// <summary>
-    /// Filter for the time to first response column.
+    /// Filter for the open pull request TTFR column.
     /// </summary>
-    public string TimeToFirstResponseFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenTimeToFirstResponseFilter {
+        get => OpenPullRequestFilters.TimeToFirstResponse;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.TimeToFirstResponse = filter);
+    }
 
     /// <summary>
-    /// Filter for the latest activity or merge age column.
+    /// Filter for the open pull request latest activity column.
     /// </summary>
-    public string ActivityFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenActivityFilter {
+        get => OpenPullRequestFilters.Activity;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.Activity = filter);
+    }
 
     /// <summary>
-    /// Filter for the comments column.
+    /// Filter for the open pull request comments column.
     /// </summary>
-    public string CommentsFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenCommentsFilter {
+        get => OpenPullRequestFilters.Comments;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.Comments = filter);
+    }
 
     /// <summary>
-    /// Filter for the request changes column.
+    /// Filter for the open pull request changes column.
     /// </summary>
-    public string RequestChangesFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenRequestChangesFilter {
+        get => OpenPullRequestFilters.RequestChanges;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.RequestChanges = filter);
+    }
 
     /// <summary>
-    /// Filter for the approvals column.
+    /// Filter for the open pull request approvals column.
     /// </summary>
-    public string ApprovalsFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenApprovalsFilter {
+        get => OpenPullRequestFilters.Approvals;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.Approvals = filter);
+    }
 
     /// <summary>
-    /// Filter for the current user activity column.
+    /// Filter for the open pull request current user activity column.
     /// </summary>
-    public string CurrentUserActivityFilter {
-        get;
-        set => SetFilterProperty(ref field, value);
-    } = string.Empty;
+    public string OpenCurrentUserActivityFilter {
+        get => OpenPullRequestFilters.CurrentUserActivity;
+        set => SetOpenPullRequestFilter(value, static (filters, filter) => filters.CurrentUserActivity = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request row number column.
+    /// </summary>
+    public string MergedNumberFilter {
+        get => MergedPullRequestFilters.Number;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.Number = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request repository column.
+    /// </summary>
+    public string MergedRepositoryFilter {
+        get => MergedPullRequestFilters.Repository;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.Repository = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request column.
+    /// </summary>
+    public string MergedPullRequestFilter {
+        get => MergedPullRequestFilters.PullRequest;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.PullRequest = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request author column.
+    /// </summary>
+    public string MergedAuthorFilter {
+        get => MergedPullRequestFilters.Author;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.Author = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request description length column.
+    /// </summary>
+    public string MergedDescriptionLengthFilter {
+        get => MergedPullRequestFilters.DescriptionLength;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.DescriptionLength = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request open duration column.
+    /// </summary>
+    public string MergedOpenForFilter {
+        get => MergedPullRequestFilters.OpenFor;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.OpenFor = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request TTFR column.
+    /// </summary>
+    public string MergedTimeToFirstResponseFilter {
+        get => MergedPullRequestFilters.TimeToFirstResponse;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.TimeToFirstResponse = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request merge age column.
+    /// </summary>
+    public string MergedActivityFilter {
+        get => MergedPullRequestFilters.Activity;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.Activity = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request comments column.
+    /// </summary>
+    public string MergedCommentsFilter {
+        get => MergedPullRequestFilters.Comments;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.Comments = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request changes column.
+    /// </summary>
+    public string MergedRequestChangesFilter {
+        get => MergedPullRequestFilters.RequestChanges;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.RequestChanges = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request approvals column.
+    /// </summary>
+    public string MergedApprovalsFilter {
+        get => MergedPullRequestFilters.Approvals;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.Approvals = filter);
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request current user activity column.
+    /// </summary>
+    public string MergedCurrentUserActivityFilter {
+        get => MergedPullRequestFilters.CurrentUserActivity;
+        set => SetMergedPullRequestFilter(value, static (filters, filter) => filters.CurrentUserActivity = filter);
+    }
 
     /// <summary>
     /// Text filter applied to the telemetry table.
@@ -218,7 +326,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref field, value))
             {
-                TelemetryView.Refresh();
+                ScheduleTelemetryFilterRefresh();
             }
         }
     } = string.Empty;
@@ -301,6 +409,16 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<TelemetryRow> Telemetry { get; } = [];
 
     /// <summary>
+    /// Open pull request grid filters.
+    /// </summary>
+    public PullRequestFilterState OpenPullRequestFilters { get; }
+
+    /// <summary>
+    /// Recently merged pull request grid filters.
+    /// </summary>
+    public PullRequestFilterState MergedPullRequestFilters { get; }
+
+    /// <summary>
     /// Filterable view over open pull request rows.
     /// </summary>
     public ICollectionView OpenPullRequestsView { get; }
@@ -334,6 +452,65 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// Command that clears all table filters.
     /// </summary>
     public ICommand ResetFiltersCommand { get; }
+
+    /// <summary>
+    /// Applies a pull request grid filter from a column header editor.
+    /// </summary>
+    /// <param name="scope">Pull request grid scope.</param>
+    /// <param name="column">Pull request grid filter column.</param>
+    /// <param name="value">Filter value.</param>
+    public void ApplyPullRequestFilter(string scope, string column, string value)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(column);
+        ArgumentNullException.ThrowIfNull(value);
+
+        var filters = string.Equals(scope, "Merged", StringComparison.Ordinal)
+            ? MergedPullRequestFilters
+            : OpenPullRequestFilters;
+
+        switch (column)
+        {
+            case "Number":
+                filters.Number = value;
+                break;
+            case "Repository":
+                filters.Repository = value;
+                break;
+            case "PullRequest":
+                filters.PullRequest = value;
+                break;
+            case "Author":
+                filters.Author = value;
+                break;
+            case "DescriptionLength":
+                filters.DescriptionLength = value;
+                break;
+            case "OpenFor":
+                filters.OpenFor = value;
+                break;
+            case "TimeToFirstResponse":
+                filters.TimeToFirstResponse = value;
+                break;
+            case "Activity":
+                filters.Activity = value;
+                break;
+            case "Comments":
+                filters.Comments = value;
+                break;
+            case "RequestChanges":
+                filters.RequestChanges = value;
+                break;
+            case "Approvals":
+                filters.Approvals = value;
+                break;
+            case "CurrentUserActivity":
+                filters.CurrentUserActivity = value;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(column), column, "Unknown pull request filter column.");
+        }
+    }
 
     private async Task LoadAsync()
     {
@@ -434,25 +611,30 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         });
     }
 
-    private bool FilterPullRequestRow(object item)
+    private bool FilterOpenPullRequestRow(object item) => FilterPullRequestRow(item, OpenPullRequestFilters);
+
+    private bool FilterMergedPullRequestRow(object item) => FilterPullRequestRow(item, MergedPullRequestFilters);
+
+    private bool FilterPullRequestRow(object item, PullRequestFilterState filters)
     {
         if (item is not PullRequestRow row)
         {
             return false;
         }
+
         return Matches(row.SearchText, GlobalSearch)
-            && Matches(row.Number.ToString(CultureInfo.InvariantCulture), NumberFilter)
-            && Matches(row.RepositoryName, RepositoryFilter)
-            && Matches(row.PullRequestDisplay, PullRequestFilter)
-            && Matches(row.Author, AuthorFilter)
-            && Matches(row.DescriptionLength.ToString(CultureInfo.InvariantCulture), DescriptionLengthFilter)
-            && Matches(row.OpenFor, OpenForFilter)
-            && Matches(row.TimeToFirstResponse, TimeToFirstResponseFilter)
-            && Matches(row.ActivityAgeOrMerged, ActivityFilter)
-            && Matches(row.CommentsCount.ToString(CultureInfo.InvariantCulture), CommentsFilter)
-            && Matches(row.RequestChanges, RequestChangesFilter)
-            && Matches(row.Approvals, ApprovalsFilter)
-            && Matches(row.CurrentUserActivity, CurrentUserActivityFilter);
+            && Matches(row.Number.ToString(CultureInfo.InvariantCulture), filters.Number)
+            && Matches(row.RepositoryName, filters.Repository)
+            && Matches(row.PullRequestDisplay, filters.PullRequest)
+            && Matches(row.Author, filters.Author)
+            && Matches(row.DescriptionLength.ToString(CultureInfo.InvariantCulture), filters.DescriptionLength)
+            && Matches(row.OpenFor, filters.OpenFor)
+            && Matches(row.TimeToFirstResponse, filters.TimeToFirstResponse)
+            && Matches(row.ActivityAgeOrMerged, filters.Activity)
+            && Matches(row.CommentsCount.ToString(CultureInfo.InvariantCulture), filters.Comments)
+            && Matches(row.RequestChanges, filters.RequestChanges)
+            && Matches(row.Approvals, filters.Approvals)
+            && Matches(row.CurrentUserActivity, filters.CurrentUserActivity);
     }
 
     private bool FilterTelemetryRow(object item) => item is TelemetryRow row && Matches(row.SearchText, TelemetryFilter);
@@ -477,38 +659,75 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         TelemetryView.Refresh();
     }
 
-    private bool SetFilterProperty(ref string field, string value)
-    {
-        if (!SetProperty(ref field, value))
-        {
-            return false;
-        }
-        RefreshViews();
-        return true;
-    }
-
     private void RefreshViews()
     {
         OpenPullRequestsView.Refresh();
         MergedPullRequestsView.Refresh();
     }
 
+    private void SchedulePullRequestFilterRefresh()
+    {
+        _pullRequestFilterRefreshTimer.Stop();
+        _pullRequestFilterRefreshTimer.Start();
+    }
+
+    private void ScheduleTelemetryFilterRefresh()
+    {
+        _telemetryFilterRefreshTimer.Stop();
+        _telemetryFilterRefreshTimer.Start();
+    }
+
+    private void OnPullRequestFilterRefreshTimerTick(object? sender, EventArgs e)
+    {
+        _pullRequestFilterRefreshTimer.Stop();
+        RefreshViews();
+    }
+
+    private void OnTelemetryFilterRefreshTimerTick(object? sender, EventArgs e)
+    {
+        _telemetryFilterRefreshTimer.Stop();
+        TelemetryView.Refresh();
+    }
+
     private void ResetFilters()
     {
         GlobalSearch = string.Empty;
-        NumberFilter = string.Empty;
-        RepositoryFilter = string.Empty;
-        PullRequestFilter = string.Empty;
-        AuthorFilter = string.Empty;
-        DescriptionLengthFilter = string.Empty;
-        OpenForFilter = string.Empty;
-        TimeToFirstResponseFilter = string.Empty;
-        ActivityFilter = string.Empty;
-        CommentsFilter = string.Empty;
-        RequestChangesFilter = string.Empty;
-        ApprovalsFilter = string.Empty;
-        CurrentUserActivityFilter = string.Empty;
+        OpenPullRequestFilters.Reset();
+        MergedPullRequestFilters.Reset();
+        RaisePullRequestFilterPropertiesChanged();
         TelemetryFilter = string.Empty;
+    }
+
+    private void SetOpenPullRequestFilter(string value, Action<PullRequestFilterState, string> setFilter) => setFilter(OpenPullRequestFilters, value);
+
+    private void SetMergedPullRequestFilter(string value, Action<PullRequestFilterState, string> setFilter) => setFilter(MergedPullRequestFilters, value);
+
+    private void RaisePullRequestFilterPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(OpenNumberFilter));
+        OnPropertyChanged(nameof(OpenRepositoryFilter));
+        OnPropertyChanged(nameof(OpenPullRequestFilter));
+        OnPropertyChanged(nameof(OpenAuthorFilter));
+        OnPropertyChanged(nameof(OpenDescriptionLengthFilter));
+        OnPropertyChanged(nameof(OpenOpenForFilter));
+        OnPropertyChanged(nameof(OpenTimeToFirstResponseFilter));
+        OnPropertyChanged(nameof(OpenActivityFilter));
+        OnPropertyChanged(nameof(OpenCommentsFilter));
+        OnPropertyChanged(nameof(OpenRequestChangesFilter));
+        OnPropertyChanged(nameof(OpenApprovalsFilter));
+        OnPropertyChanged(nameof(OpenCurrentUserActivityFilter));
+        OnPropertyChanged(nameof(MergedNumberFilter));
+        OnPropertyChanged(nameof(MergedRepositoryFilter));
+        OnPropertyChanged(nameof(MergedPullRequestFilter));
+        OnPropertyChanged(nameof(MergedAuthorFilter));
+        OnPropertyChanged(nameof(MergedDescriptionLengthFilter));
+        OnPropertyChanged(nameof(MergedOpenForFilter));
+        OnPropertyChanged(nameof(MergedTimeToFirstResponseFilter));
+        OnPropertyChanged(nameof(MergedActivityFilter));
+        OnPropertyChanged(nameof(MergedCommentsFilter));
+        OnPropertyChanged(nameof(MergedRequestChangesFilter));
+        OnPropertyChanged(nameof(MergedApprovalsFilter));
+        OnPropertyChanged(nameof(MergedCurrentUserActivityFilter));
     }
 
     private static bool Matches(string source, string filter) => string.IsNullOrWhiteSpace(filter) || source.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase);
@@ -522,13 +741,24 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Releases resources held by the view model.
     /// </summary>
-    public void Dispose() => _loadCancellation?.Dispose();
+    public void Dispose()
+    {
+        _pullRequestFilterRefreshTimer.Stop();
+        _telemetryFilterRefreshTimer.Stop();
+        _loadCancellation?.Dispose();
+    }
+
+    private static readonly TimeSpan _filterRefreshDelay = TimeSpan.FromMilliseconds(150);
 
     private readonly PullRequestDashboardLoader _loader;
 
     private readonly BitbucketOptions _options;
 
     private readonly IBitbucketTelemetryService _telemetryService;
+
+    private readonly DispatcherTimer _pullRequestFilterRefreshTimer;
+
+    private readonly DispatcherTimer _telemetryFilterRefreshTimer;
 
     private int _mergedPullRequestsDays;
 
