@@ -32,14 +32,18 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// <param name="loader">Pull request dashboard data loader.</param>
     /// <param name="telemetryService">Bitbucket API telemetry service.</param>
     /// <param name="options">Bitbucket configuration options.</param>
-    public MainViewModel(PullRequestDashboardLoader loader, IBitbucketTelemetryService telemetryService, IOptions<BitbucketOptions> options)
+    /// <param name="preferencesService">User preferences persistence service.</param>
+    public MainViewModel(PullRequestDashboardLoader loader, IBitbucketTelemetryService telemetryService, IOptions<BitbucketOptions> options, UserPreferencesService preferencesService)
     {
         ArgumentNullException.ThrowIfNull(loader, nameof(loader));
         ArgumentNullException.ThrowIfNull(telemetryService, nameof(telemetryService));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
+        ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loader = loader;
         _telemetryService = telemetryService;
         _options = options.Value;
+        _preferencesService = preferencesService;
+        _isLightTheme = _preferencesService.Load().IsLightTheme;
         _selectedSearchMode = RepositorySearchMode.StartWith;
         _searchPhrase = string.Empty;
         _mergedPullRequestsDays = 1;
@@ -110,6 +114,23 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         get;
         private set => SetProperty(ref field, value);
     } = "Ready";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the light UI theme is enabled.
+    /// </summary>
+    public bool IsLightTheme {
+        get => _isLightTheme;
+        set
+        {
+            if (SetProperty(ref _isLightTheme, value))
+            {
+                _preferencesService.Save(new UserPreferences
+                {
+                    IsLightTheme = value
+                });
+            }
+        }
+    }
 
     /// <summary>
     /// Global text filter applied to pull request tables.
@@ -944,11 +965,15 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
     private readonly IBitbucketTelemetryService _telemetryService;
 
+    private readonly UserPreferencesService _preferencesService;
+
     private readonly DispatcherTimer _pullRequestFilterRefreshTimer;
 
     private readonly DispatcherTimer _telemetryFilterRefreshTimer;
 
     private int _mergedPullRequestsDays;
+
+    private bool _isLightTheme;
 
     private CancellationTokenSource? _loadCancellation;
 

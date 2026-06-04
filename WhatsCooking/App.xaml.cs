@@ -30,6 +30,7 @@ public partial class App : Application
             .ConfigureServices((context, services) =>
             {
                 _ = services.AddApplicationServices(context.Configuration);
+                _ = services.AddSingleton<UserPreferencesService>();
                 _ = services.AddTransient<PullRequestDashboardLoader>();
                 _ = services.AddSingleton<MainViewModel>();
                 _ = services.AddSingleton<MainWindow>();

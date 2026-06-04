@@ -14,11 +14,12 @@ This project is a logical continuation of my CLI/reporting project [ntulenev/BBR
 - Choose the period for recently merged pull requests directly in the UI.
 - View open pull requests and recently merged pull requests in separate tabs.
 - Use global search, per-column filters, column sorting, and one-click filter reset.
+- Switch between the default dark theme and a light theme; the selected theme is remembered between launches.
 - Open repositories and pull requests in Bitbucket from the table.
 - Mark reviewed pull requests so they stay visible but no longer draw attention.
 - Track Bitbucket API telemetry in a dedicated tab.
 - Run the UI with synthetic demo data when Bitbucket credentials are not available.
-- Show a loading overlay with current progress while data is being loaded.
+- Show a loading overlay with repository-scanning progress while data is being loaded.
 
 ## Screenshots
 
@@ -42,7 +43,13 @@ Runtime settings are stored in:
 WhatsCooking/appsettings.json
 ```
 
-Only infrastructure and loading behavior are configured in `appsettings.json`. Repository filter mode, filter phrase, and the merged PR period are entered in the UI.
+Only infrastructure and loading behavior are configured in `appsettings.json`. Repository filter mode, filter phrase, merged PR period, table filters, and the UI theme are controlled from the UI.
+
+The selected UI theme is stored per user in:
+
+```text
+%LocalAppData%\WhatsCooking\preferences.json
+```
 
 ### Bitbucket
 
