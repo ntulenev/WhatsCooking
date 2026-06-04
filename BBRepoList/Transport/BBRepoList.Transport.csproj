@@ -1,5 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <NuGetAuditMode>all</NuGetAuditMode>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\Abstractions\IBitbucketJsonParser.cs" Link="Abstractions\IBitbucketJsonParser.cs" />
     <Compile Include="..\Abstractions\IPullRequestFingerprintBuilder.cs" Link="Abstractions\IPullRequestFingerprintBuilder.cs" />
