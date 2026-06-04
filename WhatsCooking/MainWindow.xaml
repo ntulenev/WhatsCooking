@@ -399,6 +399,7 @@
         <Style TargetType="ScrollBar">
             <Setter Property="Background" Value="#1F1F1F" />
             <Setter Property="Width" Value="14" />
+            <Setter Property="Height" Value="Auto" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollBar">
@@ -417,7 +418,7 @@
                                     <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" />
                                 </Track.DecreaseRepeatButton>
                                 <Track.Thumb>
-                                    <Thumb Background="#565656" />
+                                    <Thumb Background="#6A6A6A" />
                                 </Track.Thumb>
                                 <Track.IncreaseRepeatButton>
                                     <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" />
@@ -428,15 +429,47 @@
                                           Style="{StaticResource ScrollBarLineButtonStyle}"
                                           Tag="180" />
                         </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="Orientation" Value="Horizontal">
-                                <Setter Property="Width" Value="Auto" />
-                                <Setter Property="Height" Value="14" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto" />
+                    <Setter Property="Height" Value="14" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ScrollBar">
+                                <Grid Background="{TemplateBinding Background}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="14" />
+                                    </Grid.ColumnDefinitions>
+                                    <RepeatButton Grid.Column="0"
+                                                  Command="ScrollBar.LineLeftCommand"
+                                                  Style="{StaticResource ScrollBarLineButtonStyle}"
+                                                  Tag="270" />
+                                    <Track x:Name="PART_Track" Grid.Column="1">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Command="ScrollBar.PageLeftCommand" Opacity="0" />
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb Background="#6A6A6A" />
+                                        </Track.Thumb>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Command="ScrollBar.PageRightCommand" Opacity="0" />
+                                        </Track.IncreaseRepeatButton>
+                                    </Track>
+                                    <RepeatButton Grid.Column="2"
+                                                  Command="ScrollBar.LineRightCommand"
+                                                  Style="{StaticResource ScrollBarLineButtonStyle}"
+                                                  Tag="90" />
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style TargetType="DataGrid">
@@ -444,6 +477,10 @@
             <Setter Property="CanUserAddRows" Value="False" />
             <Setter Property="CanUserDeleteRows" Value="False" />
             <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="MaxWidth" Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}}" />
+            <Setter Property="MaxHeight" Value="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Border}}" />
             <Setter Property="GridLinesVisibility" Value="Horizontal" />
             <Setter Property="HorizontalGridLinesBrush" Value="#2D2D30" />
             <Setter Property="VerticalGridLinesBrush" Value="#252526" />
@@ -460,8 +497,11 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="RowBackground" Value="{StaticResource PanelBrush}" />
             <Setter Property="AlternatingRowBackground" Value="#28282B" />
-            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
-            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Visible" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
+            <Setter Property="ScrollViewer.PanningMode" Value="Both" />
+            <Setter Property="ScrollViewer.PanningDeceleration" Value="0.001" />
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
@@ -559,8 +599,13 @@
     </Window.Resources>
 
     <Grid Background="{StaticResource BgBrush}">
-    <DockPanel Background="{StaticResource BgBrush}">
-        <Border DockPanel.Dock="Top" Margin="10,8,10,0" Padding="10,8"
+    <Grid Background="{StaticResource BgBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Margin="10,8,10,0" Padding="10,8"
                 Background="#DD252526"
                 BorderBrush="#22FFFFFF"
                 BorderThickness="1"
@@ -620,7 +665,7 @@
             </Grid>
         </Border>
 
-        <TabControl Margin="10,8,10,10">
+        <TabControl Grid.Row="1" Margin="10,8,10,10">
             <TabItem Header="Open PR details">
                 <Border Background="{StaticResource PanelBrush}" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="12" Padding="0">
                     <DataGrid ItemsSource="{Binding OpenPullRequestsView}">
@@ -831,7 +876,7 @@
                 </Border>
             </TabItem>
         </TabControl>
-    </DockPanel>
+    </Grid>
 
         <Border Background="#CC0F1117"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
