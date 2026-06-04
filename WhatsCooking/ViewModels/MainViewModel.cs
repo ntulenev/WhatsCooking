@@ -43,9 +43,11 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         _telemetryService = telemetryService;
         _options = options.Value;
         _preferencesService = preferencesService;
-        _isLightTheme = _preferencesService.Load().IsLightTheme;
-        _selectedSearchMode = RepositorySearchMode.StartWith;
-        _searchPhrase = string.Empty;
+        _preferences = _preferencesService.Load();
+        _isLightTheme = _preferences.IsLightTheme;
+        _uiScale = NormalizeUiScale(_preferences.UiScale);
+        _selectedSearchMode = _preferences.SearchMode ?? RepositorySearchMode.StartWith;
+        _searchPhrase = _preferences.SearchPhrase ?? string.Empty;
         _mergedPullRequestsDays = 1;
         OpenPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
         MergedPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
@@ -69,6 +71,8 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         CancelCommand = new RelayCommand(Cancel, () => IsLoading);
         OpenUrlCommand = new RelayCommand(OpenUrl);
         ResetFiltersCommand = new RelayCommand(ResetFilters);
+        IncreaseUiScaleCommand = new RelayCommand(IncreaseUiScale);
+        DecreaseUiScaleCommand = new RelayCommand(DecreaseUiScale);
         RefreshTelemetry();
     }
 
@@ -90,7 +94,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// </summary>
     public string SearchPhrase {
         get => _searchPhrase;
-        set => SetProperty(ref _searchPhrase, value);
+        set => SetProperty(ref _searchPhrase, value ?? string.Empty);
     }
 
     /// <summary>
@@ -124,10 +128,24 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _isLightTheme, value))
             {
-                _preferencesService.Save(new UserPreferences
-                {
-                    IsLightTheme = value
-                });
+                _preferences.IsLightTheme = value;
+                _preferencesService.Save(_preferences);
+            }
+        }
+    }
+
+    /// <summary>
+    /// UI scale multiplier.
+    /// </summary>
+    public double UiScale {
+        get => _uiScale;
+        private set
+        {
+            var normalizedValue = NormalizeUiScale(value);
+            if (SetProperty(ref _uiScale, normalizedValue))
+            {
+                _preferences.UiScale = normalizedValue;
+                _preferencesService.Save(_preferences);
             }
         }
     }
@@ -475,6 +493,16 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand ResetFiltersCommand { get; }
 
     /// <summary>
+    /// Command that increases the UI scale.
+    /// </summary>
+    public ICommand IncreaseUiScaleCommand { get; }
+
+    /// <summary>
+    /// Command that decreases the UI scale.
+    /// </summary>
+    public ICommand DecreaseUiScaleCommand { get; }
+
+    /// <summary>
     /// Applies a pull request grid filter from a column header editor.
     /// </summary>
     /// <param name="scope">Pull request grid scope.</param>
@@ -550,6 +578,8 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         Status = "Starting";
         try
         {
+            SaveLoadPreferences();
+
             if (_options.DemoMode)
             {
                 LoadDemoData();
@@ -631,6 +661,27 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         MergedPullRequestsCount = result.MergedPullRequests.Count;
         LoadDemoTelemetry();
         Status = $"Loaded demo data: {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
+    }
+
+    private void IncreaseUiScale() => UiScale += UI_SCALE_STEP;
+
+    private void DecreaseUiScale() => UiScale -= UI_SCALE_STEP;
+
+    private void SaveLoadPreferences()
+    {
+        _preferences.SearchMode = SelectedSearchMode;
+        _preferences.SearchPhrase = SearchPhrase;
+        _preferencesService.Save(_preferences);
+    }
+
+    private static double NormalizeUiScale(double? value)
+    {
+        if (value is null || double.IsNaN(value.Value) || double.IsInfinity(value.Value))
+        {
+            return DEFAULT_UI_SCALE;
+        }
+
+        return Math.Round(Math.Clamp(value.Value, MIN_UI_SCALE, MAX_UI_SCALE), 2);
     }
 
     private static PullRequestLoadResult CreateDemoLoadResult(DateTimeOffset asOf)
@@ -957,6 +1008,14 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
     private static readonly TimeSpan _filterRefreshDelay = TimeSpan.FromMilliseconds(150);
 
+    private const double DEFAULT_UI_SCALE = 1.0;
+
+    private const double MIN_UI_SCALE = 0.75;
+
+    private const double MAX_UI_SCALE = 1.5;
+
+    private const double UI_SCALE_STEP = 0.05;
+
     private const string DEMO_DESCRIPTION_LONG = "Synthetic demo pull request with realistic review data for presenting the dashboard without Bitbucket credentials.";
 
     private readonly PullRequestDashboardLoader _loader;
@@ -967,6 +1026,8 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
     private readonly UserPreferencesService _preferencesService;
 
+    private readonly UserPreferences _preferences;
+
     private readonly DispatcherTimer _pullRequestFilterRefreshTimer;
 
     private readonly DispatcherTimer _telemetryFilterRefreshTimer;
@@ -974,6 +1035,8 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     private int _mergedPullRequestsDays;
 
     private bool _isLightTheme;
+
+    private double _uiScale;
 
     private CancellationTokenSource? _loadCancellation;
 

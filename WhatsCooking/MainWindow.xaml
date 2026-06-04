@@ -8,7 +8,15 @@
         Title="What's Cooking" Height="820" Width="1480" MinHeight="680" MinWidth="1100"
         Background="#1E1E1E"
         FontFamily="Segoe UI"
-        FontSize="13">
+        FontSize="13"
+        PreviewKeyDown="OnPreviewKeyDown">
+    <Window.InputBindings>
+        <KeyBinding Key="OemPlus" Modifiers="Control" Command="{Binding IncreaseUiScaleCommand}" />
+        <KeyBinding Key="Add" Modifiers="Control" Command="{Binding IncreaseUiScaleCommand}" />
+        <KeyBinding Key="OemMinus" Modifiers="Control" Command="{Binding DecreaseUiScaleCommand}" />
+        <KeyBinding Key="Subtract" Modifiers="Control" Command="{Binding DecreaseUiScaleCommand}" />
+    </Window.InputBindings>
+
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
@@ -649,6 +657,10 @@
     </Window.Resources>
 
     <Grid Background="{DynamicResource BgBrush}">
+        <Grid.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding UiScale}" ScaleY="{Binding UiScale}" />
+        </Grid.LayoutTransform>
+
     <Grid Background="{DynamicResource BgBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
+using System.Windows.Input;
 using System.Windows.Media;
 
 using WhatsCooking.ViewModels;
@@ -179,6 +180,26 @@ internal sealed partial class MainWindow : Window
         }
 
         viewModel.ApplyPullRequestFilter(parts[0], parts[1], textBox.Text);
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control) || DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (key is Key.OemPlus or Key.Add)
+        {
+            viewModel.IncreaseUiScaleCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (key is Key.OemMinus or Key.Subtract)
+        {
+            viewModel.DecreaseUiScaleCommand.Execute(null);
+            e.Handled = true;
+        }
     }
 
     private static bool IsFromFilterTextBox(object source) => FindVisualParent<TextBox>(source as DependencyObject) is not null;
