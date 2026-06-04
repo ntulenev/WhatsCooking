@@ -34,8 +34,8 @@ public sealed class BitbucketPullRequestActivityLoader : IBitbucketPullRequestAc
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<PullRequestActivityEntry>> GetActivitiesAsync(
-        string repositorySlug,
-        int pullRequestId,
+        RepositorySlug repositorySlug,
+        PullRequestId pullRequestId,
         CancellationToken cancellationToken)
     {
         var url = CreatePullRequestActivitiesUrl(repositorySlug, pullRequestId);
@@ -72,9 +72,9 @@ public sealed class BitbucketPullRequestActivityLoader : IBitbucketPullRequestAc
         return [.. activities.DistinctBy(static activity => (activity.ActorId, activity.HappenedOn, activity.IsComment))];
     }
 
-    private Uri CreatePullRequestActivitiesUrl(string repositorySlug, int pullRequestId) =>
+    private Uri CreatePullRequestActivitiesUrl(RepositorySlug repositorySlug, PullRequestId pullRequestId) =>
         new(
-            $"repositories/{_options.Workspace}/{Uri.EscapeDataString(repositorySlug)}/pullrequests/{pullRequestId}/activity?pagelen={_options.PageLen}&fields={Uri.EscapeDataString(PULL_REQUEST_ACTIVITY_FIELDS)}",
+            $"repositories/{_options.Workspace}/{Uri.EscapeDataString(repositorySlug.Value)}/pullrequests/{pullRequestId.Value}/activity?pagelen={_options.PageLen}&fields={Uri.EscapeDataString(PULL_REQUEST_ACTIVITY_FIELDS)}",
             UriKind.Relative);
 
     private readonly IBitbucketTransport _transport;

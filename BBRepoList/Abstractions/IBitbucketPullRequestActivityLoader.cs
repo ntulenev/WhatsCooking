@@ -15,7 +15,7 @@ public interface IBitbucketPullRequestActivityLoader
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Distinct pull request activity entries.</returns>
     Task<IReadOnlyList<PullRequestActivityEntry>> GetActivitiesAsync(
-        string repositorySlug,
-        int pullRequestId,
+        RepositorySlug repositorySlug,
+        PullRequestId pullRequestId,
         CancellationToken cancellationToken);
 }

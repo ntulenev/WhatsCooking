@@ -42,7 +42,7 @@ public sealed class PullRequestSnapshotMapper : IPullRequestSnapshotMapper
             GetPullRequestReviewState(pullRequestDto.Participants, currentUserId);
 
         return new PullRequestSnapshot(
-            pullRequestDto.Id!.Value,
+            new PullRequestId(pullRequestDto.Id!.Value),
             string.IsNullOrWhiteSpace(pullRequestDto.Title)
                 ? $"PR-{pullRequestDto.Id.Value.ToString(CultureInfo.InvariantCulture)}"
                 : pullRequestDto.Title.Trim(),

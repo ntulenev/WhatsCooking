@@ -54,7 +54,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
             return;
         }
 
-        var repositorySlug = repository.Slug!;
+        var repositorySlug = repository.Slug!.Value;
 
         try
         {
@@ -81,13 +81,14 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
             return [];
         }
 
-        var repositorySlug = repository.Slug!;
+        var repositorySlug = repository.Slug!.Value;
+        var workspace = new BitbucketWorkspace(_options.Workspace);
         var details = new List<PullRequestDetail>();
 
         try
         {
             var cacheEntriesByPullRequestId = await _cacheService
-                .ReadEntriesByPullRequestIdAsync(_options.Workspace, repositorySlug, currentUserId, cancellationToken)
+                .ReadEntriesByPullRequestIdAsync(workspace, repositorySlug, currentUserId, cancellationToken)
                 .ConfigureAwait(false);
 
             var openPullRequests = await GetPullRequestSnapshotsAsync(
@@ -99,7 +100,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
             if (openPullRequests.Count == 0)
             {
                 await _cacheService
-                    .DeleteAsync(_options.Workspace, repositorySlug, currentUserId, cancellationToken)
+                    .DeleteAsync(workspace, repositorySlug, currentUserId, cancellationToken)
                     .ConfigureAwait(false);
                 return [];
             }
@@ -133,7 +134,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
             }
 
             await _cacheService
-                .SaveEntriesAsync(_options.Workspace, repositorySlug, currentUserId, updatedCacheEntries, cancellationToken)
+                .SaveEntriesAsync(workspace, repositorySlug, currentUserId, updatedCacheEntries, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (HttpRequestException)
@@ -158,7 +159,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
             return [];
         }
 
-        var repositorySlug = repository.Slug!;
+        var repositorySlug = repository.Slug!.Value;
         var pullRequests = new List<MergedPullRequest>();
 
         try
@@ -203,7 +204,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
     }
 
     private async Task<IReadOnlyList<PullRequestSnapshot>> GetPullRequestSnapshotsAsync(
-        string repositorySlug,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken)
     {
@@ -257,22 +258,22 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         }
     }
 
-    private Uri CreateOpenPullRequestCountUrl(string repositorySlug) =>
+    private Uri CreateOpenPullRequestCountUrl(RepositorySlug repositorySlug) =>
         new(
             $"repositories/{_options.Workspace}/{EscapeRepositorySlug(repositorySlug)}/pullrequests?state=OPEN&pagelen=1&fields=size",
             UriKind.Relative);
 
-    private Uri CreateMergedPullRequestsUrl(string repositorySlug) =>
+    private Uri CreateMergedPullRequestsUrl(RepositorySlug repositorySlug) =>
         new(
             $"repositories/{_options.Workspace}/{EscapeRepositorySlug(repositorySlug)}/pullrequests?state=MERGED&pagelen={_options.PageLen}&sort=-updated_on&fields={EscapeFields(MERGED_PULL_REQUEST_FIELDS)}",
             UriKind.Relative);
 
-    private Uri CreateOpenPullRequestSnapshotsUrl(string repositorySlug) =>
+    private Uri CreateOpenPullRequestSnapshotsUrl(RepositorySlug repositorySlug) =>
         new(
             $"repositories/{_options.Workspace}/{EscapeRepositorySlug(repositorySlug)}/pullrequests?state=OPEN&pagelen={_options.PageLen}&fields={EscapeFields(OPEN_PULL_REQUEST_SNAPSHOT_FIELDS)}",
             UriKind.Relative);
 
-    private static string EscapeRepositorySlug(string repositorySlug) => Uri.EscapeDataString(repositorySlug);
+    private static string EscapeRepositorySlug(RepositorySlug repositorySlug) => Uri.EscapeDataString(repositorySlug.Value);
 
     private static string EscapeFields(string fields) => Uri.EscapeDataString(fields);
 
@@ -323,7 +324,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
     private bool TryCreateDetailFromCache(
         Repository repository,
         PullRequestSnapshot pullRequest,
-        IReadOnlyDictionary<int, PullRequestDetailsCacheEntry> cacheEntriesByPullRequestId,
+        IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry> cacheEntriesByPullRequestId,
         out PullRequestDetail detail,
         out PullRequestDetailsCacheEntry cacheEntry)
     {

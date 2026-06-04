@@ -15,9 +15,9 @@ public interface IPullRequestDetailsCacheService
     /// <param name="currentUserId">Current authenticated Bitbucket user identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Cached entries keyed by pull request identifier.</returns>
-    Task<IReadOnlyDictionary<int, PullRequestDetailsCacheEntry>> ReadEntriesByPullRequestIdAsync(
-        string workspace,
-        string repositorySlug,
+    Task<IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry>> ReadEntriesByPullRequestIdAsync(
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken);
 
@@ -30,8 +30,8 @@ public interface IPullRequestDetailsCacheService
     /// <param name="entries">Entries to persist.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task SaveEntriesAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         IReadOnlyCollection<PullRequestDetailsCacheEntry> entries,
         CancellationToken cancellationToken);
@@ -44,8 +44,8 @@ public interface IPullRequestDetailsCacheService
     /// <param name="currentUserId">Current authenticated Bitbucket user identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task DeleteAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken);
 
@@ -59,7 +59,7 @@ public interface IPullRequestDetailsCacheService
     /// <returns><see langword="true"/> when the cached entry matches the pull request fingerprint.</returns>
     bool TryCreateActivitySummary(
         PullRequestSnapshot pullRequest,
-        IReadOnlyDictionary<int, PullRequestDetailsCacheEntry> entriesByPullRequestId,
+        IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry> entriesByPullRequestId,
         out PullRequestActivitySummary activitySummary,
         out PullRequestDetailsCacheEntry cacheEntry);
 

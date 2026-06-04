@@ -25,7 +25,7 @@ public sealed class PullRequestDetail : IPullRequestReportItem
     /// <param name="hasCurrentUserApproval">Whether current authenticated user currently approves the pull request.</param>
     public PullRequestDetail(
         Repository repository,
-        int pullRequestId,
+        PullRequestId pullRequestId,
         string title,
         DateTimeOffset openedOn,
         BitbucketId? authorId,
@@ -41,11 +41,6 @@ public sealed class PullRequestDetail : IPullRequestReportItem
         bool hasCurrentUserApproval = false)
     {
         ArgumentNullException.ThrowIfNull(repository);
-
-        if (pullRequestId <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(pullRequestId), "Pull request id must be greater than zero.");
-        }
 
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -103,7 +98,7 @@ public sealed class PullRequestDetail : IPullRequestReportItem
     /// <summary>
     /// Repository slug in workspace scope.
     /// </summary>
-    public string? RepositorySlug => Repository.Slug;
+    public RepositorySlug? RepositorySlug => Repository.Slug;
 
     /// <summary>
     /// Repository creation timestamp.
@@ -113,7 +108,7 @@ public sealed class PullRequestDetail : IPullRequestReportItem
     /// <summary>
     /// Pull request identifier in repository scope.
     /// </summary>
-    public int PullRequestId { get; }
+    public PullRequestId PullRequestId { get; }
 
     /// <summary>
     /// Pull request title.

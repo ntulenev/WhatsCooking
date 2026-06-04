@@ -15,11 +15,14 @@ public static class BitbucketMappings
     {
         ArgumentNullException.ThrowIfNull(dto);
 
+        var repositorySlug = string.IsNullOrWhiteSpace(dto.Slug)
+            ? (RepositorySlug?)null
+            : new RepositorySlug(dto.Slug);
         var repository = new Repository(
             dto.Name ?? string.Empty,
             dto.CreatedOn,
             dto.UpdatedOn,
-            dto.Slug);
+            repositorySlug);
         return repository;
     }
 

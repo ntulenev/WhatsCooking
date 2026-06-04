@@ -13,12 +13,12 @@ internal interface IPullRequestReportItem
     /// <summary>
     /// Repository slug in workspace scope.
     /// </summary>
-    string? RepositorySlug { get; }
+    RepositorySlug? RepositorySlug { get; }
 
     /// <summary>
     /// Pull request identifier in repository scope.
     /// </summary>
-    int PullRequestId { get; }
+    PullRequestId PullRequestId { get; }
 
     /// <summary>
     /// Pull request title.

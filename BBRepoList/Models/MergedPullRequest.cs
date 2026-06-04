@@ -26,7 +26,7 @@ public sealed class MergedPullRequest : IPullRequestReportItem
     /// <param name="hasCurrentUserApproval">Whether current authenticated user currently approves the pull request.</param>
     public MergedPullRequest(
         Repository repository,
-        int pullRequestId,
+        PullRequestId pullRequestId,
         string title,
         DateTimeOffset openedOn,
         BitbucketId? authorId,
@@ -43,11 +43,6 @@ public sealed class MergedPullRequest : IPullRequestReportItem
         bool hasCurrentUserApproval = false)
     {
         ArgumentNullException.ThrowIfNull(repository);
-
-        if (pullRequestId <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(pullRequestId), "Pull request id must be greater than zero.");
-        }
 
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -106,12 +101,12 @@ public sealed class MergedPullRequest : IPullRequestReportItem
     /// <summary>
     /// Repository slug in workspace scope.
     /// </summary>
-    public string? RepositorySlug => Repository.Slug;
+    public RepositorySlug? RepositorySlug => Repository.Slug;
 
     /// <summary>
     /// Pull request identifier in repository scope.
     /// </summary>
-    public int PullRequestId { get; }
+    public PullRequestId PullRequestId { get; }
 
     /// <summary>
     /// Pull request title.

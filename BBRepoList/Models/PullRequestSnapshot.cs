@@ -15,7 +15,7 @@ namespace BBRepoList.Models;
 /// <param name="HasCurrentUserApproval">Whether current user currently approves the pull request.</param>
 /// <param name="CacheFingerprint">Fingerprint built from lightweight pull request fields for cache validation.</param>
 public readonly record struct PullRequestSnapshot(
-    int Id,
+    PullRequestId Id,
     string Title,
     DateTimeOffset CreatedOn,
     string? DescriptionText = null,

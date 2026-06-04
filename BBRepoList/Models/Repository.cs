@@ -16,7 +16,7 @@ public sealed class Repository
         string name,
         DateTimeOffset? createdOn = null,
         DateTimeOffset? lastUpdatedOn = null,
-        string? slug = null)
+        RepositorySlug? slug = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -26,7 +26,7 @@ public sealed class Repository
         Name = name.Trim();
         CreatedOn = createdOn;
         LastUpdatedOn = lastUpdatedOn;
-        Slug = string.IsNullOrWhiteSpace(slug) ? null : slug.Trim();
+        Slug = slug;
         CanCalculateInactivityTiming = createdOn is not null && lastUpdatedOn is not null;
     }
 
@@ -53,12 +53,12 @@ public sealed class Repository
     /// <summary>
     /// Gets a value indicating whether open pull requests count can be populated.
     /// </summary>
-    public bool CanPopulateOpenPullRequestsCount => !string.IsNullOrWhiteSpace(Slug);
+    public bool CanPopulateOpenPullRequestsCount => Slug is not null;
 
     /// <summary>
     /// Gets a value indicating whether open pull request details can be loaded.
     /// </summary>
-    public bool CanLoadPullRequests => !string.IsNullOrWhiteSpace(Slug);
+    public bool CanLoadPullRequests => Slug is not null;
 
     /// <summary>
     /// Updates open pull requests count.
@@ -80,7 +80,7 @@ public sealed class Repository
     /// <summary>
     /// Repository slug in workspace scope.
     /// </summary>
-    public string? Slug { get; }
+    public RepositorySlug? Slug { get; }
 
     /// <summary>
     /// Gets a value indicating whether inactivity timing can be calculated.

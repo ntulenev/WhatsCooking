@@ -28,16 +28,11 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<PullRequestDetailsCacheEntry>> ReadEntriesAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(workspace) || string.IsNullOrWhiteSpace(repositorySlug))
-        {
-            return [];
-        }
-
         var cacheFilePath = GetCacheFilePath(workspace, repositorySlug, currentUserId);
         if (!File.Exists(cacheFilePath))
         {
@@ -59,10 +54,10 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
                     .Where(static entry => entry is not null)
                     .OfType<PullRequestDetailsCacheEntry>()
                     .Where(static entry =>
-                        entry.PullRequestId > 0
+                        entry.PullRequestId.Value > 0
                         && !string.IsNullOrWhiteSpace(entry.Fingerprint)
                         && entry.CommentsCount >= 0)
-                    .OrderBy(static entry => entry.PullRequestId)
+                    .OrderBy(static entry => entry.PullRequestId.Value)
             ];
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or NotSupportedException)
@@ -73,18 +68,13 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
 
     /// <inheritdoc />
     public async Task SaveEntriesAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         IReadOnlyCollection<PullRequestDetailsCacheEntry> entries,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(entries);
-
-        if (string.IsNullOrWhiteSpace(workspace) || string.IsNullOrWhiteSpace(repositorySlug))
-        {
-            return;
-        }
 
         if (entries.Count == 0)
         {
@@ -104,10 +94,10 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
             _ = Directory.CreateDirectory(cacheDirectory);
 
             var validEntries = entries
-                .Where(static entry => entry.PullRequestId > 0
+                .Where(static entry => entry.PullRequestId.Value > 0
                                        && !string.IsNullOrWhiteSpace(entry.Fingerprint)
                                        && entry.CommentsCount >= 0)
-                .OrderBy(static entry => entry.PullRequestId)
+                .OrderBy(static entry => entry.PullRequestId.Value)
                 .ToArray();
 
             if (validEntries.Length == 0)
@@ -135,17 +125,12 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
 
     /// <inheritdoc />
     public Task DeleteAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
-        if (string.IsNullOrWhiteSpace(workspace) || string.IsNullOrWhiteSpace(repositorySlug))
-        {
-            return Task.CompletedTask;
-        }
 
         try
         {
@@ -163,11 +148,11 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
         return Task.CompletedTask;
     }
 
-    private string GetCacheFilePath(string workspace, string repositorySlug, BitbucketId currentUserId)
+    private string GetCacheFilePath(BitbucketWorkspace workspace, RepositorySlug repositorySlug, BitbucketId currentUserId)
     {
-        var workspaceSegment = GetHashSegment(workspace);
+        var workspaceSegment = GetHashSegment(workspace.Value);
         var userSegment = GetHashSegment(currentUserId.Value);
-        var repositorySegment = GetHashSegment(repositorySlug);
+        var repositorySegment = GetHashSegment(repositorySlug.Value);
 
         return Path.Combine(_cacheRootDirectory, workspaceSegment, userSegment, $"{repositorySegment}.json");
     }

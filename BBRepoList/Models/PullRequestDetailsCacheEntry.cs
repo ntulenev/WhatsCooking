@@ -10,7 +10,7 @@ namespace BBRepoList.Models;
 /// <param name="HasCurrentUserDiscussion">Whether current authenticated user has commented in activity.</param>
 /// <param name="CommentsCount">Comment count detected in pull request activity.</param>
 public sealed record PullRequestDetailsCacheEntry(
-    int PullRequestId,
+    PullRequestId PullRequestId,
     string Fingerprint,
     DateTimeOffset? FirstNonAuthorActivityOn,
     DateTimeOffset? LastActivityOn,

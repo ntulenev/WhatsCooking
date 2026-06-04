@@ -16,8 +16,8 @@ public interface IPullRequestDetailsCache
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Cached entries, or an empty collection when cache is unavailable.</returns>
     Task<IReadOnlyList<PullRequestDetailsCacheEntry>> ReadEntriesAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken);
 
@@ -30,8 +30,8 @@ public interface IPullRequestDetailsCache
     /// <param name="entries">Entries to persist.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task SaveEntriesAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         IReadOnlyCollection<PullRequestDetailsCacheEntry> entries,
         CancellationToken cancellationToken);
@@ -44,8 +44,8 @@ public interface IPullRequestDetailsCache
     /// <param name="currentUserId">Current authenticated Bitbucket user identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task DeleteAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken);
 }

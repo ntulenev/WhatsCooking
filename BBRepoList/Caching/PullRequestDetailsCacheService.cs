@@ -20,9 +20,9 @@ public sealed class PullRequestDetailsCacheService : IPullRequestDetailsCacheSer
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyDictionary<int, PullRequestDetailsCacheEntry>> ReadEntriesByPullRequestIdAsync(
-        string workspace,
-        string repositorySlug,
+    public async Task<IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry>> ReadEntriesByPullRequestIdAsync(
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken)
     {
@@ -37,8 +37,8 @@ public sealed class PullRequestDetailsCacheService : IPullRequestDetailsCacheSer
 
     /// <inheritdoc />
     public Task SaveEntriesAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         IReadOnlyCollection<PullRequestDetailsCacheEntry> entries,
         CancellationToken cancellationToken) =>
@@ -46,8 +46,8 @@ public sealed class PullRequestDetailsCacheService : IPullRequestDetailsCacheSer
 
     /// <inheritdoc />
     public Task DeleteAsync(
-        string workspace,
-        string repositorySlug,
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
         BitbucketId currentUserId,
         CancellationToken cancellationToken) =>
         _cache.DeleteAsync(workspace, repositorySlug, currentUserId, cancellationToken);
@@ -55,7 +55,7 @@ public sealed class PullRequestDetailsCacheService : IPullRequestDetailsCacheSer
     /// <inheritdoc />
     public bool TryCreateActivitySummary(
         PullRequestSnapshot pullRequest,
-        IReadOnlyDictionary<int, PullRequestDetailsCacheEntry> entriesByPullRequestId,
+        IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry> entriesByPullRequestId,
         out PullRequestActivitySummary activitySummary,
         out PullRequestDetailsCacheEntry cacheEntry)
     {

@@ -85,7 +85,7 @@ public sealed class RepositoryService : IRepoService
             .. pullRequestDetails
                 .OrderByDescending(static detail => detail.OpenedOn)
                 .ThenBy(static detail => detail.RepositoryName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(static detail => detail.PullRequestId)
+                .ThenBy(static detail => detail.PullRequestId.Value)
         ];
     }
 
@@ -119,7 +119,7 @@ public sealed class RepositoryService : IRepoService
             .. mergedPullRequests
                 .OrderByDescending(static pullRequest => pullRequest.MergedOn)
                 .ThenBy(static pullRequest => pullRequest.RepositoryName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(static pullRequest => pullRequest.PullRequestId)
+                .ThenBy(static pullRequest => pullRequest.PullRequestId.Value)
         ];
     }
 

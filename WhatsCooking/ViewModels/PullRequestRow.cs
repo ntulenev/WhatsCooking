@@ -169,11 +169,11 @@ internal sealed class PullRequestRow
     {
         ArgumentNullException.ThrowIfNull(detail, nameof(detail));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
-        _workspace = options.Workspace;
+        _workspace = new BitbucketWorkspace(options.Workspace);
         Number = number;
         RepositoryName = detail.RepositoryName;
-        RepositorySlug = detail.RepositorySlug ?? string.Empty;
-        PullRequestId = detail.PullRequestId;
+        RepositorySlug = detail.RepositorySlug;
+        PullRequestId = detail.PullRequestId.Value;
         Title = detail.Title;
         Author = detail.AuthorDisplayName ?? "-";
         DescriptionLength = detail.DescriptionText?.Length ?? 0;
@@ -211,11 +211,11 @@ internal sealed class PullRequestRow
     {
         ArgumentNullException.ThrowIfNull(pullRequest, nameof(pullRequest));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
-        _workspace = options.Workspace;
+        _workspace = new BitbucketWorkspace(options.Workspace);
         Number = number;
         RepositoryName = pullRequest.RepositoryName;
-        RepositorySlug = pullRequest.RepositorySlug ?? string.Empty;
-        PullRequestId = pullRequest.PullRequestId;
+        RepositorySlug = pullRequest.RepositorySlug;
+        PullRequestId = pullRequest.PullRequestId.Value;
         Title = pullRequest.Title;
         Author = pullRequest.AuthorDisplayName ?? "-";
         DescriptionLength = pullRequest.DescriptionText?.Length ?? 0;
@@ -261,18 +261,18 @@ internal sealed class PullRequestRow
 
     private static double FormatSortMinutes(TimeSpan? duration) => duration?.TotalMinutes ?? -1;
 
-    private static Uri BuildRepositoryBrowseUrl(string workspace, string repositorySlug)
+    private static Uri BuildRepositoryBrowseUrl(BitbucketWorkspace workspace, RepositorySlug? repositorySlug)
     {
-        var encodedWorkspace = Uri.EscapeDataString(workspace.Trim());
-        var encodedSlug = Uri.EscapeDataString(repositorySlug.Trim());
+        var encodedWorkspace = Uri.EscapeDataString(workspace.Value);
+        var encodedSlug = Uri.EscapeDataString(repositorySlug?.Value ?? string.Empty);
 
         return new Uri($"https://bitbucket.org/{encodedWorkspace}/{encodedSlug}");
     }
 
-    private static Uri BuildPullRequestUrl(string workspace, string repositorySlug, int pullRequestId)
+    private static Uri BuildPullRequestUrl(BitbucketWorkspace workspace, RepositorySlug? repositorySlug, int pullRequestId)
     {
-        var encodedWorkspace = Uri.EscapeDataString(workspace.Trim());
-        var encodedSlug = Uri.EscapeDataString(repositorySlug.Trim());
+        var encodedWorkspace = Uri.EscapeDataString(workspace.Value);
+        var encodedSlug = Uri.EscapeDataString(repositorySlug?.Value ?? string.Empty);
 
         return new Uri($"https://bitbucket.org/{encodedWorkspace}/{encodedSlug}/pull-requests/{pullRequestId}");
     }
@@ -303,7 +303,7 @@ internal sealed class PullRequestRow
         return "-";
     }
 
-    private readonly string _workspace;
+    private readonly BitbucketWorkspace _workspace;
 
-    private string RepositorySlug { get; }
+    private RepositorySlug? RepositorySlug { get; }
 }
