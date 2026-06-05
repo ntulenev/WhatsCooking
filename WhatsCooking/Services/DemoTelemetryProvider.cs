@@ -8,7 +8,7 @@ namespace WhatsCooking.Services;
 /// Creates synthetic Bitbucket telemetry for demo mode.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Provider is created by dependency injection.")]
-internal sealed class DemoTelemetryProvider
+internal sealed class DemoTelemetryProvider : IDemoTelemetryProvider
 {
     /// <summary>
     /// Creates demo telemetry data.

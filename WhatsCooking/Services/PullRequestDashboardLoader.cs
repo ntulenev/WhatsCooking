@@ -9,7 +9,7 @@ namespace WhatsCooking.Services;
 /// Loads pull request dashboard data from Bitbucket services.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Loader is created by dependency injection.")]
-internal sealed class PullRequestDashboardLoader
+internal sealed class PullRequestDashboardLoader : IPullRequestDashboardLoader
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="PullRequestDashboardLoader"/> class.

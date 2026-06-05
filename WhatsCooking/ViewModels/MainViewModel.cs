@@ -36,14 +36,14 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// <param name="options">Bitbucket configuration options.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
-        PullRequestDashboardLoader loader,
-        DemoPullRequestDashboardProvider demoDataProvider,
-        DemoTelemetryProvider demoTelemetryProvider,
-        TelemetryViewModel telemetryDashboard,
-        PullRequestRowFactory rowFactory,
+        IPullRequestDashboardLoader loader,
+        IDemoPullRequestDashboardProvider demoDataProvider,
+        IDemoTelemetryProvider demoTelemetryProvider,
+        ITelemetryDashboard telemetryDashboard,
+        IPullRequestRowFactory rowFactory,
         IDialogService dialogService,
         IOptions<BitbucketOptions> options,
-        UserPreferencesService preferencesService)
+        IUserPreferencesService preferencesService)
     {
         ArgumentNullException.ThrowIfNull(loader, nameof(loader));
         ArgumentNullException.ThrowIfNull(demoDataProvider, nameof(demoDataProvider));
@@ -438,7 +438,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Telemetry dashboard view model.
     /// </summary>
-    public TelemetryViewModel TelemetryDashboard { get; }
+    public ITelemetryDashboard TelemetryDashboard { get; }
 
     /// <summary>
     /// Command that loads pull request data from Bitbucket.
@@ -791,19 +791,19 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
     private const double UI_SCALE_STEP = 0.05;
 
-    private readonly PullRequestDashboardLoader _loader;
+    private readonly IPullRequestDashboardLoader _loader;
 
-    private readonly DemoPullRequestDashboardProvider _demoDataProvider;
+    private readonly IDemoPullRequestDashboardProvider _demoDataProvider;
 
-    private readonly DemoTelemetryProvider _demoTelemetryProvider;
+    private readonly IDemoTelemetryProvider _demoTelemetryProvider;
 
-    private readonly PullRequestRowFactory _rowFactory;
+    private readonly IPullRequestRowFactory _rowFactory;
 
     private readonly IDialogService _dialogService;
 
     private readonly BitbucketOptions _options;
 
-    private readonly UserPreferencesService _preferencesService;
+    private readonly IUserPreferencesService _preferencesService;
 
     private readonly UserPreferences _preferences;
 

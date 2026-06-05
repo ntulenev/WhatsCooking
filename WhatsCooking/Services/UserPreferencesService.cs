@@ -8,7 +8,7 @@ namespace WhatsCooking.Services;
 /// Loads and saves user preferences between application launches.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Service is created by dependency injection.")]
-internal sealed class UserPreferencesService
+internal sealed class UserPreferencesService : IUserPreferencesService
 {
     /// <summary>
     /// Loads persisted user preferences.

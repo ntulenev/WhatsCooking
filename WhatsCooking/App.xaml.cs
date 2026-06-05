@@ -30,13 +30,13 @@ public partial class App : Application
             .ConfigureServices((context, services) =>
             {
                 _ = services.AddApplicationServices(context.Configuration);
-                _ = services.AddSingleton<UserPreferencesService>();
+                _ = services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
                 _ = services.AddSingleton<IDialogService, WpfDialogService>();
-                _ = services.AddSingleton<DemoPullRequestDashboardProvider>();
-                _ = services.AddSingleton<DemoTelemetryProvider>();
-                _ = services.AddTransient<PullRequestDashboardLoader>();
-                _ = services.AddSingleton<TelemetryViewModel>();
-                _ = services.AddSingleton<PullRequestRowFactory>();
+                _ = services.AddSingleton<IDemoPullRequestDashboardProvider, DemoPullRequestDashboardProvider>();
+                _ = services.AddSingleton<IDemoTelemetryProvider, DemoTelemetryProvider>();
+                _ = services.AddTransient<IPullRequestDashboardLoader, PullRequestDashboardLoader>();
+                _ = services.AddSingleton<ITelemetryDashboard, TelemetryViewModel>();
+                _ = services.AddSingleton<IPullRequestRowFactory, PullRequestRowFactory>();
                 _ = services.AddSingleton<MainViewModel>();
                 _ = services.AddSingleton<MainWindow>();
             })

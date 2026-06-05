@@ -8,7 +8,7 @@ namespace WhatsCooking.Services;
 /// Creates synthetic pull request dashboard data for demo mode.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Provider is created by dependency injection.")]
-internal sealed class DemoPullRequestDashboardProvider
+internal sealed class DemoPullRequestDashboardProvider : IDemoPullRequestDashboardProvider
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DemoPullRequestDashboardProvider"/> class.
