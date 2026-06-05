@@ -31,6 +31,7 @@ public partial class App : Application
             {
                 _ = services.AddApplicationServices(context.Configuration);
                 _ = services.AddSingleton<UserPreferencesService>();
+                _ = services.AddSingleton<IDialogService, WpfDialogService>();
                 _ = services.AddSingleton<DemoPullRequestDashboardProvider>();
                 _ = services.AddSingleton<DemoTelemetryProvider>();
                 _ = services.AddTransient<PullRequestDashboardLoader>();

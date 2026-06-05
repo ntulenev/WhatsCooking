@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
-using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -32,6 +31,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// <param name="demoDataProvider">Demo dashboard data provider.</param>
     /// <param name="demoTelemetryProvider">Demo telemetry provider.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
+    /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="options">Bitbucket configuration options.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
@@ -39,6 +39,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         DemoPullRequestDashboardProvider demoDataProvider,
         DemoTelemetryProvider demoTelemetryProvider,
         TelemetryViewModel telemetryDashboard,
+        IDialogService dialogService,
         IOptions<BitbucketOptions> options,
         UserPreferencesService preferencesService)
     {
@@ -46,11 +47,13 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(demoDataProvider, nameof(demoDataProvider));
         ArgumentNullException.ThrowIfNull(demoTelemetryProvider, nameof(demoTelemetryProvider));
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
+        ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loader = loader;
         _demoDataProvider = demoDataProvider;
         _demoTelemetryProvider = demoTelemetryProvider;
+        _dialogService = dialogService;
         TelemetryDashboard = telemetryDashboard;
         _options = options.Value;
         _preferencesService = preferencesService;
@@ -529,7 +532,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (HasLoadedPullRequests() && !ConfirmReload())
+        if (HasLoadedPullRequests() && !_dialogService.ConfirmReload())
         {
             return;
         }
@@ -652,18 +655,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
     private bool HasLoadedPullRequests() => OpenPullRequests.Count > 0 || MergedPullRequests.Count > 0;
 
-    private static bool ConfirmReload()
-    {
-        var result = MessageBox.Show(
-            "Pull requests are already loaded. Reload data from Bitbucket?",
-            "Reload data",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question,
-            MessageBoxResult.No);
-
-        return result == MessageBoxResult.Yes;
-    }
-
     private void Cancel() => _loadCancellation?.Cancel();
 
     private void OpenUrl(object? parameter)
@@ -707,7 +698,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     private void ShowLoadError(Exception exception)
     {
         Status = exception.Message;
-        _ = MessageBox.Show(exception.Message, "Load failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        _dialogService.ShowLoadError(exception.Message);
     }
 
     private void RefreshViews()
@@ -801,6 +792,8 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     private readonly DemoPullRequestDashboardProvider _demoDataProvider;
 
     private readonly DemoTelemetryProvider _demoTelemetryProvider;
+
+    private readonly IDialogService _dialogService;
 
     private readonly BitbucketOptions _options;
 
