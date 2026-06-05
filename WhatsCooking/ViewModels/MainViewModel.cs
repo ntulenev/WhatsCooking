@@ -31,6 +31,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// <param name="demoDataProvider">Demo dashboard data provider.</param>
     /// <param name="demoTelemetryProvider">Demo telemetry provider.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
+    /// <param name="rowFactory">Pull request row factory.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="options">Bitbucket configuration options.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
@@ -39,6 +40,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         DemoPullRequestDashboardProvider demoDataProvider,
         DemoTelemetryProvider demoTelemetryProvider,
         TelemetryViewModel telemetryDashboard,
+        PullRequestRowFactory rowFactory,
         IDialogService dialogService,
         IOptions<BitbucketOptions> options,
         UserPreferencesService preferencesService)
@@ -47,12 +49,14 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(demoDataProvider, nameof(demoDataProvider));
         ArgumentNullException.ThrowIfNull(demoTelemetryProvider, nameof(demoTelemetryProvider));
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
+        ArgumentNullException.ThrowIfNull(rowFactory, nameof(rowFactory));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loader = loader;
         _demoDataProvider = demoDataProvider;
         _demoTelemetryProvider = demoTelemetryProvider;
+        _rowFactory = rowFactory;
         _dialogService = dialogService;
         TelemetryDashboard = telemetryDashboard;
         _options = options.Value;
@@ -616,12 +620,12 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         MergedPullRequests.Clear();
         for (var i = 0; i < snapshot.OpenPullRequests.Count; i++)
         {
-            OpenPullRequests.Add(new PullRequestRow(i + 1, snapshot.OpenPullRequests[i], snapshot.AsOf, _options));
+            OpenPullRequests.Add(_rowFactory.CreateOpenRow(i + 1, snapshot.OpenPullRequests[i], snapshot.AsOf));
         }
 
         for (var i = 0; i < snapshot.MergedPullRequests.Count; i++)
         {
-            MergedPullRequests.Add(new PullRequestRow(i + 1, snapshot.MergedPullRequests[i], _options));
+            MergedPullRequests.Add(_rowFactory.CreateMergedRow(i + 1, snapshot.MergedPullRequests[i]));
         }
 
         RepositoriesCount = snapshot.Repositories.Count;
@@ -792,6 +796,8 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     private readonly DemoPullRequestDashboardProvider _demoDataProvider;
 
     private readonly DemoTelemetryProvider _demoTelemetryProvider;
+
+    private readonly PullRequestRowFactory _rowFactory;
 
     private readonly IDialogService _dialogService;
 

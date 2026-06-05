@@ -36,6 +36,7 @@ public partial class App : Application
                 _ = services.AddSingleton<DemoTelemetryProvider>();
                 _ = services.AddTransient<PullRequestDashboardLoader>();
                 _ = services.AddSingleton<TelemetryViewModel>();
+                _ = services.AddSingleton<PullRequestRowFactory>();
                 _ = services.AddSingleton<MainViewModel>();
                 _ = services.AddSingleton<MainWindow>();
             })
