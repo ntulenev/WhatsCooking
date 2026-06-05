@@ -594,7 +594,8 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
             if (_options.DemoMode)
             {
-                LoadDemoData();
+                ApplyDashboardSnapshot(CreateDemoDashboardSnapshot());
+                Status = $"Loaded demo data: {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
                 return;
             }
 
@@ -605,21 +606,12 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
                 RefreshTelemetry();
             });
             var result = await _loader.LoadAsync(filterPattern, MergedPullRequestsDays, progress, _loadCancellation.Token).ConfigureAwait(true);
-            var asOf = DateTimeOffset.Now;
-            OpenPullRequests.Clear();
-            MergedPullRequests.Clear();
-            for (var i = 0; i < result.OpenPullRequests.Count; i++)
-            {
-                OpenPullRequests.Add(new PullRequestRow(i + 1, result.OpenPullRequests[i], asOf, _options));
-            }
-            for (var i = 0; i < result.MergedPullRequests.Count; i++)
-            {
-                MergedPullRequests.Add(new PullRequestRow(i + 1, result.MergedPullRequests[i], _options));
-            }
-            RepositoriesCount = result.Repositories.Count;
-            OpenPullRequestsCount = result.OpenPullRequests.Count;
-            MergedPullRequestsCount = result.MergedPullRequests.Count;
-            RefreshTelemetry();
+            ApplyDashboardSnapshot(new PullRequestDashboardSnapshot(
+                DateTimeOffset.Now,
+                result.Repositories,
+                result.OpenPullRequests,
+                result.MergedPullRequests,
+                _telemetryService.GetSnapshot()));
             Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
         }
         catch (OperationCanceledException)
@@ -650,29 +642,40 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void LoadDemoData()
+    private PullRequestDashboardSnapshot CreateDemoDashboardSnapshot()
     {
         Status = "Loading demo data";
         var asOf = DateTimeOffset.Now;
         var result = _demoDataProvider.Create();
 
+        return new PullRequestDashboardSnapshot(
+            asOf,
+            result.Repositories,
+            result.OpenPullRequests,
+            result.MergedPullRequests,
+            _demoTelemetryProvider.Create());
+    }
+
+    private void ApplyDashboardSnapshot(PullRequestDashboardSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
         OpenPullRequests.Clear();
         MergedPullRequests.Clear();
-        for (var i = 0; i < result.OpenPullRequests.Count; i++)
+        for (var i = 0; i < snapshot.OpenPullRequests.Count; i++)
         {
-            OpenPullRequests.Add(new PullRequestRow(i + 1, result.OpenPullRequests[i], asOf, _options));
+            OpenPullRequests.Add(new PullRequestRow(i + 1, snapshot.OpenPullRequests[i], snapshot.AsOf, _options));
         }
 
-        for (var i = 0; i < result.MergedPullRequests.Count; i++)
+        for (var i = 0; i < snapshot.MergedPullRequests.Count; i++)
         {
-            MergedPullRequests.Add(new PullRequestRow(i + 1, result.MergedPullRequests[i], _options));
+            MergedPullRequests.Add(new PullRequestRow(i + 1, snapshot.MergedPullRequests[i], _options));
         }
 
-        RepositoriesCount = result.Repositories.Count;
-        OpenPullRequestsCount = result.OpenPullRequests.Count;
-        MergedPullRequestsCount = result.MergedPullRequests.Count;
-        LoadTelemetry(_demoTelemetryProvider.Create());
-        Status = $"Loaded demo data: {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
+        RepositoriesCount = snapshot.Repositories.Count;
+        OpenPullRequestsCount = snapshot.OpenPullRequests.Count;
+        MergedPullRequestsCount = snapshot.MergedPullRequests.Count;
+        LoadTelemetry(snapshot.Telemetry);
     }
 
     private void IncreaseUiScale() => UiScale += UI_SCALE_STEP;
