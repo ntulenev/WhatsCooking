@@ -920,19 +920,19 @@
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0" Text="Enabled" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
-                            <TextBlock Grid.Column="1" Text="{Binding IsTelemetryEnabled}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="{Binding TelemetryDashboard.IsTelemetryEnabled}" FontWeight="SemiBold" />
 
                             <TextBlock Grid.Column="3" Text="Requests" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
-                            <TextBlock Grid.Column="4" Text="{Binding TelemetryRequestsCount}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="4" Text="{Binding TelemetryDashboard.TelemetryRequestsCount}" FontWeight="SemiBold" />
 
                             <TextBlock Grid.Column="6" Text="Endpoints" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
-                            <TextBlock Grid.Column="7" Text="{Binding TelemetryEndpointsCount}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="7" Text="{Binding TelemetryDashboard.TelemetryEndpointsCount}" FontWeight="SemiBold" />
 
                             <TextBlock Grid.Column="9" Text="Filter" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
-                            <TextBox Grid.Column="10" Text="{Binding TelemetryFilter, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Grid.Column="10" Text="{Binding TelemetryDashboard.TelemetryFilter, UpdateSourceTrigger=PropertyChanged}" />
                         </Grid>
 
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding TelemetryView}" Margin="0">
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding TelemetryDashboard.TelemetryView}" Margin="0">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="#" Binding="{Binding Number}" SortMemberPath="Number" Width="70" />
                                 <DataGridTextColumn Header="Bitbucket API" Binding="{Binding ApiName}" SortMemberPath="ApiName" Width="*" />

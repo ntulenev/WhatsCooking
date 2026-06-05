@@ -10,7 +10,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-using BBRepoList.Abstractions;
 using BBRepoList.Configuration;
 using BBRepoList.Models;
 
@@ -30,29 +29,29 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// Initializes a new instance of the <see cref="MainViewModel"/> class.
     /// </summary>
     /// <param name="loader">Pull request dashboard data loader.</param>
-    /// <param name="telemetryService">Bitbucket API telemetry service.</param>
     /// <param name="demoDataProvider">Demo dashboard data provider.</param>
     /// <param name="demoTelemetryProvider">Demo telemetry provider.</param>
+    /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
     /// <param name="options">Bitbucket configuration options.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
         PullRequestDashboardLoader loader,
-        IBitbucketTelemetryService telemetryService,
         DemoPullRequestDashboardProvider demoDataProvider,
         DemoTelemetryProvider demoTelemetryProvider,
+        TelemetryViewModel telemetryDashboard,
         IOptions<BitbucketOptions> options,
         UserPreferencesService preferencesService)
     {
         ArgumentNullException.ThrowIfNull(loader, nameof(loader));
-        ArgumentNullException.ThrowIfNull(telemetryService, nameof(telemetryService));
         ArgumentNullException.ThrowIfNull(demoDataProvider, nameof(demoDataProvider));
         ArgumentNullException.ThrowIfNull(demoTelemetryProvider, nameof(demoTelemetryProvider));
+        ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loader = loader;
-        _telemetryService = telemetryService;
         _demoDataProvider = demoDataProvider;
         _demoTelemetryProvider = demoTelemetryProvider;
+        TelemetryDashboard = telemetryDashboard;
         _options = options.Value;
         _preferencesService = preferencesService;
         _preferences = _preferencesService.Load();
@@ -65,27 +64,20 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         MergedPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
         OpenPullRequestsView = CollectionViewSource.GetDefaultView(OpenPullRequests);
         MergedPullRequestsView = CollectionViewSource.GetDefaultView(MergedPullRequests);
-        TelemetryView = CollectionViewSource.GetDefaultView(Telemetry);
         _pullRequestFilterRefreshTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = _filterRefreshDelay
         };
         _pullRequestFilterRefreshTimer.Tick += OnPullRequestFilterRefreshTimerTick;
-        _telemetryFilterRefreshTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = _filterRefreshDelay
-        };
-        _telemetryFilterRefreshTimer.Tick += OnTelemetryFilterRefreshTimerTick;
         OpenPullRequestsView.Filter = FilterOpenPullRequestRow;
         MergedPullRequestsView.Filter = FilterMergedPullRequestRow;
-        TelemetryView.Filter = FilterTelemetryRow;
         LoadCommand = new RelayCommand(async () => await LoadAsync().ConfigureAwait(false), CanLoad);
         CancelCommand = new RelayCommand(Cancel, () => IsLoading);
         OpenUrlCommand = new RelayCommand(OpenUrl);
         ResetFiltersCommand = new RelayCommand(ResetFilters);
         IncreaseUiScaleCommand = new RelayCommand(IncreaseUiScale);
         DecreaseUiScaleCommand = new RelayCommand(DecreaseUiScale);
-        RefreshTelemetry();
+        _ = TelemetryDashboard.RefreshTelemetry();
     }
 
     /// <summary>
@@ -369,20 +361,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Text filter applied to the telemetry table.
-    /// </summary>
-    public string TelemetryFilter {
-        get;
-        set
-        {
-            if (SetProperty(ref field, value))
-            {
-                ScheduleTelemetryFilterRefresh();
-            }
-        }
-    } = string.Empty;
-
-    /// <summary>
     /// Whether pull request data is currently loading.
     /// </summary>
     public bool IsLoading {
@@ -421,30 +399,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Number of Bitbucket API requests captured by telemetry.
-    /// </summary>
-    public int TelemetryRequestsCount {
-        get;
-        private set => SetProperty(ref field, value);
-    }
-
-    /// <summary>
-    /// Number of Bitbucket API endpoints captured by telemetry.
-    /// </summary>
-    public int TelemetryEndpointsCount {
-        get;
-        private set => SetProperty(ref field, value);
-    }
-
-    /// <summary>
-    /// Whether Bitbucket API telemetry is enabled.
-    /// </summary>
-    public bool IsTelemetryEnabled {
-        get;
-        private set => SetProperty(ref field, value);
-    }
-
-    /// <summary>
     /// Loaded open pull request rows.
     /// </summary>
     public ObservableCollection<PullRequestRow> OpenPullRequests { get; } = [];
@@ -453,11 +407,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// Loaded recently merged pull request rows.
     /// </summary>
     public ObservableCollection<PullRequestRow> MergedPullRequests { get; } = [];
-
-    /// <summary>
-    /// Loaded telemetry rows.
-    /// </summary>
-    public ObservableCollection<TelemetryRow> Telemetry { get; } = [];
 
     /// <summary>
     /// Open pull request grid filters.
@@ -480,9 +429,9 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     public ICollectionView MergedPullRequestsView { get; }
 
     /// <summary>
-    /// Filterable view over telemetry rows.
+    /// Telemetry dashboard view model.
     /// </summary>
-    public ICollectionView TelemetryView { get; }
+    public TelemetryViewModel TelemetryDashboard { get; }
 
     /// <summary>
     /// Command that loads pull request data from Bitbucket.
@@ -603,7 +552,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
             var progress = new Progress<PullRequestLoadProgress>(value =>
             {
                 Status = value.Message;
-                RefreshTelemetry();
+                _ = TelemetryDashboard.RefreshTelemetry();
             });
             var result = await _loader.LoadAsync(filterPattern, MergedPullRequestsDays, progress, _loadCancellation.Token).ConfigureAwait(true);
             ApplyDashboardSnapshot(new PullRequestDashboardSnapshot(
@@ -611,7 +560,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
                 result.Repositories,
                 result.OpenPullRequests,
                 result.MergedPullRequests,
-                _telemetryService.GetSnapshot()));
+                TelemetryDashboard.RefreshTelemetry()));
             Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
         }
         catch (OperationCanceledException)
@@ -675,7 +624,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         RepositoriesCount = snapshot.Repositories.Count;
         OpenPullRequestsCount = snapshot.OpenPullRequests.Count;
         MergedPullRequestsCount = snapshot.MergedPullRequests.Count;
-        LoadTelemetry(snapshot.Telemetry);
+        TelemetryDashboard.LoadTelemetry(snapshot.Telemetry);
     }
 
     private void IncreaseUiScale() => UiScale += UI_SCALE_STEP;
@@ -755,30 +704,10 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
             && Matches(row.CurrentUserActivity, filters.CurrentUserActivity);
     }
 
-    private bool FilterTelemetryRow(object item) => item is TelemetryRow row && Matches(row.SearchText, TelemetryFilter);
-
     private void ShowLoadError(Exception exception)
     {
         Status = exception.Message;
         _ = MessageBox.Show(exception.Message, "Load failed", MessageBoxButton.OK, MessageBoxImage.Error);
-    }
-
-    private void RefreshTelemetry()
-    {
-        LoadTelemetry(_telemetryService.GetSnapshot());
-    }
-
-    private void LoadTelemetry(BitbucketTelemetrySnapshot snapshot)
-    {
-        IsTelemetryEnabled = snapshot.IsEnabled;
-        TelemetryRequestsCount = snapshot.TotalRequests;
-        TelemetryEndpointsCount = snapshot.RequestStatistics.Count;
-        Telemetry.Clear();
-        for (var i = 0; i < snapshot.RequestStatistics.Count; i++)
-        {
-            Telemetry.Add(new TelemetryRow(i + 1, snapshot.RequestStatistics[i], snapshot.TotalRequests));
-        }
-        TelemetryView.Refresh();
     }
 
     private void RefreshViews()
@@ -793,22 +722,10 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         _pullRequestFilterRefreshTimer.Start();
     }
 
-    private void ScheduleTelemetryFilterRefresh()
-    {
-        _telemetryFilterRefreshTimer.Stop();
-        _telemetryFilterRefreshTimer.Start();
-    }
-
     private void OnPullRequestFilterRefreshTimerTick(object? sender, EventArgs e)
     {
         _pullRequestFilterRefreshTimer.Stop();
         RefreshViews();
-    }
-
-    private void OnTelemetryFilterRefreshTimerTick(object? sender, EventArgs e)
-    {
-        _telemetryFilterRefreshTimer.Stop();
-        TelemetryView.Refresh();
     }
 
     private void ResetFilters()
@@ -817,7 +734,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         OpenPullRequestFilters.Reset();
         MergedPullRequestFilters.Reset();
         RaisePullRequestFilterPropertiesChanged();
-        TelemetryFilter = string.Empty;
+        TelemetryDashboard.ResetFilter();
     }
 
     private void SetOpenPullRequestFilter(string value, Action<PullRequestFilterState, string> setFilter) => setFilter(OpenPullRequestFilters, value);
@@ -866,7 +783,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _pullRequestFilterRefreshTimer.Stop();
-        _telemetryFilterRefreshTimer.Stop();
         _loadCancellation?.Dispose();
     }
 
@@ -888,15 +804,11 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
     private readonly BitbucketOptions _options;
 
-    private readonly IBitbucketTelemetryService _telemetryService;
-
     private readonly UserPreferencesService _preferencesService;
 
     private readonly UserPreferences _preferences;
 
     private readonly DispatcherTimer _pullRequestFilterRefreshTimer;
-
-    private readonly DispatcherTimer _telemetryFilterRefreshTimer;
 
     private int _mergedPullRequestsDays;
 
