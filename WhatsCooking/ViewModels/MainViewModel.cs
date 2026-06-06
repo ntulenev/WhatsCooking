@@ -78,8 +78,9 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         _pullRequestFilterRefreshTimer.Tick += OnPullRequestFilterRefreshTimerTick;
         OpenPullRequestsView.Filter = FilterOpenPullRequestRow;
         MergedPullRequestsView.Filter = FilterMergedPullRequestRow;
-        LoadCommand = new RelayCommand(async () => await LoadAsync().ConfigureAwait(false), CanLoad);
-        CancelCommand = new RelayCommand(Cancel, () => IsLoading);
+        LoadCommand = new AsyncRelayCommand(LoadAsync, CanLoad);
+        LoadCommand.PropertyChanged += OnLoadCommandPropertyChanged;
+        CancelCommand = new RelayCommand(LoadCommand.Cancel, () => LoadCommand.CanBeCanceled);
         OpenUrlCommand = new RelayCommand(OpenUrl);
         ResetFiltersCommand = new RelayCommand(ResetFilters);
         IncreaseUiScaleCommand = new RelayCommand(IncreaseUiScale);
@@ -443,7 +444,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Command that loads pull request data from Bitbucket.
     /// </summary>
-    public ICommand LoadCommand { get; }
+    public AsyncRelayCommand LoadCommand { get; }
 
     /// <summary>
     /// Command that cancels the current pull request loading operation.
@@ -529,7 +530,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task LoadAsync()
+    private async Task LoadAsync(CancellationToken cancellationToken)
     {
         if (!CanLoad())
         {
@@ -541,7 +542,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        _loadCancellation = new CancellationTokenSource();
         IsLoading = true;
         Status = "Starting";
         try
@@ -561,7 +561,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
                 Status = value.Message;
                 _ = TelemetryDashboard.RefreshTelemetry();
             });
-            var result = await _loader.LoadAsync(filterPattern, MergedPullRequestsDays, progress, _loadCancellation.Token).ConfigureAwait(true);
+            var result = await _loader.LoadAsync(filterPattern, MergedPullRequestsDays, progress, cancellationToken).ConfigureAwait(true);
             ApplyDashboardSnapshot(new PullRequestDashboardSnapshot(
                 DateTimeOffset.Now,
                 result.Repositories,
@@ -592,8 +592,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            _loadCancellation?.Dispose();
-            _loadCancellation = null;
             IsLoading = false;
         }
     }
@@ -658,8 +656,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     private bool CanLoad() => !IsLoading && MergedPullRequestsDays > 0;
 
     private bool HasLoadedPullRequests() => OpenPullRequests.Count > 0 || MergedPullRequests.Count > 0;
-
-    private void Cancel() => _loadCancellation?.Cancel();
 
     private void OpenUrl(object? parameter)
     {
@@ -768,8 +764,16 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
     private void RaiseCommandStates()
     {
-        ((RelayCommand)LoadCommand).RaiseCanExecuteChanged();
+        LoadCommand.RaiseCanExecuteChanged();
         ((RelayCommand)CancelCommand).RaiseCanExecuteChanged();
+    }
+
+    private void OnLoadCommandPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AsyncRelayCommand.IsRunning) or nameof(AsyncRelayCommand.CanBeCanceled))
+        {
+            ((RelayCommand)CancelCommand).RaiseCanExecuteChanged();
+        }
     }
 
     /// <summary>
@@ -778,7 +782,8 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _pullRequestFilterRefreshTimer.Stop();
-        _loadCancellation?.Dispose();
+        LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
+        LoadCommand.Dispose();
     }
 
     private static readonly TimeSpan _filterRefreshDelay = TimeSpan.FromMilliseconds(150);
@@ -814,8 +819,6 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     private bool _isLightTheme;
 
     private double _uiScale;
-
-    private CancellationTokenSource? _loadCancellation;
 
     private string _searchPhrase;
 
