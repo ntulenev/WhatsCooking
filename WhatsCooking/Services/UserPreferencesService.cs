@@ -2,14 +2,40 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.Json;
 
+using Microsoft.Extensions.Logging;
+
 namespace WhatsCooking.Services;
 
 /// <summary>
 /// Loads and saves user preferences between application launches.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Service is created by dependency injection.")]
-internal sealed class UserPreferencesService : IUserPreferencesService
+internal sealed class UserPreferencesService : IUserPreferencesService, IDisposable
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UserPreferencesService"/> class.
+    /// </summary>
+    /// <param name="logger">Application logger.</param>
+    public UserPreferencesService(ILogger<UserPreferencesService> logger)
+        : this(
+            logger,
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "WhatsCooking",
+                "preferences.json"))
+    {
+    }
+
+    internal UserPreferencesService(ILogger<UserPreferencesService> logger, string preferencesPath)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentException.ThrowIfNullOrWhiteSpace(preferencesPath);
+
+        _logger = logger;
+        _preferencesPath = preferencesPath;
+        _saveTimer = new Timer(SavePendingPreferences);
+    }
+
     /// <summary>
     /// Loads persisted user preferences.
     /// </summary>
@@ -28,14 +54,17 @@ internal sealed class UserPreferencesService : IUserPreferencesService
         }
         catch (IOException)
         {
+            _logger.LogWarning("Could not read user preferences from {PreferencesPath}.", _preferencesPath);
             return new UserPreferences();
         }
         catch (JsonException)
         {
+            _logger.LogWarning("User preferences at {PreferencesPath} contain invalid JSON.", _preferencesPath);
             return new UserPreferences();
         }
         catch (UnauthorizedAccessException)
         {
+            _logger.LogWarning("Access to user preferences at {PreferencesPath} was denied.", _preferencesPath);
             return new UserPreferences();
         }
     }
@@ -48,17 +77,63 @@ internal sealed class UserPreferencesService : IUserPreferencesService
     {
         ArgumentNullException.ThrowIfNull(preferences, nameof(preferences));
 
+        var json = JsonSerializer.Serialize(preferences, _serializerOptions);
+        lock (_syncRoot)
+        {
+            _pendingJson = json;
+            _ = _saveTimer.Change(_saveDelay, Timeout.InfiniteTimeSpan);
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _ = _saveTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        SavePendingPreferences(null);
+        _saveTimer.Dispose();
+    }
+
+    private void SavePendingPreferences(object? state)
+    {
+        string? json;
+        lock (_syncRoot)
+        {
+            json = _pendingJson;
+            _pendingJson = null;
+        }
+
+        if (json is null)
+        {
+            return;
+        }
+
+        var temporaryPath = _preferencesPath + ".tmp";
         try
         {
             _ = Directory.CreateDirectory(Path.GetDirectoryName(_preferencesPath)!);
-            var json = JsonSerializer.Serialize(preferences, _serializerOptions);
-            File.WriteAllText(_preferencesPath, json);
+            File.WriteAllText(temporaryPath, json);
+            File.Move(temporaryPath, _preferencesPath, true);
         }
-        catch (IOException)
+        catch (IOException ex)
         {
+            _logger.LogWarning(ex, "Could not save user preferences to {PreferencesPath}.", _preferencesPath);
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            _logger.LogWarning(ex, "Access to user preferences at {PreferencesPath} was denied.", _preferencesPath);
+        }
+        finally
+        {
+            try
+            {
+                File.Delete(temporaryPath);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
     }
 
@@ -67,8 +142,15 @@ internal sealed class UserPreferencesService : IUserPreferencesService
         WriteIndented = true
     };
 
-    private readonly string _preferencesPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "WhatsCooking",
-        "preferences.json");
+    private static readonly TimeSpan _saveDelay = TimeSpan.FromMilliseconds(250);
+
+    private readonly ILogger<UserPreferencesService> _logger;
+
+    private readonly string _preferencesPath;
+
+    private readonly Timer _saveTimer;
+
+    private readonly object _syncRoot = new();
+
+    private string? _pendingJson;
 }
