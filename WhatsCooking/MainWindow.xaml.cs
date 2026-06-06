@@ -82,6 +82,14 @@ internal sealed partial class MainWindow : Window
             SetBrushColor("ToggleTrackBrush", Color.FromRgb(0xBC, 0xBC, 0xBC));
             SetBrushColor("ToggleThumbBrush", Color.FromRgb(0xFF, 0xFF, 0xFF));
             SetBrushColor("ToggleCheckedTrackBrush", Color.FromRgb(0x00, 0x65, 0xB8));
+            SetBrushColor("RequestChangesBadgeBackgroundBrush", Color.FromRgb(0xFF, 0xE8, 0xE3));
+            SetBrushColor("RequestChangesBadgeBorderBrush", Color.FromRgb(0xE6, 0xA0, 0x91));
+            SetBrushColor("RequestChangesBadgeTextBrush", Color.FromRgb(0x9A, 0x2F, 0x18));
+            SetBrushColor("ApprovalBadgeBackgroundBrush", Color.FromRgb(0xE4, 0xF4, 0xE7));
+            SetBrushColor("ApprovalBadgeBorderBrush", Color.FromRgb(0x91, 0xC9, 0x9B));
+            SetBrushColor("ActivityBadgeBackgroundBrush", Color.FromRgb(0xF0, 0xE8, 0xFA));
+            SetBrushColor("ActivityBadgeBorderBrush", Color.FromRgb(0xBA, 0xA2, 0xD4));
+            SetBrushColor("ActivityBadgeTextBrush", Color.FromRgb(0x63, 0x3C, 0x85));
         }
         else
         {
@@ -111,6 +119,14 @@ internal sealed partial class MainWindow : Window
             SetBrushColor("ToggleTrackBrush", Color.FromRgb(0x3C, 0x3C, 0x3C));
             SetBrushColor("ToggleThumbBrush", Color.FromRgb(0xCC, 0xCC, 0xCC));
             SetBrushColor("ToggleCheckedTrackBrush", Color.FromRgb(0x37, 0x94, 0xFF));
+            SetBrushColor("RequestChangesBadgeBackgroundBrush", Color.FromRgb(0x32, 0x22, 0x1F));
+            SetBrushColor("RequestChangesBadgeBorderBrush", Color.FromRgb(0x5A, 0x2D, 0x26));
+            SetBrushColor("RequestChangesBadgeTextBrush", Color.FromRgb(0xFF, 0x8A, 0x65));
+            SetBrushColor("ApprovalBadgeBackgroundBrush", Color.FromRgb(0x1D, 0x33, 0x24));
+            SetBrushColor("ApprovalBadgeBorderBrush", Color.FromRgb(0x2F, 0x5F, 0x3B));
+            SetBrushColor("ActivityBadgeBackgroundBrush", Color.FromRgb(0x2A, 0x26, 0x36));
+            SetBrushColor("ActivityBadgeBorderBrush", Color.FromRgb(0x4F, 0x45, 0x68));
+            SetBrushColor("ActivityBadgeTextBrush", Color.FromRgb(0xD7, 0xBA, 0xFF));
         }
 
         Background = (Brush)FindResource("BgBrush");
@@ -147,6 +163,14 @@ internal sealed partial class MainWindow : Window
         Resources["ToggleTrackBrush"] = SystemColors.ControlBrush;
         Resources["ToggleThumbBrush"] = SystemColors.ControlTextBrush;
         Resources["ToggleCheckedTrackBrush"] = SystemColors.HighlightBrush;
+        Resources["RequestChangesBadgeBackgroundBrush"] = SystemColors.WindowBrush;
+        Resources["RequestChangesBadgeBorderBrush"] = SystemColors.WindowTextBrush;
+        Resources["RequestChangesBadgeTextBrush"] = SystemColors.WindowTextBrush;
+        Resources["ApprovalBadgeBackgroundBrush"] = SystemColors.WindowBrush;
+        Resources["ApprovalBadgeBorderBrush"] = SystemColors.WindowTextBrush;
+        Resources["ActivityBadgeBackgroundBrush"] = SystemColors.WindowBrush;
+        Resources["ActivityBadgeBorderBrush"] = SystemColors.WindowTextBrush;
+        Resources["ActivityBadgeTextBrush"] = SystemColors.WindowTextBrush;
         Background = SystemColors.WindowBrush;
     }
 

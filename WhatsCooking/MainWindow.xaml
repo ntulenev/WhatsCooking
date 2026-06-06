@@ -48,6 +48,14 @@
         <SolidColorBrush x:Key="ToggleTrackBrush" Color="#3C3C3C" />
         <SolidColorBrush x:Key="ToggleThumbBrush" Color="#CCCCCC" />
         <SolidColorBrush x:Key="ToggleCheckedTrackBrush" Color="#3794FF" />
+        <SolidColorBrush x:Key="RequestChangesBadgeBackgroundBrush" Color="#32221F" />
+        <SolidColorBrush x:Key="RequestChangesBadgeBorderBrush" Color="#5A2D26" />
+        <SolidColorBrush x:Key="RequestChangesBadgeTextBrush" Color="#FF8A65" />
+        <SolidColorBrush x:Key="ApprovalBadgeBackgroundBrush" Color="#1D3324" />
+        <SolidColorBrush x:Key="ApprovalBadgeBorderBrush" Color="#2F5F3B" />
+        <SolidColorBrush x:Key="ActivityBadgeBackgroundBrush" Color="#2A2636" />
+        <SolidColorBrush x:Key="ActivityBadgeBorderBrush" Color="#4F4568" />
+        <SolidColorBrush x:Key="ActivityBadgeTextBrush" Color="#D7BAFF" />
 
         <Style TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -329,11 +337,11 @@
                         Visibility="Collapsed"
                         Padding="7,2"
                         HorizontalAlignment="Left"
-                        Background="#32221F"
-                        BorderBrush="#5A2D26"
+                        Background="{DynamicResource RequestChangesBadgeBackgroundBrush}"
+                        BorderBrush="{DynamicResource RequestChangesBadgeBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="10">
-                    <TextBlock Text="{Binding RequestChanges}" Foreground="#FF8A65" />
+                    <TextBlock Text="{Binding RequestChanges}" Foreground="{DynamicResource RequestChangesBadgeTextBrush}" />
                 </Border>
             </Grid>
             <DataTemplate.Triggers>
@@ -351,8 +359,8 @@
                         Visibility="Collapsed"
                         Padding="7,2"
                         HorizontalAlignment="Left"
-                        Background="#1D3324"
-                        BorderBrush="#2F5F3B"
+                        Background="{DynamicResource ApprovalBadgeBackgroundBrush}"
+                        BorderBrush="{DynamicResource ApprovalBadgeBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="10">
                     <TextBlock Text="{Binding Approvals}" Foreground="{DynamicResource SuccessBrush}" />
@@ -373,12 +381,14 @@
                         Visibility="Collapsed"
                         Padding="7,2"
                         HorizontalAlignment="Left"
-                        Background="#2A2636"
-                        BorderBrush="#4F4568"
+                        Background="{DynamicResource ActivityBadgeBackgroundBrush}"
+                        BorderBrush="{DynamicResource ActivityBadgeBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="10"
                         ToolTip="{Binding CurrentUserActivity}">
-                    <TextBlock Text="{Binding CurrentUserActivity}" Foreground="#D7BAFF" />
+                    <TextBlock x:Name="BadgeText"
+                               Text="{Binding CurrentUserActivity}"
+                               Foreground="{DynamicResource ActivityBadgeTextBrush}" />
                 </Border>
             </Grid>
             <DataTemplate.Triggers>
@@ -387,12 +397,14 @@
                     <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding HasCurrentUserRequestChanges}" Value="True">
-                    <Setter TargetName="Badge" Property="Background" Value="#32221F" />
-                    <Setter TargetName="Badge" Property="BorderBrush" Value="#5A2D26" />
+                    <Setter TargetName="Badge" Property="Background" Value="{DynamicResource RequestChangesBadgeBackgroundBrush}" />
+                    <Setter TargetName="Badge" Property="BorderBrush" Value="{DynamicResource RequestChangesBadgeBorderBrush}" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="{DynamicResource RequestChangesBadgeTextBrush}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding HasCurrentUserApproval}" Value="True">
-                    <Setter TargetName="Badge" Property="Background" Value="#1D3324" />
-                    <Setter TargetName="Badge" Property="BorderBrush" Value="#2F5F3B" />
+                    <Setter TargetName="Badge" Property="Background" Value="{DynamicResource ApprovalBadgeBackgroundBrush}" />
+                    <Setter TargetName="Badge" Property="BorderBrush" Value="{DynamicResource ApprovalBadgeBorderBrush}" />
+                    <Setter TargetName="BadgeText" Property="Foreground" Value="{DynamicResource SuccessBrush}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
