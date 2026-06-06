@@ -506,65 +506,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// </summary>
     public ICommand DecreaseUiScaleCommand { get; }
 
-    /// <summary>
-    /// Applies a pull request grid filter from a column header editor.
-    /// </summary>
-    /// <param name="scope">Pull request grid scope.</param>
-    /// <param name="column">Pull request grid filter column.</param>
-    /// <param name="value">Filter value.</param>
-    public void ApplyPullRequestFilter(string scope, string column, string value)
-    {
-        ArgumentNullException.ThrowIfNull(scope);
-        ArgumentNullException.ThrowIfNull(column);
-        ArgumentNullException.ThrowIfNull(value);
-
-        var filters = string.Equals(scope, "Merged", StringComparison.Ordinal)
-            ? MergedPullRequestFilters
-            : OpenPullRequestFilters;
-
-        switch (column)
-        {
-            case "Number":
-                filters.Number = value;
-                break;
-            case "Repository":
-                filters.Repository = value;
-                break;
-            case "PullRequest":
-                filters.PullRequest = value;
-                break;
-            case "Author":
-                filters.Author = value;
-                break;
-            case "DescriptionLength":
-                filters.DescriptionLength = value;
-                break;
-            case "OpenFor":
-                filters.OpenFor = value;
-                break;
-            case "TimeToFirstResponse":
-                filters.TimeToFirstResponse = value;
-                break;
-            case "Activity":
-                filters.Activity = value;
-                break;
-            case "Comments":
-                filters.Comments = value;
-                break;
-            case "RequestChanges":
-                filters.RequestChanges = value;
-                break;
-            case "Approvals":
-                filters.Approvals = value;
-                break;
-            case "CurrentUserActivity":
-                filters.CurrentUserActivity = value;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(column), column, "Unknown pull request filter column.");
-        }
-    }
-
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
         if (!CanLoad())

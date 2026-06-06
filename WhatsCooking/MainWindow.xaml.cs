@@ -2,8 +2,6 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -183,60 +181,6 @@ internal sealed partial class MainWindow : Window
             sizeof(int));
     }
 
-    private void OnColumnHeaderPreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        if (sender is not DataGridColumnHeader header
-            || IsFromFilterTextBox(e.OriginalSource)
-            || IsFromColumnResizeGrip(e.OriginalSource))
-        {
-            return;
-        }
-
-        if (header.Column is not { SortMemberPath: { } sortMemberPath } sortColumn
-            || string.IsNullOrWhiteSpace(sortMemberPath))
-        {
-            return;
-        }
-
-        var dataGrid = FindVisualParent<DataGrid>(header);
-        if (dataGrid?.ItemsSource is not ICollectionView view)
-        {
-            return;
-        }
-
-        var direction = sortColumn.SortDirection == ListSortDirection.Ascending
-            ? ListSortDirection.Descending
-            : ListSortDirection.Ascending;
-
-        view.SortDescriptions.Clear();
-        view.SortDescriptions.Add(new SortDescription(sortMemberPath, direction));
-        view.Refresh();
-
-        foreach (var dataGridColumn in dataGrid.Columns)
-        {
-            dataGridColumn.SortDirection = null;
-        }
-
-        sortColumn.SortDirection = direction;
-        e.Handled = true;
-    }
-
-    private void OnHeaderFilterTextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (sender is not TextBox { Tag: string tag } textBox || DataContext is not MainViewModel viewModel)
-        {
-            return;
-        }
-
-        var parts = tag.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 2)
-        {
-            return;
-        }
-
-        viewModel.ApplyPullRequestFilter(parts[0], parts[1], textBox.Text);
-    }
-
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control) || DataContext is not MainViewModel viewModel)
@@ -255,26 +199,6 @@ internal sealed partial class MainWindow : Window
             viewModel.DecreaseUiScaleCommand.Execute(null);
             e.Handled = true;
         }
-    }
-
-    private static bool IsFromFilterTextBox(object source) => FindVisualParent<TextBox>(source as DependencyObject) is not null;
-
-    private static bool IsFromColumnResizeGrip(object source) => FindVisualParent<Thumb>(source as DependencyObject) is not null;
-
-    private static T? FindVisualParent<T>(DependencyObject? source)
-        where T : DependencyObject
-    {
-        while (source is not null)
-        {
-            if (source is T parent)
-            {
-                return parent;
-            }
-
-            source = VisualTreeHelper.GetParent(source);
-        }
-
-        return null;
     }
 
     [LibraryImport("dwmapi.dll")]
