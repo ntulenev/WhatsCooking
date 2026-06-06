@@ -6,6 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="What's Cooking" Height="820" Width="1480" MinHeight="680" MinWidth="1100"
+        AutomationProperties.Name="What's Cooking pull request dashboard"
         Background="#1E1E1E"
         FontFamily="Segoe UI"
         FontSize="13"
@@ -129,6 +130,10 @@
                                             <Trigger Property="IsChecked" Value="True">
                                                 <Setter TargetName="Border" Property="Background" Value="{DynamicResource ControlPressedBrush}" />
                                             </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                <Setter TargetName="Border" Property="BorderThickness" Value="2" />
+                                            </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </ToggleButton.Template>
@@ -181,6 +186,10 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="{DynamicResource ControlPressedBrush}" />
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="Border" Property="BorderThickness" Value="2" />
+                            </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Border" Property="Background" Value="{DynamicResource DisabledButtonBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
@@ -228,6 +237,10 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="Track" Property="BorderThickness" Value="2" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -245,13 +258,24 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <ContentPresenter />
+                        <Border x:Name="LinkFocusBorder"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                Padding="1">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="LinkFocusBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
         <Style x:Key="HeaderFilterTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="AutomationProperties.HelpText" Value="Filter this column" />
             <Setter Property="MinHeight" Value="24" />
             <Setter Property="Height" Value="24" />
             <Setter Property="Padding" Value="6,1" />
@@ -728,11 +752,14 @@
 
                     <TextBlock Grid.Column="0" Text="Search mode" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
                     <ComboBox Grid.Column="1"
+                              AutomationProperties.Name="Repository search mode"
                               ItemsSource="{Binding SearchModes}"
                               SelectedItem="{Binding SelectedSearchMode}" />
 
                     <TextBlock Grid.Column="3" Text="Phrase" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
-                    <TextBox Grid.Column="4" Text="{Binding SearchPhrase, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Grid.Column="4"
+                             AutomationProperties.Name="Repository search phrase"
+                             Text="{Binding SearchPhrase, UpdateSourceTrigger=PropertyChanged}" />
 
                     <TextBlock Grid.Column="6" Text="Days" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
                     <TextBox Grid.Column="7"
@@ -741,13 +768,17 @@
                                             UpdateSourceTrigger=PropertyChanged,
                                             ValidatesOnNotifyDataErrors=True}" />
 
-                    <TextBox Grid.Column="9" Text="{Binding GlobalSearch, UpdateSourceTrigger=PropertyChanged}" ToolTip="Global search across all columns" />
+                    <TextBox Grid.Column="9"
+                             AutomationProperties.Name="Global pull request search"
+                             Text="{Binding GlobalSearch, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Global search across all columns" />
 
                     <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{StaticResource PrimaryButtonStyle}" />
                     <Button Grid.Column="13" Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource ActionButtonStyle}" />
                     <Button Grid.Column="15" Content="Reset Filters" Command="{Binding ResetFiltersCommand}" Style="{StaticResource ActionButtonStyle}" />
                     <TextBlock Grid.Column="17" Text="Theme" Style="{StaticResource MutedTextStyle}" />
                     <CheckBox Grid.Column="19"
+                              AutomationProperties.Name="Use light theme"
                               IsChecked="{Binding IsLightTheme, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               Style="{StaticResource ThemeToggleSwitchStyle}"
                               ToolTip="Switch theme" />
@@ -758,7 +789,8 @@
         <TabControl Grid.Row="1" Margin="10,8,10,10">
             <TabItem Header="Open PR details">
                 <Border Background="{DynamicResource PanelBrush}" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="12" Padding="0">
-                    <DataGrid ItemsSource="{Binding OpenPullRequestsView}">
+                    <DataGrid AutomationProperties.Name="Open pull requests"
+                              ItemsSource="{Binding OpenPullRequestsView}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Number}" SortMemberPath="Number" Width="64">
                                 <DataGridTextColumn.Header>
@@ -848,7 +880,8 @@
 
             <TabItem Header="Recently merged pull requests">
                 <Border Background="{DynamicResource PanelBrush}" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="12" Padding="0">
-                    <DataGrid ItemsSource="{Binding MergedPullRequestsView}">
+                    <DataGrid AutomationProperties.Name="Recently merged pull requests"
+                              ItemsSource="{Binding MergedPullRequestsView}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Number}" SortMemberPath="Number" Width="64">
                                 <DataGridTextColumn.Header><StackPanel><TextBlock Text="#" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Tag="Merged.Number" TextChanged="OnHeaderFilterTextChanged" Text="{Binding DataContext.MergedNumberFilter, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTextColumn.Header>
@@ -951,7 +984,10 @@
                             <TextBox Grid.Column="10" Text="{Binding TelemetryDashboard.TelemetryFilter, UpdateSourceTrigger=PropertyChanged}" />
                         </Grid>
 
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding TelemetryDashboard.TelemetryView}" Margin="0">
+                        <DataGrid Grid.Row="1"
+                                  AutomationProperties.Name="Bitbucket API telemetry"
+                                  ItemsSource="{Binding TelemetryDashboard.TelemetryView}"
+                                  Margin="0">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="#" Binding="{Binding Number}" SortMemberPath="Number" Width="70" />
                                 <DataGridTextColumn Header="Bitbucket API" Binding="{Binding ApiName}" SortMemberPath="ApiName" Width="*" />

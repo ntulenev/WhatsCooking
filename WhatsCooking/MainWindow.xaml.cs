@@ -29,6 +29,8 @@ internal sealed partial class MainWindow : Window
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         ApplyTheme(viewModel.IsLightTheme);
         SourceInitialized += OnSourceInitialized;
+        SystemParameters.StaticPropertyChanged += OnSystemParametersPropertyChanged;
+        Closed += OnClosed;
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -47,6 +49,13 @@ internal sealed partial class MainWindow : Window
 
     private void ApplyTheme(bool isLightTheme)
     {
+        if (SystemParameters.HighContrast)
+        {
+            ApplyHighContrastTheme();
+            ApplyWindowFrameTheme(isLightTheme);
+            return;
+        }
+
         if (isLightTheme)
         {
             SetBrushColor("BgBrush", Color.FromRgb(0xEF, 0xEF, 0xEF));
@@ -111,6 +120,52 @@ internal sealed partial class MainWindow : Window
     }
 
     private void SetBrushColor(string resourceKey, Color color) => Resources[resourceKey] = new SolidColorBrush(color);
+
+    private void ApplyHighContrastTheme()
+    {
+        Resources["BgBrush"] = SystemColors.WindowBrush;
+        Resources["PanelBrush"] = SystemColors.WindowBrush;
+        Resources["PanelAltBrush"] = SystemColors.ControlBrush;
+        Resources["BorderBrushDark"] = SystemColors.WindowTextBrush;
+        Resources["TextBrush"] = SystemColors.WindowTextBrush;
+        Resources["MutedBrush"] = SystemColors.GrayTextBrush;
+        Resources["AccentBrush"] = SystemColors.HighlightBrush;
+        Resources["LinkBrush"] = SystemColors.HotTrackBrush;
+        Resources["DangerBrush"] = SystemColors.WindowTextBrush;
+        Resources["SuccessBrush"] = SystemColors.WindowTextBrush;
+        Resources["ControlHoverBrush"] = SystemColors.HighlightBrush;
+        Resources["ControlPressedBrush"] = SystemColors.HighlightBrush;
+        Resources["InputBrush"] = SystemColors.WindowBrush;
+        Resources["HeaderPanelBrush"] = SystemColors.ControlBrush;
+        Resources["SubtleBorderBrush"] = SystemColors.WindowTextBrush;
+        Resources["DataGridAltRowBrush"] = SystemColors.ControlBrush;
+        Resources["DataGridHorizontalLineBrush"] = SystemColors.WindowTextBrush;
+        Resources["DataGridVerticalLineBrush"] = SystemColors.WindowTextBrush;
+        Resources["DataGridHeaderSelectedBrush"] = SystemColors.HighlightBrush;
+        Resources["DisabledButtonBrush"] = SystemColors.ControlBrush;
+        Resources["DisabledTextBrush"] = SystemColors.GrayTextBrush;
+        Resources["PrimaryButtonBrush"] = SystemColors.HighlightBrush;
+        Resources["PrimaryButtonBorderBrush"] = SystemColors.HighlightTextBrush;
+        Resources["ToggleTrackBrush"] = SystemColors.ControlBrush;
+        Resources["ToggleThumbBrush"] = SystemColors.ControlTextBrush;
+        Resources["ToggleCheckedTrackBrush"] = SystemColors.HighlightBrush;
+        Background = SystemColors.WindowBrush;
+    }
+
+    private void OnSystemParametersPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SystemParameters.HighContrast)
+            && DataContext is MainViewModel viewModel)
+        {
+            ApplyTheme(viewModel.IsLightTheme);
+        }
+    }
+
+    private void OnClosed(object? sender, EventArgs e)
+    {
+        SystemParameters.StaticPropertyChanged -= OnSystemParametersPropertyChanged;
+        Closed -= OnClosed;
+    }
 
     private void ApplyWindowFrameTheme(bool isLightTheme)
     {
