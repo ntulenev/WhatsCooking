@@ -20,7 +20,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="What's Cooking" FontSize="18" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="1" Text="{Binding Status}" Style="{StaticResource MutedTextStyle}" />
+                <TextBlock Grid.Column="1" Text="{Binding Status}" Style="{DynamicResource MutedTextStyle}" />
             </Grid>
 
             <Grid Grid.Row="1" Margin="0,8,0,0">
@@ -47,18 +47,18 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="Search mode" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
+                <TextBlock Grid.Column="0" Text="Search mode" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
                 <ComboBox Grid.Column="1"
                           AutomationProperties.Name="Repository search mode"
                           ItemsSource="{Binding SearchModes}"
                           SelectedItem="{Binding SelectedSearchMode}" />
 
-                <TextBlock Grid.Column="3" Text="Phrase" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
+                <TextBlock Grid.Column="3" Text="Phrase" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
                 <TextBox Grid.Column="4"
                          AutomationProperties.Name="Repository search phrase"
                          Text="{Binding SearchPhrase, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBlock Grid.Column="6" Text="Days" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
+                <TextBlock Grid.Column="6" Text="Days" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
                 <TextBox Grid.Column="7"
                          AutomationProperties.Name="Recently merged pull request period in days"
                          Text="{Binding MergedPullRequestsDaysInput,
@@ -70,14 +70,14 @@
                          Text="{Binding GlobalSearch, UpdateSourceTrigger=PropertyChanged}"
                          ToolTip="Global search across all columns" />
 
-                <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{StaticResource PrimaryButtonStyle}" />
-                <Button Grid.Column="13" Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource ActionButtonStyle}" />
-                <Button Grid.Column="15" Content="Reset Filters" Command="{Binding ResetFiltersCommand}" Style="{StaticResource ActionButtonStyle}" />
-                <TextBlock Grid.Column="17" Text="Theme" Style="{StaticResource MutedTextStyle}" />
+                <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{DynamicResource PrimaryButtonStyle}" />
+                <Button Grid.Column="13" Content="Cancel" Command="{Binding CancelCommand}" Style="{DynamicResource ActionButtonStyle}" />
+                <Button Grid.Column="15" Content="Reset Filters" Command="{Binding ResetFiltersCommand}" Style="{DynamicResource ActionButtonStyle}" />
+                <TextBlock Grid.Column="17" Text="Theme" Style="{DynamicResource MutedTextStyle}" />
                 <CheckBox Grid.Column="19"
                           AutomationProperties.Name="Use light theme"
                           IsChecked="{Binding IsLightTheme, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                          Style="{StaticResource ThemeToggleSwitchStyle}"
+                          Style="{DynamicResource ThemeToggleSwitchStyle}"
                           ToolTip="Switch theme" />
             </Grid>
         </Grid>

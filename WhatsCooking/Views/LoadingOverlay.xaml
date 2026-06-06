@@ -45,7 +45,7 @@
                              BorderBrush="{DynamicResource BorderBrushDark}" />
                 <Button Content="Cancel"
                         Command="{Binding CancelCommand}"
-                        Style="{StaticResource ActionButtonStyle}"
+                        Style="{DynamicResource ActionButtonStyle}"
                         Width="96"
                         Margin="0,20,0,0"
                         HorizontalAlignment="Center" />

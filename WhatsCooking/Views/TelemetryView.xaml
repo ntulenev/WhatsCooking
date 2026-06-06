@@ -28,13 +28,13 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="Enabled" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
+                <TextBlock Grid.Column="0" Text="Enabled" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
                 <TextBlock Grid.Column="1" Text="{Binding TelemetryDashboard.IsTelemetryEnabled}" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="3" Text="Requests" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
+                <TextBlock Grid.Column="3" Text="Requests" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
                 <TextBlock Grid.Column="4" Text="{Binding TelemetryDashboard.TelemetryRequestsCount}" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="6" Text="Endpoints" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
+                <TextBlock Grid.Column="6" Text="Endpoints" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
                 <TextBlock Grid.Column="7" Text="{Binding TelemetryDashboard.TelemetryEndpointsCount}" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="9" Text="Filter" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
+                <TextBlock Grid.Column="9" Text="Filter" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
                 <TextBox Grid.Column="10"
                          AutomationProperties.Name="Telemetry filter"
                          Text="{Binding TelemetryDashboard.TelemetryFilter, UpdateSourceTrigger=PropertyChanged}" />
