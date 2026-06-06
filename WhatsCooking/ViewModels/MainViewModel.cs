@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -444,12 +443,12 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Loaded open pull request rows.
     /// </summary>
-    public ObservableCollection<PullRequestRow> OpenPullRequests { get; } = [];
+    public BulkObservableCollection<PullRequestRow> OpenPullRequests { get; } = [];
 
     /// <summary>
     /// Loaded recently merged pull request rows.
     /// </summary>
-    public ObservableCollection<PullRequestRow> MergedPullRequests { get; } = [];
+    public BulkObservableCollection<PullRequestRow> MergedPullRequests { get; } = [];
 
     /// <summary>
     /// Open pull request grid filters.
@@ -590,17 +589,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        OpenPullRequests.Clear();
-        MergedPullRequests.Clear();
-        for (var i = 0; i < snapshot.OpenPullRequests.Count; i++)
-        {
-            OpenPullRequests.Add(_rowFactory.CreateOpenRow(i + 1, snapshot.OpenPullRequests[i], snapshot.AsOf));
-        }
-
-        for (var i = 0; i < snapshot.MergedPullRequests.Count; i++)
-        {
-            MergedPullRequests.Add(_rowFactory.CreateMergedRow(i + 1, snapshot.MergedPullRequests[i]));
-        }
+        OpenPullRequests.ReplaceAll(snapshot.OpenPullRequests.Select(
+            (pullRequest, index) => _rowFactory.CreateOpenRow(index + 1, pullRequest, snapshot.AsOf)));
+        MergedPullRequests.ReplaceAll(snapshot.MergedPullRequests.Select(
+            (pullRequest, index) => _rowFactory.CreateMergedRow(index + 1, pullRequest, snapshot.AsOf)));
 
         RepositoriesCount = snapshot.Repositories.Count;
         OpenPullRequestsCount = snapshot.OpenPullRequests.Count;

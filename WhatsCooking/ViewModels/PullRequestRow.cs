@@ -164,7 +164,7 @@ internal sealed class PullRequestRow : ObservableObject
     /// <summary>
     /// Combined searchable row text.
     /// </summary>
-    public string SearchText => string.Join(" ", Number, RepositoryName, PullRequestId, Title, Author, DescriptionLength, OpenFor, TimeToFirstResponse, ActivityAgeOrMerged, CommentsCount, RequestChanges, Approvals, CurrentUserActivity);
+    public string SearchText { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PullRequestRow"/> class.
@@ -207,6 +207,7 @@ internal sealed class PullRequestRow : ObservableObject
         HasCurrentUserApproval = detail.HasCurrentUserApproval;
         HasCurrentUserActivity = detail.HasCurrentUserActivity;
         CurrentUserActivity = FormatCurrentUserActivity(detail.HasCurrentUserDiscussion, detail.HasCurrentUserRequestChanges, detail.HasCurrentUserApproval);
+        SearchText = BuildSearchText();
     }
 
     /// <summary>
@@ -214,8 +215,9 @@ internal sealed class PullRequestRow : ObservableObject
     /// </summary>
     /// <param name="number">Row number in the current report table.</param>
     /// <param name="pullRequest">Merged pull request details.</param>
+    /// <param name="asOf">Timestamp used to calculate relative durations.</param>
     /// <param name="options">Bitbucket configuration options.</param>
-    public PullRequestRow(int number, MergedPullRequest pullRequest, BitbucketOptions options)
+    public PullRequestRow(int number, MergedPullRequest pullRequest, DateTimeOffset asOf, BitbucketOptions options)
     {
         ArgumentNullException.ThrowIfNull(pullRequest, nameof(pullRequest));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
@@ -230,7 +232,7 @@ internal sealed class PullRequestRow : ObservableObject
         IsDescriptionShort = pullRequest.HasShortOrMissingDescription(options.PullRequestDetails.MinimalDescriptionTextLength);
         var openFor = pullRequest.GetOpenDuration();
         var timeToFirstResponse = pullRequest.TimeToFirstResponse;
-        var mergedAge = DateTimeOffset.Now - pullRequest.MergedOn;
+        var mergedAge = asOf - pullRequest.MergedOn;
         OpenFor = FormatDuration(openFor);
         OpenForMinutes = openFor.TotalMinutes;
         TimeToFirstResponse = FormatDuration(timeToFirstResponse);
@@ -247,6 +249,7 @@ internal sealed class PullRequestRow : ObservableObject
         HasCurrentUserApproval = pullRequest.HasCurrentUserApproval;
         HasCurrentUserActivity = pullRequest.HasCurrentUserActivity;
         CurrentUserActivity = FormatCurrentUserActivity(pullRequest.HasCurrentUserDiscussion, pullRequest.HasCurrentUserRequestChanges, pullRequest.HasCurrentUserApproval);
+        SearchText = BuildSearchText();
     }
 
     private static string FormatDuration(TimeSpan? duration)
@@ -315,6 +318,9 @@ internal sealed class PullRequestRow : ObservableObject
         string.IsNullOrWhiteSpace(options.Workspace) && options.DemoMode
             ? "demo-workspace"
             : options.Workspace;
+
+    private string BuildSearchText() =>
+        string.Join(" ", Number, RepositoryName, PullRequestId, Title, Author, DescriptionLength, OpenFor, TimeToFirstResponse, ActivityAgeOrMerged, CommentsCount, RequestChanges, Approvals, CurrentUserActivity);
 
     private readonly BitbucketWorkspace _workspace;
 

@@ -21,6 +21,7 @@ internal interface IPullRequestRowFactory
     /// </summary>
     /// <param name="number">Row number.</param>
     /// <param name="pullRequest">Merged pull request.</param>
+    /// <param name="asOf">Timestamp used to calculate relative durations.</param>
     /// <returns>Pull request row.</returns>
-    PullRequestRow CreateMergedRow(int number, MergedPullRequest pullRequest);
+    PullRequestRow CreateMergedRow(int number, MergedPullRequest pullRequest, DateTimeOffset asOf);
 }

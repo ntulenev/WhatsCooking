@@ -39,9 +39,10 @@ internal sealed class PullRequestRowFactory : IPullRequestRowFactory
     /// </summary>
     /// <param name="number">Row number.</param>
     /// <param name="pullRequest">Merged pull request.</param>
+    /// <param name="asOf">Timestamp used to calculate relative durations.</param>
     /// <returns>Pull request row.</returns>
-    public PullRequestRow CreateMergedRow(int number, MergedPullRequest pullRequest) =>
-        new(number, pullRequest, _options);
+    public PullRequestRow CreateMergedRow(int number, MergedPullRequest pullRequest, DateTimeOffset asOf) =>
+        new(number, pullRequest, asOf, _options);
 
     private readonly BitbucketOptions _options;
 }
