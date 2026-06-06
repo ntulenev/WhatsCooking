@@ -26,8 +26,8 @@
             <Grid Grid.Row="1" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="150" />
-                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="132" />
+                    <ColumnDefinition Width="6" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="260" />
                     <ColumnDefinition Width="8" />
