@@ -66,6 +66,21 @@
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushDark}" />
             <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}" />
             <Setter Property="SelectionBrush" Value="#664FC1FF" />
+            <Setter Property="Validation.ErrorTemplate">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <StackPanel>
+                            <Border BorderBrush="{DynamicResource DangerBrush}" BorderThickness="1">
+                                <AdornedElementPlaceholder />
+                            </Border>
+                            <TextBlock Margin="2,2,0,0"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource DangerBrush}"
+                                       Text="{Binding [0].ErrorContent}" />
+                        </StackPanel>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="ComboBox">
@@ -720,7 +735,11 @@
                     <TextBox Grid.Column="4" Text="{Binding SearchPhrase, UpdateSourceTrigger=PropertyChanged}" />
 
                     <TextBlock Grid.Column="6" Text="Days" Style="{StaticResource MutedTextStyle}" Margin="0,0,6,0" />
-                    <TextBox Grid.Column="7" Text="{Binding MergedPullRequestsDays, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Grid.Column="7"
+                             AutomationProperties.Name="Recently merged pull request period in days"
+                             Text="{Binding MergedPullRequestsDaysInput,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True}" />
 
                     <TextBox Grid.Column="9" Text="{Binding GlobalSearch, UpdateSourceTrigger=PropertyChanged}" ToolTip="Global search across all columns" />
 

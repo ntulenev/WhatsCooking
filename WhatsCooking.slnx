@@ -10,4 +10,5 @@
   <Project Path="BBRepoList/Telemetry/BBRepoList.Telemetry.csproj" />
   <Project Path="BBRepoList/Transport/BBRepoList.Transport.csproj" />
   <Project Path="WhatsCooking/WhatsCooking.csproj" />
+  <Project Path="WhatsCooking.Tests/WhatsCooking.Tests.csproj" />
 </Solution>

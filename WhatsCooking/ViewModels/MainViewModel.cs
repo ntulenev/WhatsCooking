@@ -22,7 +22,7 @@ namespace WhatsCooking.ViewModels;
 /// View model for the pull request dashboard window.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "View model is created by dependency injection.")]
-internal sealed class MainViewModel : ObservableObject, IDisposable
+internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, IDisposable
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="MainViewModel"/> class.
@@ -67,6 +67,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         _selectedSearchMode = _preferences.SearchMode ?? RepositorySearchMode.StartWith;
         _searchPhrase = _preferences.SearchPhrase ?? string.Empty;
         _mergedPullRequestsDays = 1;
+        _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
         OpenPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
         MergedPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
         OpenPullRequestsView = CollectionViewSource.GetDefaultView(OpenPullRequests);
@@ -114,13 +115,47 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
     /// </summary>
     public int MergedPullRequestsDays {
         get => _mergedPullRequestsDays;
-        set
+        private set
         {
-            if (SetProperty(ref _mergedPullRequestsDays, Math.Max(value, 1)))
+            if (SetProperty(ref _mergedPullRequestsDays, value))
             {
                 RaiseCommandStates();
             }
         }
+    }
+
+    /// <summary>
+    /// Editable number of days used to load recently merged pull requests.
+    /// </summary>
+    public string MergedPullRequestsDaysInput {
+        get => _mergedPullRequestsDaysInput;
+        set
+        {
+            var normalizedValue = value ?? string.Empty;
+            if (SetProperty(ref _mergedPullRequestsDaysInput, normalizedValue))
+            {
+                ValidateMergedPullRequestsDays(normalizedValue);
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public bool HasErrors => _validationErrors.Count > 0;
+
+    /// <inheritdoc />
+    public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+    /// <inheritdoc />
+    public System.Collections.IEnumerable GetErrors(string? propertyName)
+    {
+        if (string.IsNullOrEmpty(propertyName))
+        {
+            return _validationErrors.Values.SelectMany(static errors => errors);
+        }
+
+        return _validationErrors.TryGetValue(propertyName, out var errors)
+            ? errors
+            : [];
     }
 
     /// <summary>
@@ -653,7 +688,7 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         return Math.Round(Math.Clamp(value.Value, MIN_UI_SCALE, MAX_UI_SCALE), 2);
     }
 
-    private bool CanLoad() => !IsLoading && MergedPullRequestsDays > 0;
+    private bool CanLoad() => !IsLoading && !HasErrors;
 
     private bool HasLoadedPullRequests() => OpenPullRequests.Count > 0 || MergedPullRequests.Count > 0;
 
@@ -768,6 +803,41 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
         ((RelayCommand)CancelCommand).RaiseCanExecuteChanged();
     }
 
+    private void ValidateMergedPullRequestsDays(string value)
+    {
+        const string propertyName = nameof(MergedPullRequestsDaysInput);
+        if (!MergedPullRequestPeriod.TryParse(value, out var days))
+        {
+            SetValidationError(
+                propertyName,
+                $"Enter a whole number from {MergedPullRequestPeriod.MINIMUM_DAYS} to {MergedPullRequestPeriod.MAXIMUM_DAYS}.");
+            return;
+        }
+
+        ClearValidationError(propertyName);
+        MergedPullRequestsDays = days;
+    }
+
+    private void SetValidationError(string propertyName, string error)
+    {
+        _validationErrors[propertyName] = [error];
+        ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        OnPropertyChanged(nameof(HasErrors));
+        RaiseCommandStates();
+    }
+
+    private void ClearValidationError(string propertyName)
+    {
+        if (!_validationErrors.Remove(propertyName))
+        {
+            return;
+        }
+
+        ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        OnPropertyChanged(nameof(HasErrors));
+        RaiseCommandStates();
+    }
+
     private void OnLoadCommandPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(AsyncRelayCommand.IsRunning) or nameof(AsyncRelayCommand.CanBeCanceled))
@@ -814,7 +884,11 @@ internal sealed class MainViewModel : ObservableObject, IDisposable
 
     private readonly DispatcherTimer _pullRequestFilterRefreshTimer;
 
+    private readonly Dictionary<string, string[]> _validationErrors = new(StringComparer.Ordinal);
+
     private int _mergedPullRequestsDays;
+
+    private string _mergedPullRequestsDaysInput;
 
     private bool _isLightTheme;
 
