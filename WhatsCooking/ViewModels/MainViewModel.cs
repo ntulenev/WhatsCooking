@@ -174,7 +174,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         {
             if (SetProperty(ref _isLightTheme, value))
             {
-                _preferences.IsLightTheme = value;
+                _preferences = _preferences with { IsLightTheme = value };
                 _preferencesService.Save(_preferences);
             }
         }
@@ -190,7 +190,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             var normalizedValue = NormalizeUiScale(value);
             if (SetProperty(ref _uiScale, normalizedValue))
             {
-                _preferences.UiScale = normalizedValue;
+                _preferences = _preferences with { UiScale = normalizedValue };
                 _preferencesService.Save(_preferences);
             }
         }
@@ -606,8 +606,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void SaveLoadPreferences()
     {
-        _preferences.SearchMode = SelectedSearchMode;
-        _preferences.SearchPhrase = SearchPhrase;
+        _preferences = _preferences with
+        {
+            SearchMode = SelectedSearchMode,
+            SearchPhrase = SearchPhrase
+        };
         _preferencesService.Save(_preferences);
     }
 
@@ -813,7 +816,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly IUserPreferencesService _preferencesService;
 
-    private readonly UserPreferences _preferences;
+    private UserPreferences _preferences;
 
     private readonly DispatcherTimer _pullRequestFilterRefreshTimer;
 

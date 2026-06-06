@@ -5,25 +5,25 @@ namespace WhatsCooking.Services;
 /// <summary>
 /// User preferences persisted outside appsettings.
 /// </summary>
-internal sealed class UserPreferences
+internal sealed record UserPreferences
 {
     /// <summary>
-    /// Gets or sets a value indicating whether the light UI theme is enabled.
+    /// Gets a value indicating whether the light UI theme is enabled.
     /// </summary>
-    public bool IsLightTheme { get; set; }
+    public bool IsLightTheme { get; init; }
 
     /// <summary>
-    /// Gets or sets the repository search phrase used for loading data.
+    /// Gets the repository search phrase used for loading data.
     /// </summary>
-    public string? SearchPhrase { get; set; }
+    public string? SearchPhrase { get; init; }
 
     /// <summary>
-    /// Gets or sets the repository search mode used for loading data.
+    /// Gets the repository search mode used for loading data.
     /// </summary>
-    public RepositorySearchMode? SearchMode { get; set; }
+    public RepositorySearchMode? SearchMode { get; init; }
 
     /// <summary>
-    /// Gets or sets the UI scale multiplier.
+    /// Gets the UI scale multiplier.
     /// </summary>
-    public double? UiScale { get; set; }
+    public double? UiScale { get; init; }
 }
