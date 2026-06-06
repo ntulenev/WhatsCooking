@@ -1,0 +1,55 @@
+<UserControl x:Class="WhatsCooking.Views.LoadingOverlay"
+             x:ClassModifier="internal"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Background="#CC0F1117">
+        <Border Width="460"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#F5252526"
+                BorderBrush="#334FC1FF"
+                BorderThickness="1"
+                CornerRadius="14">
+            <StackPanel>
+                <Border Width="220"
+                        Height="220"
+                        HorizontalAlignment="Center"
+                        CornerRadius="10"
+                        ClipToBounds="True">
+                    <Border.Background>
+                        <ImageBrush ImageSource="/WhatsCooking;component/Assets/whats-cooking-logo.png"
+                                    Stretch="Uniform"
+                                    RenderOptions.BitmapScalingMode="HighQuality" />
+                    </Border.Background>
+                </Border>
+
+                <TextBlock Text="What's Cooking"
+                           Margin="0,14,0,0"
+                           HorizontalAlignment="Center"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" />
+                <TextBlock Text="{Binding Status}"
+                           Margin="0,8,0,18"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           FontSize="14"
+                           Foreground="{DynamicResource MutedBrush}" />
+                <ProgressBar Height="6"
+                             AutomationProperties.Name="Loading pull request data"
+                             IsIndeterminate="True"
+                             Foreground="{DynamicResource AccentBrush}"
+                             Background="#1F1F1F"
+                             BorderBrush="{DynamicResource BorderBrushDark}" />
+                <Button Content="Cancel"
+                        Command="{Binding CancelCommand}"
+                        Style="{StaticResource ActionButtonStyle}"
+                        Width="96"
+                        Margin="0,20,0,0"
+                        HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Border>
+</UserControl>
