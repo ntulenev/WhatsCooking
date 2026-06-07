@@ -304,7 +304,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             var filterPattern = new FilterPattern(SearchPhrase, SelectedSearchMode);
             var progress = new Progress<PullRequestLoadProgress>(value =>
             {
-                Status = value.Message;
+                Status = PullRequestLoadProgressFormatter.Format(value);
                 _ = TelemetryDashboard.RefreshTelemetry();
             });
             var result = await _loadUseCase

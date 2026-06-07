@@ -41,17 +41,17 @@ internal sealed class PullRequestDashboardLoader : IPullRequestDashboardLoader
         {
             throw new ArgumentOutOfRangeException(nameof(mergedPullRequestsDays), "Merged pull request days must be greater than zero.");
         }
-        progress?.Report(new PullRequestLoadProgress("Authenticating"));
+        progress?.Report(new PullRequestLoadProgress(PullRequestLoadStage.Authenticating));
         var currentUser = await _authApi.AuthSelfCheckAsync(cancellationToken).ConfigureAwait(false);
-        var repositoryProgress = new Progress<RepoLoadProgress>(value => progress?.Report(new PullRequestLoadProgress("Loading repositories", value.Matched, value.Seen)));
+        var repositoryProgress = new Progress<RepoLoadProgress>(value => progress?.Report(new PullRequestLoadProgress(PullRequestLoadStage.LoadingRepositories, value.Matched, value.Seen)));
         var repositories = await _repoService.GetRepositoriesAsync(filterPattern, repositoryProgress, cancellationToken).ConfigureAwait(false);
         List<Repository> sortedRepositories = [.. repositories.OrderBy(repository => repository.Name, StringComparer.OrdinalIgnoreCase)];
-        var openPullRequestsProgress = new Progress<PullRequestRepositoryLoadProgress>(value => progress?.Report(new PullRequestLoadProgress("Scanning repositories for open pull requests", value.LoadedRepositories, value.TotalRepositories)));
+        var openPullRequestsProgress = new Progress<PullRequestRepositoryLoadProgress>(value => progress?.Report(new PullRequestLoadProgress(PullRequestLoadStage.LoadingOpenPullRequests, value.LoadedRepositories, value.TotalRepositories)));
         var openPullRequests = await _repoService.GetOpenPullRequestDetailsAsync(sortedRepositories, currentUser.Uuid, openPullRequestsProgress, cancellationToken).ConfigureAwait(false);
-        var mergedPullRequestsProgress = new Progress<PullRequestRepositoryLoadProgress>(value => progress?.Report(new PullRequestLoadProgress("Scanning repositories for merged pull requests", value.LoadedRepositories, value.TotalRepositories)));
+        var mergedPullRequestsProgress = new Progress<PullRequestRepositoryLoadProgress>(value => progress?.Report(new PullRequestLoadProgress(PullRequestLoadStage.LoadingMergedPullRequests, value.LoadedRepositories, value.TotalRepositories)));
         var mergedSince = _timeProvider.GetLocalNow().AddDays(-mergedPullRequestsDays);
         var mergedPullRequests = await _repoService.GetMergedPullRequestsAsync(sortedRepositories, mergedSince, currentUser.Uuid, mergedPullRequestsProgress, cancellationToken).ConfigureAwait(false);
-        progress?.Report(new PullRequestLoadProgress("Completed"));
+        progress?.Report(new PullRequestLoadProgress(PullRequestLoadStage.Completed));
         return new PullRequestLoadResult(sortedRepositories, openPullRequests, mergedPullRequests);
     }
 

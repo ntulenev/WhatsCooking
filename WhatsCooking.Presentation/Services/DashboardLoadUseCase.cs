@@ -88,7 +88,7 @@ internal sealed class DashboardLoadUseCase : IDashboardLoadUseCase
         var asOf = _timeProvider.GetLocalNow();
         if (_isDemoMode)
         {
-            progress?.Report(new PullRequestLoadProgress("Loading demo data"));
+            progress?.Report(new PullRequestLoadProgress(PullRequestLoadStage.LoadingDemoData));
             var demoResult = _demoDataProvider.Create();
             return new PullRequestDashboardSnapshot(
                 asOf,
