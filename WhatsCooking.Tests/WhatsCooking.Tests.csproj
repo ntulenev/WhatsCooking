@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WhatsCooking.Infrastructure\WhatsCooking.Infrastructure.csproj" />
     <ProjectReference Include="..\WhatsCooking.Presentation\WhatsCooking.Presentation.csproj" />
   </ItemGroup>
 </Project>

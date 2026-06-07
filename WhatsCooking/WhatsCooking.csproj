@@ -38,6 +38,7 @@
     <ProjectReference Include="..\BBRepoList\Configuration\BBRepoList.Configuration.csproj" />
     <ProjectReference Include="..\BBRepoList\Models\BBRepoList.Models.csproj" />
     <ProjectReference Include="..\BBRepoList\Registrations\BBRepoList.Registrations.csproj" />
+    <ProjectReference Include="..\WhatsCooking.Infrastructure\WhatsCooking.Infrastructure.csproj" />
     <ProjectReference Include="..\WhatsCooking.Presentation\WhatsCooking.Presentation.csproj" />
   </ItemGroup>
 
