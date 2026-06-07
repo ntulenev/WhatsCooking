@@ -37,6 +37,7 @@ public partial class App : Application
                 _ = services.AddSingleton<IDemoTelemetryProvider, DemoTelemetryProvider>();
                 _ = services.AddTransient<IDebouncer, TimerDebouncer>();
                 _ = services.AddTransient<IPullRequestDashboardLoader, PullRequestDashboardLoader>();
+                _ = services.AddTransient<IDashboardLoadUseCase, DashboardLoadUseCase>();
                 _ = services.AddSingleton<ITelemetryDashboard, TelemetryViewModel>();
                 _ = services.AddSingleton<IPullRequestRowFactory, PullRequestRowFactory>();
                 _ = services.AddSingleton<MainViewModel>();

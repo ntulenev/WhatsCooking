@@ -4,10 +4,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Windows.Input;
 
-using BBRepoList.Configuration;
 using BBRepoList.Models;
-
-using Microsoft.Extensions.Options;
 
 using WhatsCooking.Services;
 
@@ -22,51 +19,35 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Initializes a new instance of the <see cref="MainViewModel"/> class.
     /// </summary>
-    /// <param name="loader">Pull request dashboard data loader.</param>
-    /// <param name="demoDataProvider">Demo dashboard data provider.</param>
-    /// <param name="demoTelemetryProvider">Demo telemetry provider.</param>
+    /// <param name="loadUseCase">Dashboard loading use case.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
     /// <param name="rowFactory">Pull request row factory.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
     /// <param name="filterDebouncer">Debouncer used for table filters.</param>
-    /// <param name="timeProvider">Time provider used for dashboard timestamps.</param>
-    /// <param name="options">Bitbucket configuration options.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
-        IPullRequestDashboardLoader loader,
-        IDemoPullRequestDashboardProvider demoDataProvider,
-        IDemoTelemetryProvider demoTelemetryProvider,
+        IDashboardLoadUseCase loadUseCase,
         ITelemetryDashboard telemetryDashboard,
         IPullRequestRowFactory rowFactory,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
         IDebouncer filterDebouncer,
-        TimeProvider timeProvider,
-        IOptions<BitbucketOptions> options,
         IUserPreferencesService preferencesService)
     {
-        ArgumentNullException.ThrowIfNull(loader, nameof(loader));
-        ArgumentNullException.ThrowIfNull(demoDataProvider, nameof(demoDataProvider));
-        ArgumentNullException.ThrowIfNull(demoTelemetryProvider, nameof(demoTelemetryProvider));
+        ArgumentNullException.ThrowIfNull(loadUseCase, nameof(loadUseCase));
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
         ArgumentNullException.ThrowIfNull(rowFactory, nameof(rowFactory));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
         ArgumentNullException.ThrowIfNull(filterDebouncer, nameof(filterDebouncer));
-        ArgumentNullException.ThrowIfNull(timeProvider, nameof(timeProvider));
-        ArgumentNullException.ThrowIfNull(options, nameof(options));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
-        _loader = loader;
-        _demoDataProvider = demoDataProvider;
-        _demoTelemetryProvider = demoTelemetryProvider;
+        _loadUseCase = loadUseCase;
         _rowFactory = rowFactory;
         _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
         _filterDebouncer = filterDebouncer;
-        _timeProvider = timeProvider;
         TelemetryDashboard = telemetryDashboard;
-        _options = options.Value;
         _preferencesService = preferencesService;
         _preferences = _preferencesService.Load();
         _isLightTheme = _preferences.IsLightTheme;
@@ -512,26 +493,16 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         {
             SaveLoadPreferences();
 
-            if (_options.DemoMode)
-            {
-                ApplyDashboardSnapshot(CreateDemoDashboardSnapshot());
-                Status = $"Loaded demo data: {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
-                return;
-            }
-
             var filterPattern = new FilterPattern(SearchPhrase, SelectedSearchMode);
             var progress = new Progress<PullRequestLoadProgress>(value =>
             {
                 Status = value.Message;
                 _ = TelemetryDashboard.RefreshTelemetry();
             });
-            var result = await _loader.LoadAsync(filterPattern, MergedPullRequestsDays, progress, cancellationToken).ConfigureAwait(true);
-            ApplyDashboardSnapshot(new PullRequestDashboardSnapshot(
-                _timeProvider.GetLocalNow(),
-                result.Repositories,
-                result.OpenPullRequests,
-                result.MergedPullRequests,
-                TelemetryDashboard.RefreshTelemetry()));
+            var snapshot = await _loadUseCase
+                .LoadAsync(filterPattern, MergedPullRequestsDays, progress, cancellationToken)
+                .ConfigureAwait(true);
+            ApplyDashboardSnapshot(snapshot);
             Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
         }
         catch (OperationCanceledException)
@@ -558,20 +529,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         {
             IsLoading = false;
         }
-    }
-
-    private PullRequestDashboardSnapshot CreateDemoDashboardSnapshot()
-    {
-        Status = "Loading demo data";
-        var asOf = _timeProvider.GetLocalNow();
-        var result = _demoDataProvider.Create();
-
-        return new PullRequestDashboardSnapshot(
-            asOf,
-            result.Repositories,
-            result.OpenPullRequests,
-            result.MergedPullRequests,
-            _demoTelemetryProvider.Create());
     }
 
     private void ApplyDashboardSnapshot(PullRequestDashboardSnapshot snapshot)
@@ -629,32 +586,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _externalUrlLauncher.Open(url);
     }
 
-    private bool FilterOpenPullRequestRow(object item) => FilterPullRequestRow(item, OpenPullRequestFilters);
-
-    private bool FilterMergedPullRequestRow(object item) => FilterPullRequestRow(item, MergedPullRequestFilters);
-
-    private bool FilterPullRequestRow(object item, PullRequestFilterState filters)
-    {
-        if (item is not PullRequestRow row)
-        {
-            return false;
-        }
-
-        return Matches(row.SearchText, GlobalSearch)
-            && Matches(row.Number.ToString(CultureInfo.InvariantCulture), filters.Number)
-            && Matches(row.RepositoryName, filters.Repository)
-            && Matches(row.PullRequestDisplay, filters.PullRequest)
-            && Matches(row.Author, filters.Author)
-            && Matches(row.DescriptionLength.ToString(CultureInfo.InvariantCulture), filters.DescriptionLength)
-            && Matches(row.OpenFor, filters.OpenFor)
-            && Matches(row.TimeToFirstResponse, filters.TimeToFirstResponse)
-            && Matches(row.ActivityAgeOrMerged, filters.Activity)
-            && Matches(row.CommentsCount.ToString(CultureInfo.InvariantCulture), filters.Comments)
-            && Matches(row.RequestChanges, filters.RequestChanges)
-            && Matches(row.Approvals, filters.Approvals)
-            && Matches(row.CurrentUserActivity, filters.CurrentUserActivity);
-    }
-
     private void ShowLoadError(Exception exception)
     {
         Status = exception.Message;
@@ -663,8 +594,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void RefreshViews()
     {
-        OpenPullRequestsView.ReplaceAll(_openPullRequests.Where(FilterOpenPullRequestRow));
-        MergedPullRequestsView.ReplaceAll(_mergedPullRequests.Where(FilterMergedPullRequestRow));
+        OpenPullRequestsView.ReplaceAll(
+            _openPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, OpenPullRequestFilters)));
+        MergedPullRequestsView.ReplaceAll(
+            _mergedPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, MergedPullRequestFilters)));
     }
 
     private void SchedulePullRequestFilterRefresh() =>
@@ -710,8 +643,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         OnPropertyChanged(nameof(MergedApprovalsFilter));
         OnPropertyChanged(nameof(MergedCurrentUserActivityFilter));
     }
-
-    private static bool Matches(string source, string filter) => string.IsNullOrWhiteSpace(filter) || source.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase);
 
     private void RaiseCommandStates()
     {
@@ -782,11 +713,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private const double UI_SCALE_STEP = 0.05;
 
-    private readonly IPullRequestDashboardLoader _loader;
-
-    private readonly IDemoPullRequestDashboardProvider _demoDataProvider;
-
-    private readonly IDemoTelemetryProvider _demoTelemetryProvider;
+    private readonly IDashboardLoadUseCase _loadUseCase;
 
     private readonly IPullRequestRowFactory _rowFactory;
 
@@ -795,10 +722,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private readonly IExternalUrlLauncher _externalUrlLauncher;
 
     private readonly IDebouncer _filterDebouncer;
-
-    private readonly TimeProvider _timeProvider;
-
-    private readonly BitbucketOptions _options;
 
     private readonly IUserPreferencesService _preferencesService;
 
