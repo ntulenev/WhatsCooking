@@ -23,7 +23,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <param name="rowMapper">Pull request row mapper.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
-    /// <param name="filterDebouncer">Debouncer used for table filters.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
         IDashboardLoadUseCase loadUseCase,
@@ -31,7 +30,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         PullRequestRowMapper rowMapper,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
-        IDebouncer filterDebouncer,
         IUserPreferencesService preferencesService)
     {
         ArgumentNullException.ThrowIfNull(loadUseCase, nameof(loadUseCase));
@@ -39,13 +37,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ArgumentNullException.ThrowIfNull(rowMapper, nameof(rowMapper));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
-        ArgumentNullException.ThrowIfNull(filterDebouncer, nameof(filterDebouncer));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loadUseCase = loadUseCase;
         _rowMapper = rowMapper;
         _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
-        _filterDebouncer = filterDebouncer;
         TelemetryDashboard = telemetryDashboard;
         _preferencesService = preferencesService;
         _preferences = _preferencesService.Load();
@@ -189,6 +185,94 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             }
         }
     } = string.Empty;
+
+    /// <summary>
+    /// Filter for the merged pull request row number column.
+    /// </summary>
+    public string MergedNumberFilter {
+        get => MergedPullRequestFilters.Number;
+        set => MergedPullRequestFilters.Number = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request repository column.
+    /// </summary>
+    public string MergedRepositoryFilter {
+        get => MergedPullRequestFilters.Repository;
+        set => MergedPullRequestFilters.Repository = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request column.
+    /// </summary>
+    public string MergedPullRequestFilter {
+        get => MergedPullRequestFilters.PullRequest;
+        set => MergedPullRequestFilters.PullRequest = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request author column.
+    /// </summary>
+    public string MergedAuthorFilter {
+        get => MergedPullRequestFilters.Author;
+        set => MergedPullRequestFilters.Author = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request description length column.
+    /// </summary>
+    public string MergedDescriptionLengthFilter {
+        get => MergedPullRequestFilters.DescriptionLength;
+        set => MergedPullRequestFilters.DescriptionLength = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request TTFR column.
+    /// </summary>
+    public string MergedTimeToFirstResponseFilter {
+        get => MergedPullRequestFilters.TimeToFirstResponse;
+        set => MergedPullRequestFilters.TimeToFirstResponse = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request merge age column.
+    /// </summary>
+    public string MergedActivityFilter {
+        get => MergedPullRequestFilters.Activity;
+        set => MergedPullRequestFilters.Activity = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request comments column.
+    /// </summary>
+    public string MergedCommentsFilter {
+        get => MergedPullRequestFilters.Comments;
+        set => MergedPullRequestFilters.Comments = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request changes column.
+    /// </summary>
+    public string MergedRequestChangesFilter {
+        get => MergedPullRequestFilters.RequestChanges;
+        set => MergedPullRequestFilters.RequestChanges = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request approvals column.
+    /// </summary>
+    public string MergedApprovalsFilter {
+        get => MergedPullRequestFilters.Approvals;
+        set => MergedPullRequestFilters.Approvals = value;
+    }
+
+    /// <summary>
+    /// Filter for the merged pull request current user activity column.
+    /// </summary>
+    public string MergedCurrentUserActivityFilter {
+        get => MergedPullRequestFilters.CurrentUserActivity;
+        set => MergedPullRequestFilters.CurrentUserActivity = value;
+    }
 
     /// <summary>
     /// Whether pull request data is currently loading.
@@ -402,15 +486,30 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             _mergedPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, MergedPullRequestFilters)));
     }
 
-    private void SchedulePullRequestFilterRefresh() =>
-        _filterDebouncer.Schedule(RefreshViews, _filterRefreshDelay);
+    private void SchedulePullRequestFilterRefresh() => RefreshViews();
 
     private void ResetFilters()
     {
         GlobalSearch = string.Empty;
         OpenPullRequestFilters.Reset();
         MergedPullRequestFilters.Reset();
+        RaiseMergedFilterPropertiesChanged();
         TelemetryDashboard.ResetFilter();
+    }
+
+    private void RaiseMergedFilterPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(MergedNumberFilter));
+        OnPropertyChanged(nameof(MergedRepositoryFilter));
+        OnPropertyChanged(nameof(MergedPullRequestFilter));
+        OnPropertyChanged(nameof(MergedAuthorFilter));
+        OnPropertyChanged(nameof(MergedDescriptionLengthFilter));
+        OnPropertyChanged(nameof(MergedTimeToFirstResponseFilter));
+        OnPropertyChanged(nameof(MergedActivityFilter));
+        OnPropertyChanged(nameof(MergedCommentsFilter));
+        OnPropertyChanged(nameof(MergedRequestChangesFilter));
+        OnPropertyChanged(nameof(MergedApprovalsFilter));
+        OnPropertyChanged(nameof(MergedCurrentUserActivityFilter));
     }
 
     private void RaiseCommandStates()
@@ -473,10 +572,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
         LoadCommand.ExecutionFailed -= OnLoadCommandExecutionFailed;
         LoadCommand.Dispose();
-        _filterDebouncer.Dispose();
     }
-
-    private static readonly TimeSpan _filterRefreshDelay = TimeSpan.FromMilliseconds(150);
 
     private const double DEFAULT_UI_SCALE = 1.0;
 
@@ -493,8 +589,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private readonly IDialogService _dialogService;
 
     private readonly IExternalUrlLauncher _externalUrlLauncher;
-
-    private readonly IDebouncer _filterDebouncer;
 
     private readonly IUserPreferencesService _preferencesService;
 
