@@ -35,6 +35,7 @@ public partial class App : Application
                 _ = services.AddSingleton<IExternalUrlLauncher, WpfExternalUrlLauncher>();
                 _ = services.AddSingleton<IDemoPullRequestDashboardProvider, DemoPullRequestDashboardProvider>();
                 _ = services.AddSingleton<IDemoTelemetryProvider, DemoTelemetryProvider>();
+                _ = services.AddTransient<IDebouncer, TimerDebouncer>();
                 _ = services.AddTransient<IPullRequestDashboardLoader, PullRequestDashboardLoader>();
                 _ = services.AddSingleton<ITelemetryDashboard, TelemetryViewModel>();
                 _ = services.AddSingleton<IPullRequestRowFactory, PullRequestRowFactory>();

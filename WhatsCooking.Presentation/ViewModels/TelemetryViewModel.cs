@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using BBRepoList.Abstractions;
 using BBRepoList.Models;
 
+using WhatsCooking.Services;
+
 namespace WhatsCooking.ViewModels;
 
 /// <summary>
@@ -15,11 +17,16 @@ internal sealed class TelemetryViewModel : ObservableObject, ITelemetryDashboard
     /// Initializes a new instance of the <see cref="TelemetryViewModel"/> class.
     /// </summary>
     /// <param name="telemetryService">Bitbucket API telemetry service.</param>
-    public TelemetryViewModel(IBitbucketTelemetryService telemetryService)
+    /// <param name="filterDebouncer">Debouncer used for telemetry filters.</param>
+    public TelemetryViewModel(
+        IBitbucketTelemetryService telemetryService,
+        IDebouncer filterDebouncer)
     {
         ArgumentNullException.ThrowIfNull(telemetryService);
+        ArgumentNullException.ThrowIfNull(filterDebouncer);
 
         _telemetryService = telemetryService;
+        _filterDebouncer = filterDebouncer;
     }
 
     /// <summary>
@@ -108,17 +115,22 @@ internal sealed class TelemetryViewModel : ObservableObject, ITelemetryDashboard
     /// </summary>
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
+        _filterDebouncer.Dispose();
     }
 
-    private void ScheduleFilterRefresh() => RefreshFilter();
+    private void ScheduleFilterRefresh() =>
+        _filterDebouncer.Schedule(RefreshFilter, _filterRefreshDelay);
 
     private void RefreshFilter() =>
         TelemetryView.ReplaceAll(_telemetryRows.Where(row => Matches(row.SearchText, TelemetryFilter)));
 
     private static bool Matches(string source, string filter) => string.IsNullOrWhiteSpace(filter) || source.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase);
 
+    private static readonly TimeSpan _filterRefreshDelay = TimeSpan.FromMilliseconds(150);
+
     private readonly IBitbucketTelemetryService _telemetryService;
+
+    private readonly IDebouncer _filterDebouncer;
 
     private readonly List<TelemetryRow> _telemetryRows = [];
 }

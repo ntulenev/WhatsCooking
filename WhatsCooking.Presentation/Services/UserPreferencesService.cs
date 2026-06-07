@@ -15,24 +15,33 @@ internal sealed class UserPreferencesService : IUserPreferencesService, IDisposa
     /// Initializes a new instance of the <see cref="UserPreferencesService"/> class.
     /// </summary>
     /// <param name="logger">Application logger.</param>
-    public UserPreferencesService(ILogger<UserPreferencesService> logger)
+    /// <param name="timeProvider">Time provider used to delay writes.</param>
+    public UserPreferencesService(ILogger<UserPreferencesService> logger, TimeProvider timeProvider)
         : this(
             logger,
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "WhatsCooking",
-                "preferences.json"))
+                "preferences.json"),
+            timeProvider)
     {
     }
 
-    internal UserPreferencesService(ILogger<UserPreferencesService> logger, string preferencesPath)
+    internal UserPreferencesService(
+        ILogger<UserPreferencesService> logger,
+        string preferencesPath,
+        TimeProvider? timeProvider = null)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(preferencesPath);
 
         _logger = logger;
         _preferencesPath = preferencesPath;
-        _saveTimer = new Timer(SavePendingPreferences);
+        _saveTimer = (timeProvider ?? TimeProvider.System).CreateTimer(
+            SavePendingPreferences,
+            null,
+            Timeout.InfiniteTimeSpan,
+            Timeout.InfiniteTimeSpan);
     }
 
     /// <summary>
@@ -147,7 +156,7 @@ internal sealed class UserPreferencesService : IUserPreferencesService, IDisposa
 
     private readonly string _preferencesPath;
 
-    private readonly Timer _saveTimer;
+    private readonly ITimer _saveTimer;
 
     private readonly object _syncRoot = new();
 

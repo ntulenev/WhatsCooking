@@ -29,6 +29,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <param name="rowFactory">Pull request row factory.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
+    /// <param name="filterDebouncer">Debouncer used for table filters.</param>
+    /// <param name="timeProvider">Time provider used for dashboard timestamps.</param>
     /// <param name="options">Bitbucket configuration options.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
@@ -39,6 +41,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         IPullRequestRowFactory rowFactory,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
+        IDebouncer filterDebouncer,
+        TimeProvider timeProvider,
         IOptions<BitbucketOptions> options,
         IUserPreferencesService preferencesService)
     {
@@ -49,6 +53,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ArgumentNullException.ThrowIfNull(rowFactory, nameof(rowFactory));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
+        ArgumentNullException.ThrowIfNull(filterDebouncer, nameof(filterDebouncer));
+        ArgumentNullException.ThrowIfNull(timeProvider, nameof(timeProvider));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loader = loader;
@@ -57,6 +63,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _rowFactory = rowFactory;
         _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
+        _filterDebouncer = filterDebouncer;
+        _timeProvider = timeProvider;
         TelemetryDashboard = telemetryDashboard;
         _options = options.Value;
         _preferencesService = preferencesService;
@@ -519,7 +527,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             });
             var result = await _loader.LoadAsync(filterPattern, MergedPullRequestsDays, progress, cancellationToken).ConfigureAwait(true);
             ApplyDashboardSnapshot(new PullRequestDashboardSnapshot(
-                DateTimeOffset.Now,
+                _timeProvider.GetLocalNow(),
                 result.Repositories,
                 result.OpenPullRequests,
                 result.MergedPullRequests,
@@ -555,7 +563,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private PullRequestDashboardSnapshot CreateDemoDashboardSnapshot()
     {
         Status = "Loading demo data";
-        var asOf = DateTimeOffset.Now;
+        var asOf = _timeProvider.GetLocalNow();
         var result = _demoDataProvider.Create();
 
         return new PullRequestDashboardSnapshot(
@@ -659,7 +667,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         MergedPullRequestsView.ReplaceAll(_mergedPullRequests.Where(FilterMergedPullRequestRow));
     }
 
-    private void SchedulePullRequestFilterRefresh() => RefreshViews();
+    private void SchedulePullRequestFilterRefresh() =>
+        _filterDebouncer.Schedule(RefreshViews, _filterRefreshDelay);
 
     private void ResetFilters()
     {
@@ -760,7 +769,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     {
         LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
         LoadCommand.Dispose();
+        _filterDebouncer.Dispose();
     }
+
+    private static readonly TimeSpan _filterRefreshDelay = TimeSpan.FromMilliseconds(150);
 
     private const double DEFAULT_UI_SCALE = 1.0;
 
@@ -781,6 +793,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private readonly IDialogService _dialogService;
 
     private readonly IExternalUrlLauncher _externalUrlLauncher;
+
+    private readonly IDebouncer _filterDebouncer;
+
+    private readonly TimeProvider _timeProvider;
 
     private readonly BitbucketOptions _options;
 
