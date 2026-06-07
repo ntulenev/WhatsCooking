@@ -14,8 +14,8 @@ internal interface IDashboardLoadUseCase
     /// <param name="mergedPullRequestsDays">Recently merged period in days.</param>
     /// <param name="progress">Optional progress reporter.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Complete dashboard snapshot.</returns>
-    Task<PullRequestDashboardSnapshot> LoadAsync(
+    /// <returns>Dashboard load outcome.</returns>
+    Task<DashboardLoadResult> LoadAsync(
         FilterPattern filterPattern,
         int mergedPullRequestsDays,
         IProgress<PullRequestLoadProgress>? progress,

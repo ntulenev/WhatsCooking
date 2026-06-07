@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
 using BBRepoList.Abstractions;
 using BBRepoList.Configuration;
@@ -41,7 +42,44 @@ internal sealed class DashboardLoadUseCase : IDashboardLoadUseCase
     }
 
     /// <inheritdoc />
-    public async Task<PullRequestDashboardSnapshot> LoadAsync(
+    public async Task<DashboardLoadResult> LoadAsync(
+        FilterPattern filterPattern,
+        int mergedPullRequestsDays,
+        IProgress<PullRequestLoadProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var snapshot = await LoadSnapshotAsync(
+                filterPattern,
+                mergedPullRequestsDays,
+                progress,
+                cancellationToken).ConfigureAwait(false);
+            return new DashboardLoadResult.Success(snapshot);
+        }
+        catch (OperationCanceledException)
+        {
+            return new DashboardLoadResult.Cancelled();
+        }
+        catch (HttpRequestException ex)
+        {
+            return new DashboardLoadResult.Failure(ex.Message);
+        }
+        catch (JsonException ex)
+        {
+            return new DashboardLoadResult.Failure(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new DashboardLoadResult.Failure(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return new DashboardLoadResult.Failure(ex.Message);
+        }
+    }
+
+    private async Task<PullRequestDashboardSnapshot> LoadSnapshotAsync(
         FilterPattern filterPattern,
         int mergedPullRequestsDays,
         IProgress<PullRequestLoadProgress>? progress,

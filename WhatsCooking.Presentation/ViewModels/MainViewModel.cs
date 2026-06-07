@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Text.Json;
 using System.Windows.Input;
 
 using BBRepoList.Models;
@@ -499,31 +498,25 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
                 Status = value.Message;
                 _ = TelemetryDashboard.RefreshTelemetry();
             });
-            var snapshot = await _loadUseCase
+            var result = await _loadUseCase
                 .LoadAsync(filterPattern, MergedPullRequestsDays, progress, cancellationToken)
                 .ConfigureAwait(true);
-            ApplyDashboardSnapshot(snapshot);
-            Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
-        }
-        catch (OperationCanceledException)
-        {
-            Status = "Cancelled";
-        }
-        catch (HttpRequestException ex)
-        {
-            ShowLoadError(ex);
-        }
-        catch (JsonException ex)
-        {
-            ShowLoadError(ex);
-        }
-        catch (InvalidOperationException ex)
-        {
-            ShowLoadError(ex);
-        }
-        catch (ArgumentException ex)
-        {
-            ShowLoadError(ex);
+
+            switch (result)
+            {
+                case DashboardLoadResult.Success success:
+                    ApplyDashboardSnapshot(success.Snapshot);
+                    Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
+                    break;
+                case DashboardLoadResult.Cancelled:
+                    Status = "Cancelled";
+                    break;
+                case DashboardLoadResult.Failure failure:
+                    ShowLoadError(failure.UserMessage);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported dashboard load result: {result.GetType().Name}.");
+            }
         }
         finally
         {
@@ -586,10 +579,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _externalUrlLauncher.Open(url);
     }
 
-    private void ShowLoadError(Exception exception)
+    private void ShowLoadError(string message)
     {
-        Status = exception.Message;
-        _dialogService.ShowLoadError(exception.Message);
+        Status = message;
+        _dialogService.ShowLoadError(message);
     }
 
     private void RefreshViews()
