@@ -22,6 +22,7 @@ internal sealed partial class MainWindow : Window
     /// <param name="viewModel">Main dashboard view model.</param>
     public MainWindow(MainViewModel viewModel)
     {
+        _viewModel = viewModel;
         InitializeComponent();
         DataContext = viewModel;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -185,6 +186,8 @@ internal sealed partial class MainWindow : Window
 
     private void OnClosed(object? sender, EventArgs e)
     {
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        SourceInitialized -= OnSourceInitialized;
         SystemParameters.StaticPropertyChanged -= OnSystemParametersPropertyChanged;
         Closed -= OnClosed;
     }
@@ -234,4 +237,6 @@ internal sealed partial class MainWindow : Window
         int attributeSize);
 
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+    private readonly MainViewModel _viewModel;
 }
