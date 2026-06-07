@@ -1,4 +1,3 @@
-using BBRepoList.Configuration;
 using BBRepoList.Models;
 
 namespace WhatsCooking.ViewModels;
@@ -172,12 +171,16 @@ internal sealed class PullRequestRow : ObservableObject
     /// <param name="number">Row number in the current report table.</param>
     /// <param name="detail">Open pull request details.</param>
     /// <param name="asOf">Timestamp used to calculate relative durations.</param>
-    /// <param name="options">Bitbucket configuration options.</param>
-    public PullRequestRow(int number, PullRequestDetail detail, DateTimeOffset asOf, BitbucketOptions options)
+    /// <param name="options">Pull request presentation options.</param>
+    public PullRequestRow(
+        int number,
+        PullRequestDetail detail,
+        DateTimeOffset asOf,
+        PullRequestPresentationOptions options)
     {
         ArgumentNullException.ThrowIfNull(detail, nameof(detail));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
-        _workspace = new BitbucketWorkspace(GetWorkspace(options));
+        _workspace = options.Workspace;
         Number = number;
         RepositoryName = detail.RepositoryName;
         RepositorySlug = detail.RepositorySlug;
@@ -185,14 +188,14 @@ internal sealed class PullRequestRow : ObservableObject
         Title = detail.Title;
         Author = detail.AuthorDisplayName ?? "-";
         DescriptionLength = detail.DescriptionText?.Length ?? 0;
-        IsDescriptionShort = detail.HasShortOrMissingDescription(options.PullRequestDetails.MinimalDescriptionTextLength);
+        IsDescriptionShort = detail.HasShortOrMissingDescription(options.MinimalDescriptionLength);
         var openFor = detail.GetOpenDuration(asOf);
         var timeToFirstResponse = detail.TimeToFirstResponse;
         var activityAge = detail.GetLastActivityAge(asOf);
         OpenFor = FormatDuration(openFor);
         OpenForMinutes = openFor.TotalMinutes;
         IsTtfrAlert = timeToFirstResponse is null
-                      && openFor > TimeSpan.FromHours(options.PullRequestDetails.TtfrThresholdHours);
+                      && openFor > options.TtfrThreshold;
         TimeToFirstResponse = timeToFirstResponse is null && IsTtfrAlert ? "ALERT" : FormatDuration(timeToFirstResponse);
         TimeToFirstResponseMinutes = FormatSortMinutes(timeToFirstResponse);
         ActivityAgeOrMerged = FormatDuration(activityAge);
@@ -216,12 +219,16 @@ internal sealed class PullRequestRow : ObservableObject
     /// <param name="number">Row number in the current report table.</param>
     /// <param name="pullRequest">Merged pull request details.</param>
     /// <param name="asOf">Timestamp used to calculate relative durations.</param>
-    /// <param name="options">Bitbucket configuration options.</param>
-    public PullRequestRow(int number, MergedPullRequest pullRequest, DateTimeOffset asOf, BitbucketOptions options)
+    /// <param name="options">Pull request presentation options.</param>
+    public PullRequestRow(
+        int number,
+        MergedPullRequest pullRequest,
+        DateTimeOffset asOf,
+        PullRequestPresentationOptions options)
     {
         ArgumentNullException.ThrowIfNull(pullRequest, nameof(pullRequest));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
-        _workspace = new BitbucketWorkspace(GetWorkspace(options));
+        _workspace = options.Workspace;
         Number = number;
         RepositoryName = pullRequest.RepositoryName;
         RepositorySlug = pullRequest.RepositorySlug;
@@ -229,7 +236,7 @@ internal sealed class PullRequestRow : ObservableObject
         Title = pullRequest.Title;
         Author = pullRequest.AuthorDisplayName ?? "-";
         DescriptionLength = pullRequest.DescriptionText?.Length ?? 0;
-        IsDescriptionShort = pullRequest.HasShortOrMissingDescription(options.PullRequestDetails.MinimalDescriptionTextLength);
+        IsDescriptionShort = pullRequest.HasShortOrMissingDescription(options.MinimalDescriptionLength);
         var openFor = pullRequest.GetOpenDuration();
         var timeToFirstResponse = pullRequest.TimeToFirstResponse;
         var mergedAge = asOf - pullRequest.MergedOn;
@@ -313,11 +320,6 @@ internal sealed class PullRequestRow : ObservableObject
         }
         return "-";
     }
-
-    private static string GetWorkspace(BitbucketOptions options) =>
-        string.IsNullOrWhiteSpace(options.Workspace) && options.DemoMode
-            ? "demo-workspace"
-            : options.Workspace;
 
     private string BuildSearchText() =>
         string.Join(" ", Number, RepositoryName, PullRequestId, Title, Author, DescriptionLength, OpenFor, TimeToFirstResponse, ActivityAgeOrMerged, CommentsCount, RequestChanges, Approvals, CurrentUserActivity);

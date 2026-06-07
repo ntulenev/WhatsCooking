@@ -8,20 +8,27 @@ using Microsoft.Extensions.Options;
 namespace WhatsCooking.ViewModels;
 
 /// <summary>
-/// Creates pull request rows for dashboard grids.
+/// Maps pull request models to dashboard rows.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Factory is created by dependency injection.")]
-internal sealed class PullRequestRowFactory : IPullRequestRowFactory
+internal sealed class PullRequestRowMapper
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="PullRequestRowFactory"/> class.
+    /// Initializes a new instance of the <see cref="PullRequestRowMapper"/> class.
     /// </summary>
     /// <param name="options">Bitbucket configuration options.</param>
-    public PullRequestRowFactory(IOptions<BitbucketOptions> options)
+    public PullRequestRowMapper(IOptions<BitbucketOptions> options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        _options = options.Value;
+        var value = options.Value;
+        var workspace = string.IsNullOrWhiteSpace(value.Workspace) && value.DemoMode
+            ? "demo-workspace"
+            : value.Workspace;
+        _options = new PullRequestPresentationOptions(
+            new BitbucketWorkspace(workspace),
+            value.PullRequestDetails.MinimalDescriptionTextLength,
+            TimeSpan.FromHours(value.PullRequestDetails.TtfrThresholdHours));
     }
 
     /// <summary>
@@ -31,7 +38,7 @@ internal sealed class PullRequestRowFactory : IPullRequestRowFactory
     /// <param name="detail">Open pull request detail.</param>
     /// <param name="asOf">Timestamp used to calculate relative durations.</param>
     /// <returns>Pull request row.</returns>
-    public PullRequestRow CreateOpenRow(int number, PullRequestDetail detail, DateTimeOffset asOf) =>
+    public PullRequestRow MapOpen(int number, PullRequestDetail detail, DateTimeOffset asOf) =>
         new(number, detail, asOf, _options);
 
     /// <summary>
@@ -41,8 +48,8 @@ internal sealed class PullRequestRowFactory : IPullRequestRowFactory
     /// <param name="pullRequest">Merged pull request.</param>
     /// <param name="asOf">Timestamp used to calculate relative durations.</param>
     /// <returns>Pull request row.</returns>
-    public PullRequestRow CreateMergedRow(int number, MergedPullRequest pullRequest, DateTimeOffset asOf) =>
+    public PullRequestRow MapMerged(int number, MergedPullRequest pullRequest, DateTimeOffset asOf) =>
         new(number, pullRequest, asOf, _options);
 
-    private readonly BitbucketOptions _options;
+    private readonly PullRequestPresentationOptions _options;
 }

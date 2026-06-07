@@ -38,8 +38,8 @@ public partial class App : Application
                 _ = services.AddTransient<IDebouncer, TimerDebouncer>();
                 _ = services.AddTransient<IPullRequestDashboardLoader, PullRequestDashboardLoader>();
                 _ = services.AddTransient<IDashboardLoadUseCase, DashboardLoadUseCase>();
-                _ = services.AddSingleton<ITelemetryDashboard, TelemetryViewModel>();
-                _ = services.AddSingleton<IPullRequestRowFactory, PullRequestRowFactory>();
+                _ = services.AddSingleton<TelemetryViewModel>();
+                _ = services.AddSingleton<PullRequestRowMapper>();
                 _ = services.AddSingleton<MainViewModel>();
                 _ = services.AddSingleton<MainWindow>();
             })

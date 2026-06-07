@@ -11,7 +11,7 @@ namespace WhatsCooking.ViewModels;
 /// View model for Bitbucket API telemetry table state.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "View model is created by dependency injection.")]
-internal sealed class TelemetryViewModel : ObservableObject, ITelemetryDashboard, IDisposable
+internal sealed class TelemetryViewModel : ObservableObject, IDisposable
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TelemetryViewModel"/> class.

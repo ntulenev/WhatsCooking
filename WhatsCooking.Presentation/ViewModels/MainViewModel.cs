@@ -21,15 +21,15 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// </summary>
     /// <param name="loadUseCase">Dashboard loading use case.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
-    /// <param name="rowFactory">Pull request row factory.</param>
+    /// <param name="rowMapper">Pull request row mapper.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
     /// <param name="filterDebouncer">Debouncer used for table filters.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
         IDashboardLoadUseCase loadUseCase,
-        ITelemetryDashboard telemetryDashboard,
-        IPullRequestRowFactory rowFactory,
+        TelemetryViewModel telemetryDashboard,
+        PullRequestRowMapper rowMapper,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
         IDebouncer filterDebouncer,
@@ -37,13 +37,13 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     {
         ArgumentNullException.ThrowIfNull(loadUseCase, nameof(loadUseCase));
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
-        ArgumentNullException.ThrowIfNull(rowFactory, nameof(rowFactory));
+        ArgumentNullException.ThrowIfNull(rowMapper, nameof(rowMapper));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
         ArgumentNullException.ThrowIfNull(filterDebouncer, nameof(filterDebouncer));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loadUseCase = loadUseCase;
-        _rowFactory = rowFactory;
+        _rowMapper = rowMapper;
         _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
         _filterDebouncer = filterDebouncer;
@@ -443,7 +443,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Telemetry dashboard view model.
     /// </summary>
-    public ITelemetryDashboard TelemetryDashboard { get; }
+    public TelemetryViewModel TelemetryDashboard { get; }
 
     /// <summary>
     /// Command that loads pull request data from Bitbucket.
@@ -537,10 +537,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
         _openPullRequests.Clear();
         _openPullRequests.AddRange(snapshot.OpenPullRequests.Select(
-            (pullRequest, index) => _rowFactory.CreateOpenRow(index + 1, pullRequest, snapshot.AsOf)));
+            (pullRequest, index) => _rowMapper.MapOpen(index + 1, pullRequest, snapshot.AsOf)));
         _mergedPullRequests.Clear();
         _mergedPullRequests.AddRange(snapshot.MergedPullRequests.Select(
-            (pullRequest, index) => _rowFactory.CreateMergedRow(index + 1, pullRequest, snapshot.AsOf)));
+            (pullRequest, index) => _rowMapper.MapMerged(index + 1, pullRequest, snapshot.AsOf)));
         RefreshViews();
 
         RepositoriesCount = snapshot.Repositories.Count;
@@ -715,7 +715,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly IDashboardLoadUseCase _loadUseCase;
 
-    private readonly IPullRequestRowFactory _rowFactory;
+    private readonly PullRequestRowMapper _rowMapper;
 
     private readonly IDialogService _dialogService;
 
