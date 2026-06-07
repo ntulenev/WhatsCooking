@@ -1,12 +1,8 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Net.Http;
 using System.Text.Json;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 using BBRepoList.Configuration;
 using BBRepoList.Models;
@@ -32,6 +28,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
     /// <param name="rowFactory">Pull request row factory.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
+    /// <param name="externalUrlLauncher">External URL launcher.</param>
     /// <param name="options">Bitbucket configuration options.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
@@ -41,6 +38,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ITelemetryDashboard telemetryDashboard,
         IPullRequestRowFactory rowFactory,
         IDialogService dialogService,
+        IExternalUrlLauncher externalUrlLauncher,
         IOptions<BitbucketOptions> options,
         IUserPreferencesService preferencesService)
     {
@@ -50,6 +48,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
         ArgumentNullException.ThrowIfNull(rowFactory, nameof(rowFactory));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
+        ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
         ArgumentNullException.ThrowIfNull(options, nameof(options));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loader = loader;
@@ -57,6 +56,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _demoTelemetryProvider = demoTelemetryProvider;
         _rowFactory = rowFactory;
         _dialogService = dialogService;
+        _externalUrlLauncher = externalUrlLauncher;
         TelemetryDashboard = telemetryDashboard;
         _options = options.Value;
         _preferencesService = preferencesService;
@@ -69,15 +69,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
         OpenPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
         MergedPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
-        OpenPullRequestsView = CollectionViewSource.GetDefaultView(OpenPullRequests);
-        MergedPullRequestsView = CollectionViewSource.GetDefaultView(MergedPullRequests);
-        _pullRequestFilterRefreshTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = _filterRefreshDelay
-        };
-        _pullRequestFilterRefreshTimer.Tick += OnPullRequestFilterRefreshTimerTick;
-        OpenPullRequestsView.Filter = FilterOpenPullRequestRow;
-        MergedPullRequestsView.Filter = FilterMergedPullRequestRow;
         LoadCommand = new AsyncRelayCommand(LoadAsync, CanLoad);
         LoadCommand.PropertyChanged += OnLoadCommandPropertyChanged;
         CancelCommand = new RelayCommand(LoadCommand.Cancel, () => LoadCommand.CanBeCanceled);
@@ -443,12 +434,12 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Loaded open pull request rows.
     /// </summary>
-    public BulkObservableCollection<PullRequestRow> OpenPullRequests { get; } = [];
+    public BulkObservableCollection<PullRequestRow> OpenPullRequestsView { get; } = [];
 
     /// <summary>
     /// Loaded recently merged pull request rows.
     /// </summary>
-    public BulkObservableCollection<PullRequestRow> MergedPullRequests { get; } = [];
+    public BulkObservableCollection<PullRequestRow> MergedPullRequestsView { get; } = [];
 
     /// <summary>
     /// Open pull request grid filters.
@@ -459,16 +450,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// Recently merged pull request grid filters.
     /// </summary>
     public PullRequestFilterState MergedPullRequestFilters { get; }
-
-    /// <summary>
-    /// Filterable view over open pull request rows.
-    /// </summary>
-    public ICollectionView OpenPullRequestsView { get; }
-
-    /// <summary>
-    /// Filterable view over recently merged pull request rows.
-    /// </summary>
-    public ICollectionView MergedPullRequestsView { get; }
 
     /// <summary>
     /// Telemetry dashboard view model.
@@ -589,10 +570,13 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        OpenPullRequests.ReplaceAll(snapshot.OpenPullRequests.Select(
+        _openPullRequests.Clear();
+        _openPullRequests.AddRange(snapshot.OpenPullRequests.Select(
             (pullRequest, index) => _rowFactory.CreateOpenRow(index + 1, pullRequest, snapshot.AsOf)));
-        MergedPullRequests.ReplaceAll(snapshot.MergedPullRequests.Select(
+        _mergedPullRequests.Clear();
+        _mergedPullRequests.AddRange(snapshot.MergedPullRequests.Select(
             (pullRequest, index) => _rowFactory.CreateMergedRow(index + 1, pullRequest, snapshot.AsOf)));
+        RefreshViews();
 
         RepositoriesCount = snapshot.Repositories.Count;
         OpenPullRequestsCount = snapshot.OpenPullRequests.Count;
@@ -626,7 +610,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private bool CanLoad() => !IsLoading && !HasErrors;
 
-    private bool HasLoadedPullRequests() => OpenPullRequests.Count > 0 || MergedPullRequests.Count > 0;
+    private bool HasLoadedPullRequests() => _openPullRequests.Count > 0 || _mergedPullRequests.Count > 0;
 
     private void OpenUrl(object? parameter)
     {
@@ -634,10 +618,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         {
             return;
         }
-        _ = Process.Start(new ProcessStartInfo(url.ToString())
-        {
-            UseShellExecute = true
-        });
+        _externalUrlLauncher.Open(url);
     }
 
     private bool FilterOpenPullRequestRow(object item) => FilterPullRequestRow(item, OpenPullRequestFilters);
@@ -674,21 +655,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void RefreshViews()
     {
-        OpenPullRequestsView.Refresh();
-        MergedPullRequestsView.Refresh();
+        OpenPullRequestsView.ReplaceAll(_openPullRequests.Where(FilterOpenPullRequestRow));
+        MergedPullRequestsView.ReplaceAll(_mergedPullRequests.Where(FilterMergedPullRequestRow));
     }
 
-    private void SchedulePullRequestFilterRefresh()
-    {
-        _pullRequestFilterRefreshTimer.Stop();
-        _pullRequestFilterRefreshTimer.Start();
-    }
-
-    private void OnPullRequestFilterRefreshTimerTick(object? sender, EventArgs e)
-    {
-        _pullRequestFilterRefreshTimer.Stop();
-        RefreshViews();
-    }
+    private void SchedulePullRequestFilterRefresh() => RefreshViews();
 
     private void ResetFilters()
     {
@@ -787,12 +758,9 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// </summary>
     public void Dispose()
     {
-        _pullRequestFilterRefreshTimer.Stop();
         LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
         LoadCommand.Dispose();
     }
-
-    private static readonly TimeSpan _filterRefreshDelay = TimeSpan.FromMilliseconds(150);
 
     private const double DEFAULT_UI_SCALE = 1.0;
 
@@ -812,13 +780,17 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly IDialogService _dialogService;
 
+    private readonly IExternalUrlLauncher _externalUrlLauncher;
+
     private readonly BitbucketOptions _options;
 
     private readonly IUserPreferencesService _preferencesService;
 
     private UserPreferences _preferences;
 
-    private readonly DispatcherTimer _pullRequestFilterRefreshTimer;
+    private readonly List<PullRequestRow> _openPullRequests = [];
+
+    private readonly List<PullRequestRow> _mergedPullRequests = [];
 
     private readonly Dictionary<string, string[]> _validationErrors = new(StringComparer.Ordinal);
 

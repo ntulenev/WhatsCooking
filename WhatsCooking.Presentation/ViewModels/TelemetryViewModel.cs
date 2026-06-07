@@ -1,8 +1,4 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Windows.Data;
-using System.Windows.Threading;
 
 using BBRepoList.Abstractions;
 using BBRepoList.Models;
@@ -24,13 +20,6 @@ internal sealed class TelemetryViewModel : ObservableObject, ITelemetryDashboard
         ArgumentNullException.ThrowIfNull(telemetryService);
 
         _telemetryService = telemetryService;
-        TelemetryView = CollectionViewSource.GetDefaultView(Telemetry);
-        TelemetryView.Filter = FilterTelemetryRow;
-        _filterRefreshTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = _filterRefreshDelay
-        };
-        _filterRefreshTimer.Tick += OnFilterRefreshTimerTick;
     }
 
     /// <summary>
@@ -74,12 +63,7 @@ internal sealed class TelemetryViewModel : ObservableObject, ITelemetryDashboard
     /// <summary>
     /// Loaded telemetry rows.
     /// </summary>
-    public ObservableCollection<TelemetryRow> Telemetry { get; } = [];
-
-    /// <summary>
-    /// Filterable view over telemetry rows.
-    /// </summary>
-    public ICollectionView TelemetryView { get; }
+    public BulkObservableCollection<TelemetryRow> TelemetryView { get; } = [];
 
     /// <summary>
     /// Reloads telemetry from the telemetry service.
@@ -103,12 +87,12 @@ internal sealed class TelemetryViewModel : ObservableObject, ITelemetryDashboard
         IsTelemetryEnabled = snapshot.IsEnabled;
         TelemetryRequestsCount = snapshot.TotalRequests;
         TelemetryEndpointsCount = snapshot.RequestStatistics.Count;
-        Telemetry.Clear();
+        _telemetryRows.Clear();
         for (var i = 0; i < snapshot.RequestStatistics.Count; i++)
         {
-            Telemetry.Add(new TelemetryRow(i + 1, snapshot.RequestStatistics[i], snapshot.TotalRequests));
+            _telemetryRows.Add(new TelemetryRow(i + 1, snapshot.RequestStatistics[i], snapshot.TotalRequests));
         }
-        TelemetryView.Refresh();
+        RefreshFilter();
     }
 
     /// <summary>
@@ -124,28 +108,17 @@ internal sealed class TelemetryViewModel : ObservableObject, ITelemetryDashboard
     /// </summary>
     public void Dispose()
     {
-        _filterRefreshTimer.Stop();
+        GC.SuppressFinalize(this);
     }
 
-    private bool FilterTelemetryRow(object item) => item is TelemetryRow row && Matches(row.SearchText, TelemetryFilter);
+    private void ScheduleFilterRefresh() => RefreshFilter();
 
-    private void ScheduleFilterRefresh()
-    {
-        _filterRefreshTimer.Stop();
-        _filterRefreshTimer.Start();
-    }
-
-    private void OnFilterRefreshTimerTick(object? sender, EventArgs e)
-    {
-        _filterRefreshTimer.Stop();
-        TelemetryView.Refresh();
-    }
+    private void RefreshFilter() =>
+        TelemetryView.ReplaceAll(_telemetryRows.Where(row => Matches(row.SearchText, TelemetryFilter)));
 
     private static bool Matches(string source, string filter) => string.IsNullOrWhiteSpace(filter) || source.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase);
 
-    private static readonly TimeSpan _filterRefreshDelay = TimeSpan.FromMilliseconds(150);
-
     private readonly IBitbucketTelemetryService _telemetryService;
 
-    private readonly DispatcherTimer _filterRefreshTimer;
+    private readonly List<TelemetryRow> _telemetryRows = [];
 }

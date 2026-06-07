@@ -32,6 +32,7 @@ public partial class App : Application
                 _ = services.AddApplicationServices(context.Configuration);
                 _ = services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
                 _ = services.AddSingleton<IDialogService, WpfDialogService>();
+                _ = services.AddSingleton<IExternalUrlLauncher, WpfExternalUrlLauncher>();
                 _ = services.AddSingleton<IDemoPullRequestDashboardProvider, DemoPullRequestDashboardProvider>();
                 _ = services.AddSingleton<IDemoTelemetryProvider, DemoTelemetryProvider>();
                 _ = services.AddTransient<IPullRequestDashboardLoader, PullRequestDashboardLoader>();

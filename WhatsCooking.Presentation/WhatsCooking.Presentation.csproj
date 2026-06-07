@@ -16,9 +16,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BBRepoList\Abstractions\BBRepoList.Abstractions.csproj" />
+    <ProjectReference Include="..\BBRepoList\Configuration\BBRepoList.Configuration.csproj" />
     <ProjectReference Include="..\BBRepoList\Models\BBRepoList.Models.csproj" />
   </ItemGroup>
 

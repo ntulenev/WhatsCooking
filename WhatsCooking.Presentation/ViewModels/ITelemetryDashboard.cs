@@ -1,6 +1,3 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-
 using BBRepoList.Models;
 
 namespace WhatsCooking.ViewModels;
@@ -33,12 +30,7 @@ internal interface ITelemetryDashboard
     /// <summary>
     /// Loaded telemetry rows.
     /// </summary>
-    ObservableCollection<TelemetryRow> Telemetry { get; }
-
-    /// <summary>
-    /// Filterable view over telemetry rows.
-    /// </summary>
-    ICollectionView TelemetryView { get; }
+    BulkObservableCollection<TelemetryRow> TelemetryView { get; }
 
     /// <summary>
     /// Reloads telemetry from the telemetry service.
