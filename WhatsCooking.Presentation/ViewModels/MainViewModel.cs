@@ -59,6 +59,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         MergedPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
         LoadCommand = new AsyncRelayCommand(LoadAsync, CanLoad);
         LoadCommand.PropertyChanged += OnLoadCommandPropertyChanged;
+        LoadCommand.ExecutionFailed += OnLoadCommandExecutionFailed;
         CancelCommand = new RelayCommand(LoadCommand.Cancel, () => LoadCommand.CanBeCanceled);
         OpenUrlCommand = new RelayCommand(OpenUrl);
         ResetFiltersCommand = new RelayCommand(ResetFilters);
@@ -461,12 +462,16 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         }
     }
 
+    private void OnLoadCommandExecutionFailed(object? sender, AsyncCommandFailedEventArgs e) =>
+        ShowLoadError(e.Exception.Message);
+
     /// <summary>
     /// Releases resources held by the view model.
     /// </summary>
     public void Dispose()
     {
         LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
+        LoadCommand.ExecutionFailed -= OnLoadCommandExecutionFailed;
         LoadCommand.Dispose();
         _filterDebouncer.Dispose();
     }

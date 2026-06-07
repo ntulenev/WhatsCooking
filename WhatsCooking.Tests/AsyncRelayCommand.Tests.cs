@@ -49,4 +49,19 @@ public sealed class AsyncRelayCommandTests
 
         Assert.False(command.IsRunning);
     }
+
+    [Fact]
+    public async Task ExecutePublishesUnexpectedException()
+    {
+        using var command = new AsyncRelayCommand(_ => throw new InvalidOperationException("Unexpected failure"));
+        var failure = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        command.ExecutionFailed += (_, args) => failure.SetResult(args.Exception);
+
+        command.Execute(null);
+
+        var exception = await failure.Task;
+        Assert.IsType<InvalidOperationException>(exception);
+        Assert.Equal("Unexpected failure", exception.Message);
+        Assert.False(command.IsRunning);
+    }
 }

@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
@@ -14,6 +15,11 @@ internal sealed class AsyncRelayCommand : ICommand, INotifyPropertyChanged, IDis
 
     /// <inheritdoc />
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>
+    /// Occurs when execution through <see cref="ICommand.Execute"/> fails.
+    /// </summary>
+    public event EventHandler<AsyncCommandFailedEventArgs>? ExecutionFailed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AsyncRelayCommand"/> class.
@@ -73,9 +79,17 @@ internal sealed class AsyncRelayCommand : ICommand, INotifyPropertyChanged, IDis
     public bool CanExecute(object? parameter) => !IsRunning && (_canExecute?.Invoke() ?? true);
 
     /// <inheritdoc />
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ICommand is an async-void boundary and reports failures through ExecutionFailed.")]
     public async void Execute(object? parameter)
     {
-        await ExecuteAsync().ConfigureAwait(true);
+        try
+        {
+            await ExecuteAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            ExecutionFailed?.Invoke(this, new AsyncCommandFailedEventArgs(ex));
+        }
     }
 
     /// <summary>
