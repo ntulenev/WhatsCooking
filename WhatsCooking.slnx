@@ -10,6 +10,7 @@
   <Project Path="BBRepoList/Telemetry/BBRepoList.Telemetry.csproj" />
   <Project Path="BBRepoList/Transport/BBRepoList.Transport.csproj" />
   <Project Path="WhatsCooking.Infrastructure/WhatsCooking.Infrastructure.csproj" />
+  <Project Path="WhatsCooking.Infrastructure.Tests/WhatsCooking.Infrastructure.Tests.csproj" />
   <Project Path="WhatsCooking.Presentation/WhatsCooking.Presentation.csproj" />
   <Project Path="WhatsCooking/WhatsCooking.csproj" />
   <Project Path="WhatsCooking.Tests/WhatsCooking.Tests.csproj" />

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using WhatsCooking.Services;
 
-namespace WhatsCooking.Tests;
+namespace WhatsCooking.Infrastructure.Tests;
 
 public sealed class UserPreferencesServiceTests
 {
@@ -45,7 +45,7 @@ public sealed class UserPreferencesServiceTests
         // Arrange
         var preferencesPath = Path.Combine(
             Path.GetTempPath(),
-            "WhatsCooking.Tests",
+            "WhatsCooking.Infrastructure.Tests",
             Guid.NewGuid().ToString("N"),
             "preferences.json");
         using var service = new UserPreferencesService(
@@ -100,37 +100,31 @@ public sealed class UserPreferencesServiceTests
     public void DisposeFlushesPendingPreferencesAtomically()
     {
         // Arrange
-        var testDirectory = Path.Combine(Path.GetTempPath(), "WhatsCooking.Tests", Guid.NewGuid().ToString("N"));
-        var preferencesPath = Path.Combine(testDirectory, "preferences.json");
-        try
+        using var directory = new TemporaryDirectory();
+        var preferencesPath = Path.Combine(directory.Path, "preferences.json");
+        using (var service = new UserPreferencesService(
+            NullLogger<UserPreferencesService>.Instance,
+            preferencesPath))
         {
-            using (var service = new UserPreferencesService(NullLogger<UserPreferencesService>.Instance, preferencesPath))
+            service.Save(new UserPreferences
             {
-                service.Save(new UserPreferences
-                {
-                    IsLightTheme = true,
-                    SearchPhrase = "platform",
-                    UiScale = 1.2
-                });
-            }
-
-            // Act
-            using var reader = new UserPreferencesService(NullLogger<UserPreferencesService>.Instance, preferencesPath);
-            var preferences = reader.Load();
-
-            // Assert
-            preferences.IsLightTheme.Should().BeTrue();
-            preferences.SearchPhrase.Should().Be("platform");
-            preferences.UiScale.Should().Be(1.2);
-            File.Exists(preferencesPath + ".tmp").Should().BeFalse();
+                IsLightTheme = true,
+                SearchPhrase = "platform",
+                UiScale = 1.2
+            });
         }
-        finally
-        {
-            if (Directory.Exists(testDirectory))
-            {
-                Directory.Delete(testDirectory, true);
-            }
-        }
+
+        // Act
+        using var reader = new UserPreferencesService(
+            NullLogger<UserPreferencesService>.Instance,
+            preferencesPath);
+        var preferences = reader.Load();
+
+        // Assert
+        preferences.IsLightTheme.Should().BeTrue();
+        preferences.SearchPhrase.Should().Be("platform");
+        preferences.UiScale.Should().Be(1.2);
+        File.Exists(preferencesPath + ".tmp").Should().BeFalse();
     }
 
     private sealed class TemporaryDirectory : IDisposable
@@ -139,7 +133,7 @@ public sealed class UserPreferencesServiceTests
         {
             Path = System.IO.Path.Combine(
                 System.IO.Path.GetTempPath(),
-                "WhatsCooking.Tests",
+                "WhatsCooking.Infrastructure.Tests",
                 Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(Path);
         }
