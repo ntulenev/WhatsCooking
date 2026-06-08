@@ -105,7 +105,7 @@ public sealed class PullRequestDashboardLoaderTests
         var repoService = new Mock<IRepoService>(MockBehavior.Strict);
         repoService.Setup(instance => instance.GetRepositoriesAsync(
                 filterPattern,
-                It.Is<IProgress<RepoLoadProgress>?>(progress => progress != null),
+                It.IsAny<IProgress<RepoLoadProgress>?>(),
                 cts.Token))
             .Callback(() => repositoryCalls++)
             .ReturnsAsync(repositories);
@@ -115,7 +115,7 @@ public sealed class PullRequestDashboardLoaderTests
                     && ReferenceEquals(items[0], repositoryA)
                     && ReferenceEquals(items[1], repositoryB)),
                 currentUserId,
-                It.Is<IProgress<PullRequestRepositoryLoadProgress>?>(progress => progress != null),
+                It.IsAny<IProgress<PullRequestRepositoryLoadProgress>?>(),
                 cts.Token))
             .Callback(() => openCalls++)
             .ReturnsAsync(openPullRequests);
@@ -126,7 +126,7 @@ public sealed class PullRequestDashboardLoaderTests
                     && ReferenceEquals(items[1], repositoryB)),
                 now.AddDays(-14),
                 currentUserId,
-                It.Is<IProgress<PullRequestRepositoryLoadProgress>?>(progress => progress != null),
+                It.IsAny<IProgress<PullRequestRepositoryLoadProgress>?>(),
                 cts.Token))
             .Callback(() => mergedCalls++)
             .ReturnsAsync(mergedPullRequests);

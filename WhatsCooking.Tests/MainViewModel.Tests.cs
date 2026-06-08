@@ -183,7 +183,7 @@ public sealed class MainViewModelTests
         fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
                 new FilterPattern("pay", RepositorySearchMode.Contains),
                 7,
-                It.Is<IProgress<PullRequestLoadProgress>?>(progress => progress != null),
+                It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 It.Is<CancellationToken>(token => token.CanBeCanceled)))
             .Callback(() => loadCalls++)
             .ReturnsAsync(new DashboardLoadResult.Success(snapshot));
@@ -227,7 +227,7 @@ public sealed class MainViewModelTests
         fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
                 new FilterPattern(string.Empty, RepositorySearchMode.StartWith),
                 1,
-                It.Is<IProgress<PullRequestLoadProgress>?>(progress => progress != null),
+                It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 It.Is<CancellationToken>(token => token.CanBeCanceled)))
             .ReturnsAsync(new DashboardLoadResult.Failure("Could not load"));
         fixture.PreferencesService.Setup(instance => instance.Save(
@@ -257,7 +257,7 @@ public sealed class MainViewModelTests
         fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
                 new FilterPattern(string.Empty, RepositorySearchMode.StartWith),
                 1,
-                It.Is<IProgress<PullRequestLoadProgress>?>(progress => progress != null),
+                It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 It.Is<CancellationToken>(token => token.CanBeCanceled)))
             .ReturnsAsync(new DashboardLoadResult.Cancelled());
         fixture.PreferencesService.Setup(instance => instance.Save(

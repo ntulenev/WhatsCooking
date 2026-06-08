@@ -154,7 +154,7 @@ public sealed class DashboardLoadUseCaseTests
         loader.Setup(instance => instance.LoadAsync(
                 filterPattern,
                 30,
-                It.Is<IProgress<PullRequestLoadProgress>?>(progress => progress != null),
+                It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 cts.Token))
             .Callback(() => loaderCalls++)
             .ReturnsAsync(loadResult);

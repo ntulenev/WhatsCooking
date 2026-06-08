@@ -145,7 +145,7 @@ public sealed class TelemetryTests
         var scheduleCalls = 0;
         var debouncer = new Mock<IDebouncer>(MockBehavior.Strict);
         debouncer.Setup(instance => instance.Schedule(
-                It.Is<Action>(action => action != null),
+                It.IsAny<Action>(),
                 TimeSpan.FromMilliseconds(150)))
             .Callback<Action, TimeSpan>((action, _) =>
             {

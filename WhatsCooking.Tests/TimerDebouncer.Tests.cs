@@ -106,7 +106,7 @@ public sealed class TimerDebouncerTests
         timer.Setup(instance => instance.Dispose());
         var timeProvider = new Mock<TimeProvider>(MockBehavior.Strict);
         timeProvider.Setup(instance => instance.CreateTimer(
-                It.Is<TimerCallback>(value => value != null),
+                It.IsAny<TimerCallback>(),
                 null,
                 Timeout.InfiniteTimeSpan,
                 Timeout.InfiniteTimeSpan))
