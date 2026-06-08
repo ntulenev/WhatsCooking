@@ -8,6 +8,21 @@ namespace WhatsCooking.Tests;
 
 public sealed class BulkObservableCollectionTests
 {
+    [Fact(DisplayName = "ReplaceAll throws when items are null")]
+    [Trait("Category", "Unit")]
+    public void ReplaceAllWhenItemsAreNullThrowsArgumentNullException()
+    {
+        // Arrange
+        var collection = new BulkObservableCollection<int>();
+        IEnumerable<int> items = null!;
+
+        // Act
+        Action act = () => collection.ReplaceAll(items);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     [Fact(DisplayName = "ReplaceAll replaces items and publishes one reset notification")]
     [Trait("Category", "Unit")]
     public void ReplaceAllPublishesSingleResetNotification()

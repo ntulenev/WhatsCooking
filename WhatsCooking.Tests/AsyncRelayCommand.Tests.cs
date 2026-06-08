@@ -6,6 +6,54 @@ namespace WhatsCooking.Tests;
 
 public sealed class AsyncRelayCommandTests
 {
+    [Fact(DisplayName = "Constructor throws when execute delegate is null")]
+    [Trait("Category", "Unit")]
+    public void ConstructorWhenExecuteIsNullThrowsArgumentNullException()
+    {
+        // Arrange
+        Func<CancellationToken, Task> execute = null!;
+
+        // Act
+        Action act = () => _ = new AsyncRelayCommand(execute);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact(DisplayName = "CanExecute returns predicate result")]
+    [Trait("Category", "Unit")]
+    public void CanExecuteWhenPredicateExistsReturnsPredicateResult()
+    {
+        // Arrange
+        var canExecute = false;
+        using var command = new AsyncRelayCommand(_ => Task.CompletedTask, () => canExecute);
+
+        // Act
+        var denied = command.CanExecute(null);
+        canExecute = true;
+        var allowed = command.CanExecute(null);
+
+        // Assert
+        denied.Should().BeFalse();
+        allowed.Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "RaiseCanExecuteChanged publishes event")]
+    [Trait("Category", "Unit")]
+    public void RaiseCanExecuteChangedWhenCalledPublishesEvent()
+    {
+        // Arrange
+        using var command = new AsyncRelayCommand(_ => Task.CompletedTask);
+        var calls = 0;
+        command.CanExecuteChanged += (_, _) => calls++;
+
+        // Act
+        command.RaiseCanExecuteChanged();
+
+        // Assert
+        calls.Should().Be(1);
+    }
+
     [Fact(DisplayName = "ExecuteAsync disables concurrent execution")]
     [Trait("Category", "Unit")]
     public async Task ExecuteAsyncDisablesConcurrentExecution()

@@ -11,6 +11,50 @@ namespace WhatsCooking.Tests;
 
 public sealed class PullRequestRowMapperTests
 {
+    [Fact(DisplayName = "Constructor throws when options are null")]
+    [Trait("Category", "Unit")]
+    public void ConstructorWhenOptionsAreNullThrowsArgumentNullException()
+    {
+        // Arrange
+        IOptions<BitbucketOptions> options = null!;
+
+        // Act
+        Action act = () => _ = new PullRequestRowMapper(options);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact(DisplayName = "Constructor uses demo workspace when configured workspace is empty")]
+    [Trait("Category", "Unit")]
+    public void ConstructorWhenDemoWorkspaceIsEmptyUsesDemoWorkspace()
+    {
+        // Arrange
+        var mapper = new PullRequestRowMapper(Options.Create(new BitbucketOptions
+        {
+            BaseUrl = new Uri("https://api.bitbucket.org/2.0/"),
+            DemoMode = true,
+            Workspace = string.Empty
+        }));
+        var asOf = new DateTimeOffset(2026, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var detail = new PullRequestDetail(
+            new Repository("Demo", slug: new RepositorySlug("demo")),
+            new PullRequestId(1),
+            "Demo PR",
+            asOf,
+            null,
+            null,
+            null,
+            null,
+            false);
+
+        // Act
+        var row = mapper.MapOpen(1, detail, asOf);
+
+        // Assert
+        row.RepositoryUrl.Should().Be("https://bitbucket.org/demo-workspace/demo");
+    }
+
     [Fact(DisplayName = "MapOpen uses presentation configuration")]
     [Trait("Category", "Unit")]
     public void MapOpenUsesOnlyPresentationConfiguration()
@@ -86,5 +130,37 @@ public sealed class PullRequestRowMapperTests
         // Assert
         matchingResult.Should().BeTrue();
         nonMatchingResult.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "MapMerged creates merged pull request row")]
+    [Trait("Category", "Unit")]
+    public void MapMergedWhenPullRequestIsValidCreatesMergedRow()
+    {
+        // Arrange
+        var mapper = new PullRequestRowMapper(Options.Create(new BitbucketOptions
+        {
+            BaseUrl = new Uri("https://api.bitbucket.org/2.0/"),
+            Workspace = "platform"
+        }));
+        var asOf = new DateTimeOffset(2026, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var pullRequest = new MergedPullRequest(
+            new Repository("Payments", slug: new RepositorySlug("payments")),
+            new PullRequestId(42),
+            "Merged title",
+            asOf.AddDays(-2),
+            null,
+            "Nikita",
+            null,
+            null,
+            false,
+            asOf.AddDays(-1));
+
+        // Act
+        var row = mapper.MapMerged(4, pullRequest, asOf);
+
+        // Assert
+        row.Number.Should().Be(4);
+        row.Title.Should().Be("Merged title");
+        row.ActivityAgeOrMerged.Should().Be("1d 0h 0m");
     }
 }

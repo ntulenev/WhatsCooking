@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace WhatsCooking.ViewModels;
 
 /// <summary>
@@ -131,9 +133,12 @@ internal sealed class PullRequestFilterState : ObservableObject
         CurrentUserActivity = string.Empty;
     }
 
-    private bool SetFilterProperty(ref string field, string value)
+    private bool SetFilterProperty(
+        ref string field,
+        string value,
+        [CallerMemberName] string? propertyName = null)
     {
-        if (!SetProperty(ref field, value))
+        if (!SetProperty(ref field, value, propertyName))
         {
             return false;
         }
