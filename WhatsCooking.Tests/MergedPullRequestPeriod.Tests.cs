@@ -1,24 +1,28 @@
-using WhatsCooking.ViewModels;
+using FluentAssertions;
 
-using Xunit;
+using WhatsCooking.ViewModels;
 
 namespace WhatsCooking.Tests;
 
 public sealed class MergedPullRequestPeriodTests
 {
-    [Theory]
+    [Theory(DisplayName = "TryParse accepts supported whole numbers")]
+    [Trait("Category", "Unit")]
     [InlineData("1", 1)]
     [InlineData("365", 365)]
     [InlineData("30", 30)]
     public void TryParseAcceptsSupportedWholeNumbers(string input, int expected)
     {
+        // Act
         var parsed = MergedPullRequestPeriod.TryParse(input, out var actual);
 
-        Assert.True(parsed);
-        Assert.Equal(expected, actual);
+        // Assert
+        parsed.Should().BeTrue();
+        actual.Should().Be(expected);
     }
 
-    [Theory]
+    [Theory(DisplayName = "TryParse rejects unsupported values")]
+    [Trait("Category", "Unit")]
     [InlineData("")]
     [InlineData("0")]
     [InlineData("366")]
@@ -27,6 +31,10 @@ public sealed class MergedPullRequestPeriodTests
     [InlineData("text")]
     public void TryParseRejectsUnsupportedValues(string input)
     {
-        Assert.False(MergedPullRequestPeriod.TryParse(input, out _));
+        // Act
+        var parsed = MergedPullRequestPeriod.TryParse(input, out _);
+
+        // Assert
+        parsed.Should().BeFalse();
     }
 }

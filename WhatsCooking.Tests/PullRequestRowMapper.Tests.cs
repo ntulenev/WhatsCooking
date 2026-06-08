@@ -1,19 +1,21 @@
 using BBRepoList.Configuration;
 using BBRepoList.Models;
 
+using FluentAssertions;
+
 using Microsoft.Extensions.Options;
 
 using WhatsCooking.ViewModels;
-
-using Xunit;
 
 namespace WhatsCooking.Tests;
 
 public sealed class PullRequestRowMapperTests
 {
-    [Fact]
+    [Fact(DisplayName = "MapOpen uses presentation configuration")]
+    [Trait("Category", "Unit")]
     public void MapOpenUsesOnlyPresentationConfiguration()
     {
+        // Arrange
         var mapper = new PullRequestRowMapper(Options.Create(new BitbucketOptions
         {
             BaseUrl = new Uri("https://api.bitbucket.org/2.0"),
@@ -37,16 +39,20 @@ public sealed class PullRequestRowMapperTests
             false,
             "short");
 
+        // Act
         var row = mapper.MapOpen(1, pullRequest, asOf);
 
-        Assert.True(row.IsDescriptionShort);
-        Assert.True(row.IsTtfrAlert);
-        Assert.Equal("https://bitbucket.org/platform/payments/pull-requests/42", row.PullRequestUrl.ToString());
+        // Assert
+        row.IsDescriptionShort.Should().BeTrue();
+        row.IsTtfrAlert.Should().BeTrue();
+        row.PullRequestUrl.Should().Be("https://bitbucket.org/platform/payments/pull-requests/42");
     }
 
-    [Fact]
+    [Fact(DisplayName = "Pull request row filter requires global and column matches")]
+    [Trait("Category", "Unit")]
     public void FilterRequiresGlobalAndColumnMatches()
     {
+        // Arrange
         var options = new PullRequestPresentationOptions(
             new BitbucketWorkspace("platform"),
             1,
@@ -72,9 +78,13 @@ public sealed class PullRequestRowMapperTests
             Repository = "pay"
         };
 
-        Assert.True(PullRequestRowFilter.Matches(row, "settlement", filters));
-
+        // Act
+        var matchingResult = PullRequestRowFilter.Matches(row, "settlement", filters);
         filters.Author = "someone else";
-        Assert.False(PullRequestRowFilter.Matches(row, "settlement", filters));
+        var nonMatchingResult = PullRequestRowFilter.Matches(row, "settlement", filters);
+
+        // Assert
+        matchingResult.Should().BeTrue();
+        nonMatchingResult.Should().BeFalse();
     }
 }
