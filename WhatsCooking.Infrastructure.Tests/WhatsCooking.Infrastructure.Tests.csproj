@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BBRepoList\Models\BBRepoList.Models.csproj" />
     <ProjectReference Include="..\WhatsCooking.Infrastructure\WhatsCooking.Infrastructure.csproj" />
     <ProjectReference Include="..\WhatsCooking.Presentation\WhatsCooking.Presentation.csproj" />
   </ItemGroup>

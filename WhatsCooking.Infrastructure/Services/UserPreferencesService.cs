@@ -23,7 +23,7 @@ internal sealed class UserPreferencesService : IUserPreferencesService, IDisposa
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "WhatsCooking",
                 "preferences.json"),
-            timeProvider)
+            timeProvider ?? throw new ArgumentNullException(nameof(timeProvider)))
     {
     }
 
@@ -118,7 +118,12 @@ internal sealed class UserPreferencesService : IUserPreferencesService, IDisposa
         var temporaryPath = _preferencesPath + ".tmp";
         try
         {
-            _ = Directory.CreateDirectory(Path.GetDirectoryName(_preferencesPath)!);
+            var directoryPath = Path.GetDirectoryName(_preferencesPath);
+            if (!string.IsNullOrEmpty(directoryPath))
+            {
+                _ = Directory.CreateDirectory(directoryPath);
+            }
+
             File.WriteAllText(temporaryPath, json);
             File.Move(temporaryPath, _preferencesPath, true);
         }
