@@ -1,4 +1,4 @@
-namespace WhatsCooking.Tests;
+namespace WhatsCooking.Presentation.Tests;
 
 internal sealed class FixedTimeProvider(DateTimeOffset localNow) : TimeProvider
 {

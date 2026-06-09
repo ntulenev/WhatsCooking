@@ -12,7 +12,7 @@ using Moq;
 
 using WhatsCooking.Services;
 
-namespace WhatsCooking.Tests;
+namespace WhatsCooking.Presentation.Tests;
 
 public sealed class DashboardLoadUseCaseTests
 {

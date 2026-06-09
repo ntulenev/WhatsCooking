@@ -2,7 +2,7 @@ using FluentAssertions;
 
 using WhatsCooking.Services;
 
-namespace WhatsCooking.Tests;
+namespace WhatsCooking.Presentation.Tests;
 
 public sealed class DemoProvidersTests
 {

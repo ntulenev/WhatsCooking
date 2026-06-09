@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 using WhatsCooking.ViewModels;
 
-namespace WhatsCooking.Tests;
+namespace WhatsCooking.Presentation.Tests;
 
 public sealed class PullRequestRowMapperTests
 {

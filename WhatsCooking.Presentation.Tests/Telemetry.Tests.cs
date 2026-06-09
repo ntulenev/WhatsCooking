@@ -10,7 +10,7 @@ using Moq;
 using WhatsCooking.Services;
 using WhatsCooking.ViewModels;
 
-namespace WhatsCooking.Tests;
+namespace WhatsCooking.Presentation.Tests;
 
 public sealed class TelemetryTests
 {
