@@ -14,4 +14,5 @@
   <Project Path="WhatsCooking.Presentation/WhatsCooking.Presentation.csproj" />
   <Project Path="WhatsCooking.Presentation.Tests/WhatsCooking.Presentation.Tests.csproj" />
   <Project Path="WhatsCooking/WhatsCooking.csproj" />
+  <Project Path="WhatsCooking.Tests/WhatsCooking.Tests.csproj" />
 </Solution>
