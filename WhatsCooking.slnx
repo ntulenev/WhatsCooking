@@ -15,6 +15,7 @@
   <Project Path="BBRepoList/Registrations/BBRepoList.Registrations.csproj" />
   <Project Path="BBRepoList/Registrations.Tests/BBRepoList.Registrations.Tests.csproj" />
   <Project Path="BBRepoList/Telemetry/BBRepoList.Telemetry.csproj" />
+  <Project Path="BBRepoList/Telemetry.Tests/BBRepoList.Telemetry.Tests.csproj" />
   <Project Path="BBRepoList/Transport/BBRepoList.Transport.csproj" />
   <Project Path="WhatsCooking.Infrastructure/WhatsCooking.Infrastructure.csproj" />
   <Project Path="WhatsCooking.Infrastructure.Tests/WhatsCooking.Infrastructure.Tests.csproj" />
