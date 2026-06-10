@@ -67,7 +67,7 @@
 
                 <TextBox Grid.Column="9"
                          AutomationProperties.Name="Global pull request search"
-                         Text="{Binding GlobalSearch, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding GlobalSearch, UpdateSourceTrigger=PropertyChanged, Delay=250}"
                          ToolTip="Global search across all columns" />
 
                 <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{DynamicResource PrimaryButtonStyle}" />

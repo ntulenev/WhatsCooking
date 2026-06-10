@@ -1,3 +1,5 @@
+using System.Collections.Specialized;
+
 using BBRepoList.Abstractions;
 using BBRepoList.Configuration;
 using BBRepoList.Models;
@@ -213,9 +215,38 @@ public sealed class MainViewModelTests
         viewModel.TelemetryDashboard.TelemetryRequestsCount.Should().Be(3);
 
         var reviewedRow = viewModel.OpenPullRequestsView.Single();
+        var openViewChanges = new List<NotifyCollectionChangedAction>();
+        var mergedViewChanges = new List<NotifyCollectionChangedAction>();
+        viewModel.OpenPullRequestsView.CollectionChanged += (_, args) => openViewChanges.Add(args.Action);
+        viewModel.MergedPullRequestsView.CollectionChanged += (_, args) => mergedViewChanges.Add(args.Action);
+
+        reviewedRow.IsReviewed = true;
+        viewModel.OpenPullRequestsView.Should().ContainSingle();
+        openViewChanges.Should().BeEmpty();
+        mergedViewChanges.Should().BeEmpty();
+
         viewModel.ToggleOpenReviewedFilterCommand.Execute(null);
+        viewModel.OpenPullRequestsView.Should().BeEmpty();
+        viewModel.OpenReviewedFilterButtonText.Should().Be("Show all");
+        viewModel.IsOpenReviewedFilterActive.Should().BeTrue();
+        openViewChanges.Should().ContainSingle()
+            .Which.Should().Be(NotifyCollectionChangedAction.Reset);
+
+        viewModel.ToggleOpenReviewedFilterCommand.Execute(null);
+        viewModel.OpenReviewedFilterButtonText.Should().Be("Hide reviewed");
+        viewModel.IsOpenReviewedFilterActive.Should().BeFalse();
+        openViewChanges.Clear();
+        reviewedRow.IsReviewed = false;
+        viewModel.OpenPullRequestsView.Should().ContainSingle();
+        openViewChanges.Should().BeEmpty();
+
+        viewModel.ToggleOpenReviewedFilterCommand.Execute(null);
+        openViewChanges.Clear();
         reviewedRow.IsReviewed = true;
         viewModel.OpenPullRequestsView.Should().BeEmpty();
+        openViewChanges.Should().ContainSingle()
+            .Which.Should().Be(NotifyCollectionChangedAction.Remove);
+        mergedViewChanges.Should().BeEmpty();
 
         loadCalls.Should().Be(1);
         saveCalls.Should().Be(1);

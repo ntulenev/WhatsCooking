@@ -51,18 +51,18 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _searchPhrase = _preferences.SearchPhrase ?? string.Empty;
         _mergedPullRequestsDays = 1;
         _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
-        OpenPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
-        MergedPullRequestFilters = new PullRequestFilterState(SchedulePullRequestFilterRefresh);
+        OpenPullRequestFilters = new PullRequestFilterState(RefreshOpenPullRequestsView);
+        MergedPullRequestFilters = new PullRequestFilterState(RefreshMergedPullRequestsView);
+        OpenPullRequestFilters.PropertyChanged += OnOpenPullRequestFilterPropertyChanged;
+        MergedPullRequestFilters.PropertyChanged += OnMergedPullRequestFilterPropertyChanged;
         LoadCommand = new AsyncRelayCommand(LoadAsync, CanLoad);
         LoadCommand.PropertyChanged += OnLoadCommandPropertyChanged;
         LoadCommand.ExecutionFailed += OnLoadCommandExecutionFailed;
         CancelCommand = new RelayCommand(LoadCommand.Cancel, () => LoadCommand.CanBeCanceled);
         OpenUrlCommand = new RelayCommand(OpenUrl);
         ResetFiltersCommand = new RelayCommand(ResetFilters);
-        ToggleOpenReviewedFilterCommand = new RelayCommand(
-            () => OpenPullRequestFilters.HideReviewed = !OpenPullRequestFilters.HideReviewed);
-        ToggleMergedReviewedFilterCommand = new RelayCommand(
-            () => MergedPullRequestFilters.HideReviewed = !MergedPullRequestFilters.HideReviewed);
+        ToggleOpenReviewedFilterCommand = new RelayCommand(ToggleOpenReviewedFilter);
+        ToggleMergedReviewedFilterCommand = new RelayCommand(ToggleMergedReviewedFilter);
         IncreaseUiScaleCommand = new RelayCommand(IncreaseUiScale);
         DecreaseUiScaleCommand = new RelayCommand(DecreaseUiScale);
         _ = TelemetryDashboard.RefreshTelemetry();
@@ -337,6 +337,28 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     public PullRequestFilterState MergedPullRequestFilters { get; }
 
     /// <summary>
+    /// Text displayed by the open pull request reviewed filter button.
+    /// </summary>
+    public string OpenReviewedFilterButtonText =>
+        OpenPullRequestFilters.HideReviewed ? "Show all" : "Hide reviewed";
+
+    /// <summary>
+    /// Text displayed by the merged pull request reviewed filter button.
+    /// </summary>
+    public string MergedReviewedFilterButtonText =>
+        MergedPullRequestFilters.HideReviewed ? "Show all" : "Hide reviewed";
+
+    /// <summary>
+    /// Gets a value indicating whether reviewed open pull requests are hidden.
+    /// </summary>
+    public bool IsOpenReviewedFilterActive => OpenPullRequestFilters.HideReviewed;
+
+    /// <summary>
+    /// Gets a value indicating whether reviewed merged pull requests are hidden.
+    /// </summary>
+    public bool IsMergedReviewedFilterActive => MergedPullRequestFilters.HideReviewed;
+
+    /// <summary>
     /// Telemetry dashboard view model.
     /// </summary>
     public TelemetryViewModel TelemetryDashboard { get; }
@@ -496,13 +518,43 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void RefreshViews()
     {
-        OpenPullRequestsView.ReplaceAll(
-            _openPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, OpenPullRequestFilters)));
-        MergedPullRequestsView.ReplaceAll(
-            _mergedPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, MergedPullRequestFilters)));
+        RefreshOpenPullRequestsView();
+        RefreshMergedPullRequestsView();
     }
 
+    private void RefreshOpenPullRequestsView() =>
+        OpenPullRequestsView.ReplaceAll(
+            _openPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, OpenPullRequestFilters)));
+
+    private void RefreshMergedPullRequestsView() =>
+        MergedPullRequestsView.ReplaceAll(
+            _mergedPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, MergedPullRequestFilters)));
+
     private void SchedulePullRequestFilterRefresh() => RefreshViews();
+
+    private void ToggleOpenReviewedFilter() =>
+        OpenPullRequestFilters.HideReviewed = !OpenPullRequestFilters.HideReviewed;
+
+    private void ToggleMergedReviewedFilter() =>
+        MergedPullRequestFilters.HideReviewed = !MergedPullRequestFilters.HideReviewed;
+
+    private void OnOpenPullRequestFilterPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PullRequestFilterState.HideReviewed))
+        {
+            OnPropertyChanged(nameof(OpenReviewedFilterButtonText));
+            OnPropertyChanged(nameof(IsOpenReviewedFilterActive));
+        }
+    }
+
+    private void OnMergedPullRequestFilterPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PullRequestFilterState.HideReviewed))
+        {
+            OnPropertyChanged(nameof(MergedReviewedFilterButtonText));
+            OnPropertyChanged(nameof(IsMergedReviewedFilterActive));
+        }
+    }
 
     private void SubscribeToPullRequestRows()
     {
@@ -522,9 +574,37 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void OnPullRequestRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(PullRequestRow.IsReviewed))
+        if (e.PropertyName != nameof(PullRequestRow.IsReviewed)
+            || sender is not PullRequestRow row)
         {
-            RefreshViews();
+            return;
+        }
+
+        if (_openPullRequests.Contains(row))
+        {
+            UpdateReviewedRowVisibility(row, OpenPullRequestFilters, OpenPullRequestsView);
+            return;
+        }
+
+        if (_mergedPullRequests.Contains(row))
+        {
+            UpdateReviewedRowVisibility(row, MergedPullRequestFilters, MergedPullRequestsView);
+        }
+    }
+
+    private static void UpdateReviewedRowVisibility(
+        PullRequestRow row,
+        PullRequestFilterState filters,
+        BulkObservableCollection<PullRequestRow> view)
+    {
+        if (!filters.HideReviewed)
+        {
+            return;
+        }
+
+        if (row.IsReviewed)
+        {
+            _ = view.Remove(row);
         }
     }
 
@@ -610,6 +690,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     public void Dispose()
     {
         UnsubscribeFromPullRequestRows();
+        OpenPullRequestFilters.PropertyChanged -= OnOpenPullRequestFilterPropertyChanged;
+        MergedPullRequestFilters.PropertyChanged -= OnMergedPullRequestFilterPropertyChanged;
         LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
         LoadCommand.ExecutionFailed -= OnLoadCommandExecutionFailed;
         LoadCommand.Dispose();
