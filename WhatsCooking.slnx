@@ -11,6 +11,7 @@
   <Project Path="BBRepoList/Logic/BBRepoList.Logic.csproj" />
   <Project Path="BBRepoList/Logic.Tests/BBRepoList.Logic.Tests.csproj" />
   <Project Path="BBRepoList/Models/BBRepoList.Models.csproj" />
+  <Project Path="BBRepoList/Models.Tests/BBRepoList.Models.Tests.csproj" />
   <Project Path="BBRepoList/Registrations/BBRepoList.Registrations.csproj" />
   <Project Path="BBRepoList/Telemetry/BBRepoList.Telemetry.csproj" />
   <Project Path="BBRepoList/Transport/BBRepoList.Transport.csproj" />
