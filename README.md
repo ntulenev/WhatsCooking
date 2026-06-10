@@ -18,7 +18,8 @@ This project is a logical continuation of my CLI/reporting project [ntulenev/BBR
 - Switch between the default dark theme and a light theme; the selected theme is remembered between launches.
 - Adjust UI scale with `Ctrl +` and `Ctrl -`; the selected scale is remembered between launches.
 - Open repositories and pull requests in Bitbucket from the table.
-- Mark reviewed pull requests so they stay visible but no longer draw attention.
+- Mark pull requests as reviewed to visually de-emphasize them.
+- Use `Hide reviewed` in the `Reviewed` column to remove reviewed pull requests from the current table, then use `Show all` to display them again.
 - Track Bitbucket API telemetry in a dedicated tab.
 - Run the UI with synthetic demo data when Bitbucket credentials are not available.
 - Show a loading overlay with repository-scanning progress while data is being loaded.
