@@ -1,0 +1,186 @@
+using BBRepoList.Models;
+
+using FluentAssertions;
+
+namespace BBRepoList.Caching.Tests;
+
+public sealed class FilePullRequestDetailsCacheTests
+{
+    [Fact(DisplayName = "Read entries returns empty collection when cache does not exist")]
+    [Trait("Category", "Unit")]
+    public async Task ReadEntriesAsyncWhenCacheDoesNotExistReturnsEmptyCollection()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+
+        // Act
+        var result = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            CancellationToken.None);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Save entries persists valid entries ordered by pull request id")]
+    [Trait("Category", "Unit")]
+    public async Task SaveEntriesAsyncWhenEntriesAreValidPersistsOrderedEntries()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        PullRequestDetailsCacheEntry[] entries =
+        [
+            CreateEntry(2, "second"),
+            CreateEntry(1, "first")
+        ];
+
+        // Act
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            entries,
+            CancellationToken.None);
+        var result = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            CancellationToken.None);
+
+        // Assert
+        result.Should().Equal(entries.Reverse());
+    }
+
+    [Fact(DisplayName = "Save entries excludes entries with invalid cached values")]
+    [Trait("Category", "Unit")]
+    public async Task SaveEntriesAsyncWhenEntriesContainInvalidValuesPersistsOnlyValidEntries()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        var validEntry = CreateEntry(1, "valid");
+        PullRequestDetailsCacheEntry[] entries =
+        [
+            validEntry,
+            CreateEntry(2, " "),
+            CreateEntry(3, "invalid-comments", commentsCount: -1)
+        ];
+
+        // Act
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            entries,
+            CancellationToken.None);
+        var result = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            CancellationToken.None);
+
+        // Assert
+        result.Should().ContainSingle().Which.Should().Be(validEntry);
+    }
+
+    [Fact(DisplayName = "Save empty entries deletes existing cache")]
+    [Trait("Category", "Unit")]
+    public async Task SaveEntriesAsyncWhenEntriesAreEmptyDeletesExistingCache()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            [CreateEntry(1, "fingerprint")],
+            CancellationToken.None);
+
+        // Act
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            [],
+            CancellationToken.None);
+        var result = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            CancellationToken.None);
+
+        // Assert
+        result.Should().BeEmpty();
+        Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Read entries returns empty collection when cache JSON is malformed")]
+    [Trait("Category", "Unit")]
+    public async Task ReadEntriesAsyncWhenCacheJsonIsMalformedReturnsEmptyCollection()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            [CreateEntry(1, "fingerprint")],
+            CancellationToken.None);
+        var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
+        await File.WriteAllTextAsync(cacheFilePath, "{", CancellationToken.None);
+
+        // Act
+        var result = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            CancellationToken.None);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    private static PullRequestDetailsCacheEntry CreateEntry(
+        int pullRequestId,
+        string fingerprint,
+        int commentsCount = 2) =>
+        new(
+            new PullRequestId(pullRequestId),
+            fingerprint,
+            new DateTimeOffset(2026, 6, 1, 10, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 6, 2, 11, 0, 0, TimeSpan.Zero),
+            true,
+            commentsCount);
+
+    private static readonly BitbucketWorkspace _workspace = new("workspace");
+    private static readonly RepositorySlug _repositorySlug = new("repository");
+    private static readonly BitbucketId _currentUserId = new("user");
+
+    private sealed class TemporaryDirectory : IDisposable
+    {
+        public TemporaryDirectory()
+        {
+            Path = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                "WhatsCooking.Tests",
+                Guid.NewGuid().ToString("N"));
+            _ = Directory.CreateDirectory(Path);
+        }
+
+        public string Path { get; }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
+        }
+    }
+}

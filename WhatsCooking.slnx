@@ -5,6 +5,7 @@
   <Project Path="BBRepoList/API.Tests/BBRepoList.API.Tests.csproj" />
   <Project Path="BBRepoList/API.Helpers/BBRepoList.API.Helpers.csproj" />
   <Project Path="BBRepoList/Caching/BBRepoList.Caching.csproj" />
+  <Project Path="BBRepoList/Caching.Tests/BBRepoList.Caching.Tests.csproj" />
   <Project Path="BBRepoList/Configuration/BBRepoList.Configuration.csproj" />
   <Project Path="BBRepoList/Logic/BBRepoList.Logic.csproj" />
   <Project Path="BBRepoList/Models/BBRepoList.Models.csproj" />
