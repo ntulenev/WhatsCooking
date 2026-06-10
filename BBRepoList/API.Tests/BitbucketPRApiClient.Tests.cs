@@ -78,10 +78,13 @@ public sealed class BitbucketPRApiClientTests
     public async Task PopulateOpenPullRequestCountWhenTransportFailsLeavesExistingCount()
     {
         // Arrange
+        var expectedUrl = new Uri(
+            "repositories/workspace/repo%20slug/pullrequests?state=OPEN&pagelen=1&fields=size",
+            UriKind.Relative);
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestPageSummaryDto>(
-                It.IsAny<Uri>(),
-                It.IsAny<CancellationToken>()))
+                It.Is<Uri>(url => url == expectedUrl),
+                It.Is<CancellationToken>(token => token == CancellationToken.None)))
             .ThrowsAsync(new HttpRequestException("Failure"));
         var client = CreateClient(transport: transport);
         var repository = CreateRepository();
@@ -102,9 +105,10 @@ public sealed class BitbucketPRApiClientTests
         var repository = CreateRepository();
         var currentUserId = new BitbucketId("current-user");
         var workspace = new BitbucketWorkspace("workspace");
+        var expectedUrl = CreateOpenPullRequestSnapshotsUrl();
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
-                It.IsAny<Uri>(),
+                It.Is<Uri>(url => url == expectedUrl),
                 CancellationToken.None))
             .ReturnsAsync(new PullRequestPageDto([], null));
         var cache = new Mock<IPullRequestDetailsCacheService>(MockBehavior.Strict);
@@ -176,9 +180,10 @@ public sealed class BitbucketPRApiClientTests
             {
                 [firstSnapshot.Id] = cachedEntry
             };
+        var expectedUrl = CreateOpenPullRequestSnapshotsUrl();
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
-                It.IsAny<Uri>(),
+                It.Is<Uri>(url => url == expectedUrl),
                 CancellationToken.None))
             .ReturnsAsync(new PullRequestPageDto([firstDto, secondDto], null));
         var mapper = new Mock<IPullRequestSnapshotMapper>(MockBehavior.Strict);
@@ -251,7 +256,7 @@ public sealed class BitbucketPRApiClientTests
         activityLoader.Verify(instance => instance.GetActivitiesAsync(
             repositorySlug,
             firstSnapshot.Id,
-            It.IsAny<CancellationToken>()), Times.Never);
+            It.Is<CancellationToken>(token => token == CancellationToken.None)), Times.Never);
         cache.VerifyAll();
     }
 
@@ -311,10 +316,10 @@ public sealed class BitbucketPRApiClientTests
         result[0].CommentsCount.Should().Be(4);
         transport.Verify(instance => instance.GetAsync<PullRequestPageDto>(
             nextUrl,
-            It.IsAny<CancellationToken>()), Times.Never);
+            It.Is<CancellationToken>(token => token == CancellationToken.None)), Times.Never);
         mapper.Verify(instance => instance.CreateSnapshot(
             It.Is<PullRequestDto>(dto => dto.Id != recentDto.Id),
-            It.IsAny<BitbucketId>()), Times.Never);
+            It.Is<BitbucketId>(id => id == currentUserId)), Times.Never);
     }
 
     [Fact(DisplayName = "Get open details suppresses HTTP request failures")]
@@ -323,18 +328,21 @@ public sealed class BitbucketPRApiClientTests
     {
         // Arrange
         var repository = CreateRepository();
+        var repositorySlug = repository.Slug!.Value;
         var currentUserId = new BitbucketId("current-user");
+        var workspace = new BitbucketWorkspace("workspace");
+        var expectedUrl = CreateOpenPullRequestSnapshotsUrl();
         var cache = new Mock<IPullRequestDetailsCacheService>();
         cache.Setup(instance => instance.ReadEntriesByPullRequestIdAsync(
-                It.IsAny<BitbucketWorkspace>(),
-                It.IsAny<RepositorySlug>(),
-                It.IsAny<BitbucketId>(),
-                It.IsAny<CancellationToken>()))
+                It.Is<BitbucketWorkspace>(value => value == workspace),
+                It.Is<RepositorySlug>(value => value == repositorySlug),
+                It.Is<BitbucketId>(value => value == currentUserId),
+                It.Is<CancellationToken>(token => token == CancellationToken.None)))
             .ReturnsAsync(new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>());
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
-                It.IsAny<Uri>(),
-                It.IsAny<CancellationToken>()))
+                It.Is<Uri>(url => url == expectedUrl),
+                It.Is<CancellationToken>(token => token == CancellationToken.None)))
             .ThrowsAsync(new HttpRequestException("Failure"));
         var client = CreateClient(transport: transport, cache: cache);
 
@@ -364,6 +372,11 @@ public sealed class BitbucketPRApiClientTests
 
     private static Repository CreateRepository() =>
         new("Repository", slug: new RepositorySlug("repo slug"));
+
+    private static Uri CreateOpenPullRequestSnapshotsUrl() =>
+        new(
+            "repositories/workspace/repo%20slug/pullrequests?state=OPEN&pagelen=25&fields=values.id%2Cvalues.title%2Cvalues.created_on%2Cvalues.updated_on%2Cvalues.state%2Cvalues.description%2Cvalues.summary.raw%2Cvalues.author.uuid%2Cvalues.author.display_name%2Cvalues.source.commit.hash%2Cvalues.comment_count%2Cvalues.task_count%2Cvalues.participants.user.uuid%2Cvalues.participants.state%2Cvalues.participants.approved%2Cnext",
+            UriKind.Relative);
 
     private static PullRequestDto CreatePullRequestDto(
         int id,

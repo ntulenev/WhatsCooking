@@ -33,18 +33,23 @@ public sealed class BitbucketPullRequestActivityLoaderTests
         var happenedOn = new DateTimeOffset(2026, 6, 1, 12, 0, 0, TimeSpan.Zero);
         var parser = new Mock<IBitbucketJsonParser>(MockBehavior.Strict);
         parser.Setup(instance => instance.AddActivityEntriesFromJson(
-                It.IsAny<JsonElement>(),
-                It.IsAny<bool>(),
+                It.Is<JsonElement>(element => element.GetString() == "first"),
+                It.Is<bool>(isComment => isComment),
                 It.IsAny<Action<BitbucketId, DateTimeOffset, bool>>()))
             .Callback<JsonElement, bool, Action<BitbucketId, DateTimeOffset, bool>>(
-                (element, isComment, onEntry) =>
-                {
-                    var marker = element.GetString();
-                    onEntry(
-                        actorId,
-                        marker == "last" ? happenedOn.AddHours(1) : happenedOn,
-                        isComment);
-                });
+                (element, isComment, onEntry) => onEntry(actorId, happenedOn, isComment));
+        parser.Setup(instance => instance.AddActivityEntriesFromJson(
+                It.Is<JsonElement>(element => element.GetString() == "duplicate"),
+                It.Is<bool>(isComment => !isComment),
+                It.IsAny<Action<BitbucketId, DateTimeOffset, bool>>()))
+            .Callback<JsonElement, bool, Action<BitbucketId, DateTimeOffset, bool>>(
+                (element, isComment, onEntry) => onEntry(actorId, happenedOn, isComment));
+        parser.Setup(instance => instance.AddActivityEntriesFromJson(
+                It.Is<JsonElement>(element => element.GetString() == "last"),
+                It.Is<bool>(isComment => !isComment),
+                It.IsAny<Action<BitbucketId, DateTimeOffset, bool>>()))
+            .Callback<JsonElement, bool, Action<BitbucketId, DateTimeOffset, bool>>(
+                (element, isComment, onEntry) => onEntry(actorId, happenedOn.AddHours(1), isComment));
         var loader = new BitbucketPullRequestActivityLoader(
             transport.Object,
             parser.Object,
@@ -70,10 +75,13 @@ public sealed class BitbucketPullRequestActivityLoaderTests
     public async Task GetActivitiesWhenPageIsNullReturnsEmptyList()
     {
         // Arrange
+        var expectedUrl = new Uri(
+            "repositories/workspace/repository/pullrequests/1/activity?pagelen=10&fields=values.actor.uuid%2Cvalues.user.uuid%2Cvalues.date%2Cvalues.created_on%2Cvalues.updated_on%2Cvalues.comment%2Cvalues.approval%2Cvalues.request_changes%2Cvalues.changes_requested%2Cvalues.update%2Cnext",
+            UriKind.Relative);
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestActivityPageDto>(
-                It.IsAny<Uri>(),
-                It.IsAny<CancellationToken>()))
+                It.Is<Uri>(url => url == expectedUrl),
+                It.Is<CancellationToken>(token => token == CancellationToken.None)))
             .ReturnsAsync((PullRequestActivityPageDto?)null);
         var loader = new BitbucketPullRequestActivityLoader(
             transport.Object,

@@ -55,8 +55,8 @@ public sealed class BitbucketAuthApiClientTests
         // Arrange
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<BitbucketUserDto>(
-                It.IsAny<Uri>(),
-                It.IsAny<CancellationToken>()))
+                It.Is<Uri>(url => url == new Uri("user", UriKind.Relative)),
+                It.Is<CancellationToken>(token => token == CancellationToken.None)))
             .ReturnsAsync((BitbucketUserDto?)null);
         var client = new BitbucketAuthApiClient(transport.Object);
 
