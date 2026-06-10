@@ -149,12 +149,13 @@ public sealed class DashboardLoadUseCaseTests
         var telemetry = new BitbucketTelemetrySnapshot(true, 2, [new BitbucketApiRequestStatistic("user", 2)]);
         var loaderCalls = 0;
         var telemetryCalls = 0;
+        var progress = new RecordingProgress<PullRequestLoadProgress>();
 
         var loader = new Mock<IPullRequestDashboardLoader>(MockBehavior.Strict);
         loader.Setup(instance => instance.LoadAsync(
                 filterPattern,
                 30,
-                It.IsAny<IProgress<PullRequestLoadProgress>?>(),
+                It.Is<IProgress<PullRequestLoadProgress>?>(value => ReferenceEquals(value, progress)),
                 cts.Token))
             .Callback(() => loaderCalls++)
             .ReturnsAsync(loadResult);
@@ -171,7 +172,7 @@ public sealed class DashboardLoadUseCaseTests
         var result = await useCase.LoadAsync(
             filterPattern,
             30,
-            new RecordingProgress<PullRequestLoadProgress>(),
+            progress,
             cts.Token);
 
         // Assert
