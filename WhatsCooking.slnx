@@ -7,6 +7,7 @@
   <Project Path="BBRepoList/Caching/BBRepoList.Caching.csproj" />
   <Project Path="BBRepoList/Caching.Tests/BBRepoList.Caching.Tests.csproj" />
   <Project Path="BBRepoList/Configuration/BBRepoList.Configuration.csproj" />
+  <Project Path="BBRepoList/Configuration.Tests/BBRepoList.Configuration.Tests.csproj" />
   <Project Path="BBRepoList/Logic/BBRepoList.Logic.csproj" />
   <Project Path="BBRepoList/Models/BBRepoList.Models.csproj" />
   <Project Path="BBRepoList/Registrations/BBRepoList.Registrations.csproj" />
