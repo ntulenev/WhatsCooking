@@ -12,6 +12,7 @@ public sealed class FilePullRequestDetailsCacheTests
     {
         // Arrange
         using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
         var cache = new FilePullRequestDetailsCache(directory.Path);
 
         // Act
@@ -19,7 +20,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeEmpty();
@@ -31,6 +32,7 @@ public sealed class FilePullRequestDetailsCacheTests
     {
         // Arrange
         using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
         var cache = new FilePullRequestDetailsCache(directory.Path);
         PullRequestDetailsCacheEntry[] entries =
         [
@@ -44,12 +46,12 @@ public sealed class FilePullRequestDetailsCacheTests
             _repositorySlug,
             _currentUserId,
             entries,
-            CancellationToken.None);
+            cancellation.Token);
         var result = await cache.ReadEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().Equal(entries.Reverse());
@@ -61,6 +63,7 @@ public sealed class FilePullRequestDetailsCacheTests
     {
         // Arrange
         using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
         var cache = new FilePullRequestDetailsCache(directory.Path);
         var validEntry = CreateEntry(1, "valid");
         PullRequestDetailsCacheEntry[] entries =
@@ -76,12 +79,12 @@ public sealed class FilePullRequestDetailsCacheTests
             _repositorySlug,
             _currentUserId,
             entries,
-            CancellationToken.None);
+            cancellation.Token);
         var result = await cache.ReadEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().ContainSingle().Which.Should().Be(validEntry);
@@ -93,13 +96,14 @@ public sealed class FilePullRequestDetailsCacheTests
     {
         // Arrange
         using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
         var cache = new FilePullRequestDetailsCache(directory.Path);
         await cache.SaveEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
             [CreateEntry(1, "fingerprint")],
-            CancellationToken.None);
+            cancellation.Token);
 
         // Act
         await cache.SaveEntriesAsync(
@@ -107,12 +111,12 @@ public sealed class FilePullRequestDetailsCacheTests
             _repositorySlug,
             _currentUserId,
             [],
-            CancellationToken.None);
+            cancellation.Token);
         var result = await cache.ReadEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeEmpty();
@@ -125,22 +129,23 @@ public sealed class FilePullRequestDetailsCacheTests
     {
         // Arrange
         using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
         var cache = new FilePullRequestDetailsCache(directory.Path);
         await cache.SaveEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
             [CreateEntry(1, "fingerprint")],
-            CancellationToken.None);
+            cancellation.Token);
         var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
-        await File.WriteAllTextAsync(cacheFilePath, "{", CancellationToken.None);
+        await File.WriteAllTextAsync(cacheFilePath, "{", cancellation.Token);
 
         // Act
         var result = await cache.ReadEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeEmpty();

@@ -30,13 +30,14 @@ public sealed class PullRequestDetailsCacheServiceTests
         // Arrange
         var firstEntry = CreateEntry(1, "first");
         var lastEntry = CreateEntry(1, "last");
+        using var cancellation = new CancellationTokenSource();
         var cache = new Mock<IPullRequestDetailsCache>();
         _ = cache
             .Setup(instance => instance.ReadEntriesAsync(
                 _workspace,
                 _repositorySlug,
                 _currentUserId,
-                CancellationToken.None))
+                cancellation.Token))
             .ReturnsAsync([firstEntry, lastEntry]);
         var service = new PullRequestDetailsCacheService(cache.Object);
 
@@ -45,7 +46,7 @@ public sealed class PullRequestDetailsCacheServiceTests
             _workspace,
             _repositorySlug,
             _currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().ContainSingle()
