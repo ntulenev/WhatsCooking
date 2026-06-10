@@ -94,7 +94,15 @@
                             <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
                                 <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenPullRequestFilters.CurrentUserActivity, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Reviewed" Width="86">
+                            <DataGridTemplateColumn Width="122" CanUserSort="False">
+                                <DataGridTemplateColumn.Header>
+                                    <StackPanel>
+                                        <TextBlock Text="Reviewed" />
+                                        <Button Style="{StaticResource ReviewedFilterButtonStyle}"
+                                                Command="{Binding Data.ToggleOpenReviewedFilterCommand, Source={StaticResource ViewModelProxy}}"
+                                                Tag="{Binding Data.OpenPullRequestFilters.HideReviewed, Source={StaticResource ViewModelProxy}}" />
+                                    </StackPanel>
+                                </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <CheckBox IsChecked="{Binding IsReviewed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -160,7 +168,15 @@
                             <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
                                 <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedCurrentUserActivityFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Reviewed" Width="86">
+                            <DataGridTemplateColumn Width="122" CanUserSort="False">
+                                <DataGridTemplateColumn.Header>
+                                    <StackPanel>
+                                        <TextBlock Text="Reviewed" />
+                                        <Button Style="{StaticResource ReviewedFilterButtonStyle}"
+                                                Command="{Binding Data.ToggleMergedReviewedFilterCommand, Source={StaticResource ViewModelProxy}}"
+                                                Tag="{Binding Data.MergedPullRequestFilters.HideReviewed, Source={StaticResource ViewModelProxy}}" />
+                                    </StackPanel>
+                                </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <CheckBox IsChecked="{Binding IsReviewed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" />

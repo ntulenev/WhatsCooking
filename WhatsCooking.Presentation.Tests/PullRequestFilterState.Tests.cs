@@ -58,7 +58,8 @@ public sealed class PullRequestFilterStateTests
             Comments = "4",
             RequestChanges = "RC",
             Approvals = "AP",
-            CurrentUserActivity = "Comment"
+            CurrentUserActivity = "Comment",
+            HideReviewed = true
         };
 
         // Act
@@ -78,7 +79,8 @@ public sealed class PullRequestFilterStateTests
             Comments = string.Empty,
             RequestChanges = string.Empty,
             Approvals = string.Empty,
-            CurrentUserActivity = string.Empty
+            CurrentUserActivity = string.Empty,
+            HideReviewed = false
         });
     }
 }

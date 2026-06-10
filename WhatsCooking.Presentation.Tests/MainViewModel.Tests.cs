@@ -211,6 +211,12 @@ public sealed class MainViewModelTests
             .Which.Title.Should().Be("Merged title");
         viewModel.Status.Should().Be("Loaded 1 open PRs and 1 merged PRs");
         viewModel.TelemetryDashboard.TelemetryRequestsCount.Should().Be(3);
+
+        var reviewedRow = viewModel.OpenPullRequestsView.Single();
+        viewModel.ToggleOpenReviewedFilterCommand.Execute(null);
+        reviewedRow.IsReviewed = true;
+        viewModel.OpenPullRequestsView.Should().BeEmpty();
+
         loadCalls.Should().Be(1);
         saveCalls.Should().Be(1);
         fixture.LoadUseCase.VerifyAll();
@@ -300,6 +306,8 @@ public sealed class MainViewModelTests
         using var viewModel = fixture.CreateViewModel();
         viewModel.GlobalSearch = "filter";
         viewModel.MergedAuthorFilter = "author";
+        viewModel.ToggleMergedReviewedFilterCommand.Execute(null);
+        viewModel.MergedPullRequestFilters.HideReviewed.Should().BeTrue();
         viewModel.TelemetryDashboard.TelemetryFilter = string.Empty;
 
         // Act
@@ -315,6 +323,7 @@ public sealed class MainViewModelTests
         viewModel.UiScale.Should().Be(1.05);
         viewModel.GlobalSearch.Should().BeEmpty();
         viewModel.MergedAuthorFilter.Should().BeEmpty();
+        viewModel.MergedPullRequestFilters.HideReviewed.Should().BeFalse();
         savedThemes.Should().Equal(true);
         savedScales.Should().Equal(1.05, 1.0, 1.05);
         openedUrls.Should().Equal(expectedUrl);

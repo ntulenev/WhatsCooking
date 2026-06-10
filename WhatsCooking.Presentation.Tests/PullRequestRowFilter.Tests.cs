@@ -95,6 +95,28 @@ public sealed class PullRequestRowFilterTests
         }
     }
 
+    [Fact(DisplayName = "Matches hides reviewed rows when requested")]
+    [Trait("Category", "Unit")]
+    public void MatchesWhenHideReviewedIsEnabledExcludesReviewedRows()
+    {
+        // Arrange
+        var row = CreateRow();
+        var filters = new PullRequestFilterState(() => { });
+
+        // Act
+        row.IsReviewed = true;
+        var visibleByDefault = PullRequestRowFilter.Matches(row, string.Empty, filters);
+        filters.HideReviewed = true;
+        var hiddenWhenFiltered = PullRequestRowFilter.Matches(row, string.Empty, filters);
+        row.IsReviewed = false;
+        var unreviewedMatches = PullRequestRowFilter.Matches(row, string.Empty, filters);
+
+        // Assert
+        visibleByDefault.Should().BeTrue();
+        hiddenWhenFiltered.Should().BeFalse();
+        unreviewedMatches.Should().BeTrue();
+    }
+
     private static PullRequestRow CreateRow()
     {
         var asOf = new DateTimeOffset(2026, 6, 8, 12, 0, 0, TimeSpan.Zero);

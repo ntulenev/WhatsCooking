@@ -59,6 +59,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         CancelCommand = new RelayCommand(LoadCommand.Cancel, () => LoadCommand.CanBeCanceled);
         OpenUrlCommand = new RelayCommand(OpenUrl);
         ResetFiltersCommand = new RelayCommand(ResetFilters);
+        ToggleOpenReviewedFilterCommand = new RelayCommand(
+            () => OpenPullRequestFilters.HideReviewed = !OpenPullRequestFilters.HideReviewed);
+        ToggleMergedReviewedFilterCommand = new RelayCommand(
+            () => MergedPullRequestFilters.HideReviewed = !MergedPullRequestFilters.HideReviewed);
         IncreaseUiScaleCommand = new RelayCommand(IncreaseUiScale);
         DecreaseUiScaleCommand = new RelayCommand(DecreaseUiScale);
         _ = TelemetryDashboard.RefreshTelemetry();
@@ -358,6 +362,16 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     public ICommand ResetFiltersCommand { get; }
 
     /// <summary>
+    /// Command that toggles hiding reviewed open pull requests.
+    /// </summary>
+    public ICommand ToggleOpenReviewedFilterCommand { get; }
+
+    /// <summary>
+    /// Command that toggles hiding reviewed merged pull requests.
+    /// </summary>
+    public ICommand ToggleMergedReviewedFilterCommand { get; }
+
+    /// <summary>
     /// Command that increases the UI scale.
     /// </summary>
     public ICommand IncreaseUiScaleCommand { get; }
@@ -421,12 +435,14 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
+        UnsubscribeFromPullRequestRows();
         _openPullRequests.Clear();
         _openPullRequests.AddRange(snapshot.OpenPullRequests.Select(
             (pullRequest, index) => _rowMapper.MapOpen(index + 1, pullRequest, snapshot.AsOf)));
         _mergedPullRequests.Clear();
         _mergedPullRequests.AddRange(snapshot.MergedPullRequests.Select(
             (pullRequest, index) => _rowMapper.MapMerged(index + 1, pullRequest, snapshot.AsOf)));
+        SubscribeToPullRequestRows();
         RefreshViews();
 
         RepositoriesCount = snapshot.Repositories.Count;
@@ -487,6 +503,30 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     }
 
     private void SchedulePullRequestFilterRefresh() => RefreshViews();
+
+    private void SubscribeToPullRequestRows()
+    {
+        foreach (var row in _openPullRequests.Concat(_mergedPullRequests))
+        {
+            row.PropertyChanged += OnPullRequestRowPropertyChanged;
+        }
+    }
+
+    private void UnsubscribeFromPullRequestRows()
+    {
+        foreach (var row in _openPullRequests.Concat(_mergedPullRequests))
+        {
+            row.PropertyChanged -= OnPullRequestRowPropertyChanged;
+        }
+    }
+
+    private void OnPullRequestRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PullRequestRow.IsReviewed))
+        {
+            RefreshViews();
+        }
+    }
 
     private void ResetFilters()
     {
@@ -569,6 +609,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// </summary>
     public void Dispose()
     {
+        UnsubscribeFromPullRequestRows();
         LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
         LoadCommand.ExecutionFailed -= OnLoadCommandExecutionFailed;
         LoadCommand.Dispose();

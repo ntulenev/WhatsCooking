@@ -115,6 +115,14 @@ internal sealed class PullRequestFilterState : ObservableObject
     } = string.Empty;
 
     /// <summary>
+    /// Gets or sets a value indicating whether reviewed pull requests are hidden.
+    /// </summary>
+    public bool HideReviewed {
+        get;
+        set => SetFilterProperty(ref field, value);
+    }
+
+    /// <summary>
     /// Clears all filter values.
     /// </summary>
     public void Reset()
@@ -131,11 +139,12 @@ internal sealed class PullRequestFilterState : ObservableObject
         RequestChanges = string.Empty;
         Approvals = string.Empty;
         CurrentUserActivity = string.Empty;
+        HideReviewed = false;
     }
 
-    private bool SetFilterProperty(
-        ref string field,
-        string value,
+    private bool SetFilterProperty<T>(
+        ref T field,
+        T value,
         [CallerMemberName] string? propertyName = null)
     {
         if (!SetProperty(ref field, value, propertyName))

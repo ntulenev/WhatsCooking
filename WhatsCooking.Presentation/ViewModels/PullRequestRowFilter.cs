@@ -30,7 +30,8 @@ internal static class PullRequestRowFilter
             && Contains(row.CommentsCount.ToString(CultureInfo.InvariantCulture), filters.Comments)
             && Contains(row.RequestChanges, filters.RequestChanges)
             && Contains(row.Approvals, filters.Approvals)
-            && Contains(row.CurrentUserActivity, filters.CurrentUserActivity);
+            && Contains(row.CurrentUserActivity, filters.CurrentUserActivity)
+            && (!filters.HideReviewed || !row.IsReviewed);
     }
 
     private static bool Contains(string source, string filter) =>
