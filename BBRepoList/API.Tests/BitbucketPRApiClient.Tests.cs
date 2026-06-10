@@ -41,9 +41,10 @@ public sealed class BitbucketPRApiClientTests
         var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
         var client = CreateClient(transport: transport);
         var repository = new Repository("Repository");
+        using var cancellation = new CancellationTokenSource();
 
         // Act
-        await client.PopulateOpenPullRequestCountAsync(repository, CancellationToken.None);
+        await client.PopulateOpenPullRequestCountAsync(repository, cancellation.Token);
 
         // Assert
         repository.OpenPullRequestsCount.Should().Be(0);
@@ -58,16 +59,17 @@ public sealed class BitbucketPRApiClientTests
         var expectedUrl = new Uri(
             "repositories/workspace/repo%20slug/pullrequests?state=OPEN&pagelen=1&fields=size",
             UriKind.Relative);
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
         transport.Setup(instance => instance.GetAsync<PullRequestPageSummaryDto>(
                 expectedUrl,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new PullRequestPageSummaryDto(7));
         var client = CreateClient(transport: transport);
         var repository = CreateRepository();
 
         // Act
-        await client.PopulateOpenPullRequestCountAsync(repository, CancellationToken.None);
+        await client.PopulateOpenPullRequestCountAsync(repository, cancellation.Token);
 
         // Assert
         repository.OpenPullRequestsCount.Should().Be(7);
@@ -81,17 +83,18 @@ public sealed class BitbucketPRApiClientTests
         var expectedUrl = new Uri(
             "repositories/workspace/repo%20slug/pullrequests?state=OPEN&pagelen=1&fields=size",
             UriKind.Relative);
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestPageSummaryDto>(
                 It.Is<Uri>(url => url == expectedUrl),
-                It.Is<CancellationToken>(token => token == CancellationToken.None)))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ThrowsAsync(new HttpRequestException("Failure"));
         var client = CreateClient(transport: transport);
         var repository = CreateRepository();
         repository.UpdateOpenPullRequestsCount(4);
 
         // Act
-        await client.PopulateOpenPullRequestCountAsync(repository, CancellationToken.None);
+        await client.PopulateOpenPullRequestCountAsync(repository, cancellation.Token);
 
         // Assert
         repository.OpenPullRequestsCount.Should().Be(4);
@@ -106,23 +109,24 @@ public sealed class BitbucketPRApiClientTests
         var currentUserId = new BitbucketId("current-user");
         var workspace = new BitbucketWorkspace("workspace");
         var expectedUrl = CreateOpenPullRequestSnapshotsUrl();
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
                 It.Is<Uri>(url => url == expectedUrl),
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new PullRequestPageDto([], null));
         var cache = new Mock<IPullRequestDetailsCacheService>(MockBehavior.Strict);
         cache.Setup(instance => instance.ReadEntriesByPullRequestIdAsync(
                 workspace,
                 repository.Slug!.Value,
                 currentUserId,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>());
         cache.Setup(instance => instance.DeleteAsync(
                 workspace,
                 repository.Slug!.Value,
                 currentUserId,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .Returns(Task.CompletedTask);
         var client = CreateClient(transport: transport, cache: cache);
 
@@ -130,7 +134,7 @@ public sealed class BitbucketPRApiClientTests
         var result = await client.GetOpenPullRequestDetailsAsync(
             repository,
             currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeEmpty();
@@ -181,10 +185,11 @@ public sealed class BitbucketPRApiClientTests
                 [firstSnapshot.Id] = cachedEntry
             };
         var expectedUrl = CreateOpenPullRequestSnapshotsUrl();
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
                 It.Is<Uri>(url => url == expectedUrl),
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new PullRequestPageDto([firstDto, secondDto], null));
         var mapper = new Mock<IPullRequestSnapshotMapper>(MockBehavior.Strict);
         mapper.Setup(instance => instance.CreateSnapshot(firstDto, currentUserId)).Returns(firstSnapshot);
@@ -194,7 +199,7 @@ public sealed class BitbucketPRApiClientTests
                 workspace,
                 repositorySlug,
                 currentUserId,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(cachedEntries);
         var cachedSummaryOut = cachedSummary;
         var cachedEntryOut = cachedEntry;
@@ -221,7 +226,7 @@ public sealed class BitbucketPRApiClientTests
                     entries.Count == 2
                     && entries.Contains(cachedEntry)
                     && entries.Contains(freshEntry)),
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .Returns(Task.CompletedTask);
         PullRequestActivityEntry[] freshActivities =
         [
@@ -231,7 +236,7 @@ public sealed class BitbucketPRApiClientTests
         activityLoader.Setup(instance => instance.GetActivitiesAsync(
                 repositorySlug,
                 secondSnapshot.Id,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(freshActivities);
         var analyzer = new Mock<IPullRequestActivityAnalyzer>(MockBehavior.Strict);
         analyzer.Setup(instance => instance.CreateSummary(freshActivities, secondSnapshot, currentUserId))
@@ -247,7 +252,7 @@ public sealed class BitbucketPRApiClientTests
         var result = await client.GetOpenPullRequestDetailsAsync(
             repository,
             currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Select(detail => detail.Title).Should().Equal("Cached", "Fresh");
@@ -256,7 +261,7 @@ public sealed class BitbucketPRApiClientTests
         activityLoader.Verify(instance => instance.GetActivitiesAsync(
             repositorySlug,
             firstSnapshot.Id,
-            It.Is<CancellationToken>(token => token == CancellationToken.None)), Times.Never);
+            It.Is<CancellationToken>(token => token == cancellation.Token)), Times.Never);
         cache.VerifyAll();
     }
 
@@ -279,10 +284,11 @@ public sealed class BitbucketPRApiClientTests
             true,
             4);
         var nextUrl = new Uri("next-page", UriKind.Relative);
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
         transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
                 It.Is<Uri>(url => url.OriginalString.Contains("state=MERGED", StringComparison.Ordinal)),
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new PullRequestPageDto([recentDto, oldDto, ignoredDto], nextUrl));
         var mapper = new Mock<IPullRequestSnapshotMapper>(MockBehavior.Strict);
         mapper.Setup(instance => instance.CreateSnapshot(recentDto, currentUserId)).Returns(recentSnapshot);
@@ -291,7 +297,7 @@ public sealed class BitbucketPRApiClientTests
         activityLoader.Setup(instance => instance.GetActivitiesAsync(
                 repositorySlug,
                 recentSnapshot.Id,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(activities);
         var analyzer = new Mock<IPullRequestActivityAnalyzer>(MockBehavior.Strict);
         analyzer.Setup(instance => instance.CreateSummary(activities, recentSnapshot, currentUserId))
@@ -307,7 +313,7 @@ public sealed class BitbucketPRApiClientTests
             repository,
             mergedSince,
             currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().ContainSingle();
@@ -316,7 +322,7 @@ public sealed class BitbucketPRApiClientTests
         result[0].CommentsCount.Should().Be(4);
         transport.Verify(instance => instance.GetAsync<PullRequestPageDto>(
             nextUrl,
-            It.Is<CancellationToken>(token => token == CancellationToken.None)), Times.Never);
+            It.Is<CancellationToken>(token => token == cancellation.Token)), Times.Never);
         mapper.Verify(instance => instance.CreateSnapshot(
             It.Is<PullRequestDto>(dto => dto.Id != recentDto.Id),
             It.Is<BitbucketId>(id => id == currentUserId)), Times.Never);
@@ -332,17 +338,18 @@ public sealed class BitbucketPRApiClientTests
         var currentUserId = new BitbucketId("current-user");
         var workspace = new BitbucketWorkspace("workspace");
         var expectedUrl = CreateOpenPullRequestSnapshotsUrl();
+        using var cancellation = new CancellationTokenSource();
         var cache = new Mock<IPullRequestDetailsCacheService>();
         cache.Setup(instance => instance.ReadEntriesByPullRequestIdAsync(
                 It.Is<BitbucketWorkspace>(value => value == workspace),
                 It.Is<RepositorySlug>(value => value == repositorySlug),
                 It.Is<BitbucketId>(value => value == currentUserId),
-                It.Is<CancellationToken>(token => token == CancellationToken.None)))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>());
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
                 It.Is<Uri>(url => url == expectedUrl),
-                It.Is<CancellationToken>(token => token == CancellationToken.None)))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ThrowsAsync(new HttpRequestException("Failure"));
         var client = CreateClient(transport: transport, cache: cache);
 
@@ -350,7 +357,7 @@ public sealed class BitbucketPRApiClientTests
         var result = await client.GetOpenPullRequestDetailsAsync(
             repository,
             currentUserId,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeEmpty();

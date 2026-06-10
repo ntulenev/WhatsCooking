@@ -36,19 +36,24 @@ public sealed class BitbucketRepoApiClientTests
             "repositories/workspace?pagelen=25&fields=values.name%2Cvalues.slug%2Cvalues.created_on%2Cvalues.updated_on%2Cnext",
             UriKind.Relative);
         var secondUrl = new Uri("next-page", UriKind.Relative);
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
-        transport.Setup(instance => instance.GetAsync<RepoPageDto>(firstUrl, CancellationToken.None))
+        transport.Setup(instance => instance.GetAsync<RepoPageDto>(
+                firstUrl,
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new RepoPageDto(
                 [new RepositoryDto("First", Slug: "first")],
                 secondUrl));
-        transport.Setup(instance => instance.GetAsync<RepoPageDto>(secondUrl, CancellationToken.None))
+        transport.Setup(instance => instance.GetAsync<RepoPageDto>(
+                secondUrl,
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new RepoPageDto(
                 [new RepositoryDto("Second", Slug: "second")],
                 null));
         var client = new BitbucketRepoApiClient(transport.Object, CreateOptions(pageLen: 25));
 
         // Act
-        var result = await ReadAllAsync(client.GetRepositoriesAsync(default, CancellationToken.None));
+        var result = await ReadAllAsync(client.GetRepositoriesAsync(default, cancellation.Token));
 
         // Assert
         result.Select(repository => repository.Name).Should().Equal("First", "Second");
@@ -61,13 +66,14 @@ public sealed class BitbucketRepoApiClientTests
     {
         // Arrange
         Uri? requestedUrl = null;
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<RepoPageDto>(
                 It.Is<Uri>(url =>
                     Uri.UnescapeDataString(url.OriginalString).EndsWith(
                         "&q=name ~ \"team\\\\\\\"api\"",
                         StringComparison.Ordinal)),
-                It.Is<CancellationToken>(token => token == CancellationToken.None)))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .Callback<Uri, CancellationToken>((url, _) => requestedUrl = url)
             .ReturnsAsync((RepoPageDto?)null);
         var client = new BitbucketRepoApiClient(transport.Object, CreateOptions());
@@ -75,7 +81,7 @@ public sealed class BitbucketRepoApiClientTests
         // Act
         var result = await ReadAllAsync(client.GetRepositoriesAsync(
             new FilterPattern("team\\\"api", RepositorySearchMode.Contains),
-            CancellationToken.None));
+            cancellation.Token));
 
         // Assert
         result.Should().BeEmpty();
@@ -95,7 +101,7 @@ public sealed class BitbucketRepoApiClientTests
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<RepoPageDto>(
                 It.Is<Uri>(url => url == expectedUrl),
-                cancellation.Token))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new RepoPageDto(
                 [
                     new RepositoryDto("First"),

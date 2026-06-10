@@ -36,7 +36,7 @@ public sealed class BitbucketAuthApiClientTests
         var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
         transport.Setup(instance => instance.GetAsync<BitbucketUserDto>(
                 new Uri("user", UriKind.Relative),
-                cancellationToken))
+                It.Is<CancellationToken>(token => token == cancellationToken)))
             .ReturnsAsync(new BitbucketUserDto("{user-id}", "User Name"));
         var client = new BitbucketAuthApiClient(transport.Object);
 
@@ -53,15 +53,16 @@ public sealed class BitbucketAuthApiClientTests
     public async Task AuthSelfCheckWhenResponseIsNullThrowsInvalidOperationException()
     {
         // Arrange
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>();
         transport.Setup(instance => instance.GetAsync<BitbucketUserDto>(
                 It.Is<Uri>(url => url == new Uri("user", UriKind.Relative)),
-                It.Is<CancellationToken>(token => token == CancellationToken.None)))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync((BitbucketUserDto?)null);
         var client = new BitbucketAuthApiClient(transport.Object);
 
         // Act
-        Func<Task> act = () => client.AuthSelfCheckAsync(CancellationToken.None);
+        Func<Task> act = () => client.AuthSelfCheckAsync(cancellation.Token);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>();
