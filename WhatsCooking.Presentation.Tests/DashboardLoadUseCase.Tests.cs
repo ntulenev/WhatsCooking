@@ -156,7 +156,7 @@ public sealed class DashboardLoadUseCaseTests
                 filterPattern,
                 30,
                 It.Is<IProgress<PullRequestLoadProgress>?>(value => ReferenceEquals(value, progress)),
-                cts.Token))
+                It.Is<CancellationToken>(token => token == cts.Token)))
             .Callback(() => loaderCalls++)
             .ReturnsAsync(loadResult);
         var telemetryService = new Mock<IBitbucketTelemetryService>(MockBehavior.Strict);
@@ -202,6 +202,7 @@ public sealed class DashboardLoadUseCaseTests
         var demoDataCalls = 0;
         var demoTelemetryCalls = 0;
         var progress = new RecordingProgress<PullRequestLoadProgress>();
+        using var cancellation = new CancellationTokenSource();
         var demoDataProvider = new Mock<IDemoPullRequestDashboardProvider>(MockBehavior.Strict);
         demoDataProvider.Setup(instance => instance.Create())
             .Callback(() => demoDataCalls++)
@@ -225,7 +226,7 @@ public sealed class DashboardLoadUseCaseTests
             new FilterPattern(null),
             1,
             progress,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeOfType<DashboardLoadResult.Success>()
@@ -253,12 +254,13 @@ public sealed class DashboardLoadUseCaseTests
             2 => new InvalidOperationException(message),
             _ => new ArgumentException(message)
         };
+        using var cancellation = new CancellationTokenSource();
         var loader = new Mock<IPullRequestDashboardLoader>(MockBehavior.Strict);
         loader.Setup(instance => instance.LoadAsync(
                 It.Is<FilterPattern>(filter => filter == new FilterPattern(null)),
                 1,
                 null,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ThrowsAsync(exception);
         var useCase = CreateUseCase(loader: loader.Object);
 
@@ -267,7 +269,7 @@ public sealed class DashboardLoadUseCaseTests
             new FilterPattern(null),
             1,
             progress: null,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeEquivalentTo(new DashboardLoadResult.Failure(message));
@@ -279,12 +281,13 @@ public sealed class DashboardLoadUseCaseTests
     public async Task LoadAsyncWhenOperationIsCancelledReturnsCancelled()
     {
         // Arrange
+        using var cancellation = new CancellationTokenSource();
         var loader = new Mock<IPullRequestDashboardLoader>(MockBehavior.Strict);
         loader.Setup(instance => instance.LoadAsync(
                 It.Is<FilterPattern>(filter => filter == new FilterPattern(null)),
                 1,
                 null,
-                CancellationToken.None))
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ThrowsAsync(new OperationCanceledException());
         var useCase = CreateUseCase(loader: loader.Object);
 
@@ -293,7 +296,7 @@ public sealed class DashboardLoadUseCaseTests
             new FilterPattern(null),
             1,
             progress: null,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeOfType<DashboardLoadResult.Cancelled>();

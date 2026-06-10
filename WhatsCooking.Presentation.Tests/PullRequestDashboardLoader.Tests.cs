@@ -62,6 +62,7 @@ public sealed class PullRequestDashboardLoaderTests
     public async Task LoadAsyncWhenMergedPullRequestDaysIsNotPositiveThrowsArgumentOutOfRangeException()
     {
         // Arrange
+        using var cancellation = new CancellationTokenSource();
         var loader = new PullRequestDashboardLoader(
             new Mock<IBitbucketAuthApiClient>(MockBehavior.Strict).Object,
             new Mock<IRepoService>(MockBehavior.Strict).Object,
@@ -72,7 +73,7 @@ public sealed class PullRequestDashboardLoaderTests
             new FilterPattern(null),
             0,
             progress: null,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -99,14 +100,15 @@ public sealed class PullRequestDashboardLoaderTests
         var mergedCalls = 0;
 
         var authApi = new Mock<IBitbucketAuthApiClient>(MockBehavior.Strict);
-        authApi.Setup(instance => instance.AuthSelfCheckAsync(cts.Token))
+        authApi.Setup(instance => instance.AuthSelfCheckAsync(
+                It.Is<CancellationToken>(token => token == cts.Token)))
             .Callback(() => authCalls++)
             .ReturnsAsync(currentUser);
         var repoService = new Mock<IRepoService>(MockBehavior.Strict);
         repoService.Setup(instance => instance.GetRepositoriesAsync(
                 filterPattern,
                 It.IsAny<IProgress<RepoLoadProgress>?>(),
-                cts.Token))
+                It.Is<CancellationToken>(token => token == cts.Token)))
             .Callback(() => repositoryCalls++)
             .ReturnsAsync(repositories);
         repoService.Setup(instance => instance.GetOpenPullRequestDetailsAsync(
@@ -116,7 +118,7 @@ public sealed class PullRequestDashboardLoaderTests
                     && ReferenceEquals(items[1], repositoryB)),
                 currentUserId,
                 It.IsAny<IProgress<PullRequestRepositoryLoadProgress>?>(),
-                cts.Token))
+                It.Is<CancellationToken>(token => token == cts.Token)))
             .Callback(() => openCalls++)
             .ReturnsAsync(openPullRequests);
         repoService.Setup(instance => instance.GetMergedPullRequestsAsync(
@@ -127,7 +129,7 @@ public sealed class PullRequestDashboardLoaderTests
                 now.AddDays(-14),
                 currentUserId,
                 It.IsAny<IProgress<PullRequestRepositoryLoadProgress>?>(),
-                cts.Token))
+                It.Is<CancellationToken>(token => token == cts.Token)))
             .Callback(() => mergedCalls++)
             .ReturnsAsync(mergedPullRequests);
         var progress = new RecordingProgress<PullRequestLoadProgress>();
