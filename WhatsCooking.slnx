@@ -13,6 +13,7 @@
   <Project Path="BBRepoList/Models/BBRepoList.Models.csproj" />
   <Project Path="BBRepoList/Models.Tests/BBRepoList.Models.Tests.csproj" />
   <Project Path="BBRepoList/Registrations/BBRepoList.Registrations.csproj" />
+  <Project Path="BBRepoList/Registrations.Tests/BBRepoList.Registrations.Tests.csproj" />
   <Project Path="BBRepoList/Telemetry/BBRepoList.Telemetry.csproj" />
   <Project Path="BBRepoList/Transport/BBRepoList.Transport.csproj" />
   <Project Path="WhatsCooking.Infrastructure/WhatsCooking.Infrastructure.csproj" />
