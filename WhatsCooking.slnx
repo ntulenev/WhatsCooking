@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="BBRepoList/Abstractions/BBRepoList.Abstractions.csproj" />
   <Project Path="BBRepoList/API/BBRepoList.API.csproj" />
+  <Project Path="BBRepoList/API.Tests/BBRepoList.API.Tests.csproj" />
   <Project Path="BBRepoList/API.Helpers/BBRepoList.API.Helpers.csproj" />
   <Project Path="BBRepoList/Caching/BBRepoList.Caching.csproj" />
   <Project Path="BBRepoList/Configuration/BBRepoList.Configuration.csproj" />
