@@ -20,6 +20,20 @@ public sealed class IdentifierModelsTests
         first.GetHashCode().Should().Be(second.GetHashCode());
     }
 
+    [Fact(DisplayName = "Default Bitbucket ids compare equal")]
+    [Trait("Category", "Unit")]
+    public void BitbucketIdWhenDefaultComparesUsingEmptyNormalizedValue()
+    {
+        // Arrange
+        var first = default(BitbucketId);
+        var second = default(BitbucketId);
+
+        // Assert
+        first.Should().Be(second);
+        first.GetHashCode().Should().Be(second.GetHashCode());
+        first.Value.Should().BeNull();
+    }
+
     [Theory(DisplayName = "Bitbucket id rejects empty values")]
     [Trait("Category", "Unit")]
     [InlineData(null)]
@@ -139,5 +153,16 @@ public sealed class IdentifierModelsTests
         missing.Value.Should().Be("<N/A>");
         missing.ToString().Should().Be("<N/A>");
         empty.Value.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Repository search mode exposes supported values")]
+    [Trait("Category", "Unit")]
+    public void RepositorySearchModeWhenEnumeratedContainsSupportedValues()
+    {
+        // Act
+        var values = Enum.GetValues<RepositorySearchMode>();
+
+        // Assert
+        values.Should().Equal(RepositorySearchMode.Contains, RepositorySearchMode.StartWith);
     }
 }

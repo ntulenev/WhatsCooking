@@ -18,7 +18,10 @@ public sealed class RepositoryModelsTests
 
         // Assert
         repository.Name.Should().Be("Repository");
+        repository.CreatedOn.Should().Be(createdOn);
+        repository.LastUpdatedOn.Should().Be(updatedOn);
         repository.Slug.Should().Be(slug);
+        repository.OpenPullRequestsCount.Should().Be(0);
         repository.CanPopulateOpenPullRequestsCount.Should().BeTrue();
         repository.CanLoadPullRequests.Should().BeTrue();
         repository.CanCalculateInactivityTiming.Should().BeTrue();
@@ -192,6 +195,7 @@ public sealed class RepositoryModelsTests
     [InlineData(-1, 0, 0, 0)]
     [InlineData(0, -1, 0, 0)]
     [InlineData(0, 0, -1, 0)]
+    [InlineData(0, 0, 0, -1)]
     [InlineData(0, 0, 1, 0)]
     public void RepoLoadProgressWhenCountersAreInvalidThrowsArgumentOutOfRangeException(
         int seen,
@@ -210,6 +214,26 @@ public sealed class RepositoryModelsTests
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
+    [Fact(DisplayName = "Repository load progress maps valid counters")]
+    [Trait("Category", "Unit")]
+    public void RepoLoadProgressWhenCountersAreValidMapsValues()
+    {
+        // Act
+        var progress = new RepoLoadProgress(
+            seen: 5,
+            matched: 3,
+            isLoadingPullRequestStatistics: true,
+            pullRequestStatisticsLoaded: 2,
+            pullRequestStatisticsTotal: 3);
+
+        // Assert
+        progress.Seen.Should().Be(5);
+        progress.Matched.Should().Be(3);
+        progress.IsLoadingPullRequestStatistics.Should().BeTrue();
+        progress.PullRequestStatisticsLoaded.Should().Be(2);
+        progress.PullRequestStatisticsTotal.Should().Be(3);
+    }
+
     [Theory(DisplayName = "Pull request repository progress rejects invalid counters")]
     [Trait("Category", "Unit")]
     [InlineData(-1, 0)]
@@ -224,5 +248,17 @@ public sealed class RepositoryModelsTests
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact(DisplayName = "Pull request repository progress maps valid counters")]
+    [Trait("Category", "Unit")]
+    public void PullRequestRepositoryLoadProgressWhenCountersAreValidMapsValues()
+    {
+        // Act
+        var progress = new PullRequestRepositoryLoadProgress(2, 3);
+
+        // Assert
+        progress.LoadedRepositories.Should().Be(2);
+        progress.TotalRepositories.Should().Be(3);
     }
 }
