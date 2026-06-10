@@ -9,6 +9,7 @@
   <Project Path="BBRepoList/Configuration/BBRepoList.Configuration.csproj" />
   <Project Path="BBRepoList/Configuration.Tests/BBRepoList.Configuration.Tests.csproj" />
   <Project Path="BBRepoList/Logic/BBRepoList.Logic.csproj" />
+  <Project Path="BBRepoList/Logic.Tests/BBRepoList.Logic.Tests.csproj" />
   <Project Path="BBRepoList/Models/BBRepoList.Models.csproj" />
   <Project Path="BBRepoList/Registrations/BBRepoList.Registrations.csproj" />
   <Project Path="BBRepoList/Telemetry/BBRepoList.Telemetry.csproj" />
