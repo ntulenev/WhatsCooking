@@ -151,6 +151,23 @@ public sealed class UserPreferencesServiceTests
         result.Should().BeEquivalentTo(new UserPreferences());
     }
 
+    [Fact(DisplayName = "Load returns defaults when preferences path is a directory")]
+    [Trait("Category", "Integration")]
+    public void LoadWhenPreferencesPathIsDirectoryReturnsDefaults()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        using var service = new UserPreferencesService(
+            NullLogger<UserPreferencesService>.Instance,
+            directory.Path);
+
+        // Act
+        var result = service.Load();
+
+        // Assert
+        result.Should().BeEquivalentTo(new UserPreferences());
+    }
+
     [Fact(DisplayName = "Save throws when preferences are null")]
     [Trait("Category", "Unit")]
     public void SaveWhenPreferencesAreNullThrowsArgumentNullException()
@@ -306,6 +323,28 @@ public sealed class UserPreferencesServiceTests
             SearchMode = RepositorySearchMode.StartWith,
             UiScale = 1.35
         });
+    }
+
+    [Fact(DisplayName = "Dispose ignores write failures and removes temporary preferences")]
+    [Trait("Category", "Integration")]
+    public void DisposeWhenPreferencesDirectoryCannotBeCreatedDoesNotThrow()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var blockingFilePath = Path.Combine(directory.Path, "blocking-file");
+        File.WriteAllText(blockingFilePath, "content");
+        var preferencesPath = Path.Combine(blockingFilePath, "preferences.json");
+        var service = new UserPreferencesService(
+            NullLogger<UserPreferencesService>.Instance,
+            preferencesPath);
+        service.Save(new UserPreferences { SearchPhrase = "platform" });
+
+        // Act
+        Action act = service.Dispose;
+
+        // Assert
+        act.Should().NotThrow();
+        File.Exists(preferencesPath + ".tmp").Should().BeFalse();
     }
 
     private static TimerFixture CreateTimerFixture()
