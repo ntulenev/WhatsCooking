@@ -2,6 +2,8 @@ using BBRepoList.Models;
 
 using FluentAssertions;
 
+using System.Text.Json.Nodes;
+
 namespace BBRepoList.Caching.Tests;
 
 public sealed class FilePullRequestDetailsCacheTests
@@ -90,6 +92,38 @@ public sealed class FilePullRequestDetailsCacheTests
         result.Should().ContainSingle().Which.Should().Be(validEntry);
     }
 
+    [Fact(DisplayName = "Save entries deletes cache when all entries are invalid")]
+    [Trait("Category", "Unit")]
+    public async Task SaveEntriesAsyncWhenAllEntriesAreInvalidDeletesExistingCache()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            [CreateEntry(1, "existing")],
+            cancellation.Token);
+        PullRequestDetailsCacheEntry[] invalidEntries =
+        [
+            CreateEntry(2, " "),
+            CreateEntry(3, "invalid-comments", commentsCount: -1)
+        ];
+
+        // Act
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            invalidEntries,
+            cancellation.Token);
+
+        // Assert
+        Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
     [Fact(DisplayName = "Save empty entries deletes existing cache")]
     [Trait("Category", "Unit")]
     public async Task SaveEntriesAsyncWhenEntriesAreEmptyDeletesExistingCache()
@@ -149,6 +183,76 @@ public sealed class FilePullRequestDetailsCacheTests
 
         // Assert
         result.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Read entries ignores cache documents with unsupported versions")]
+    [Trait("Category", "Unit")]
+    public async Task ReadEntriesAsyncWhenCacheVersionIsUnsupportedReturnsEmptyCollection()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            [CreateEntry(1, "fingerprint")],
+            cancellation.Token);
+        var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
+        var document = JsonNode.Parse(await File.ReadAllTextAsync(cacheFilePath, cancellation.Token))!.AsObject();
+        document["Version"] = 2;
+        await File.WriteAllTextAsync(cacheFilePath, document.ToJsonString(), cancellation.Token);
+
+        // Act
+        var result = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            cancellation.Token);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Save entries throws when entries are null")]
+    [Trait("Category", "Unit")]
+    public async Task SaveEntriesAsyncWhenEntriesAreNullThrowsArgumentNullException()
+    {
+        // Arrange
+        var cache = new FilePullRequestDetailsCache();
+        IReadOnlyCollection<PullRequestDetailsCacheEntry> entries = null!;
+
+        // Act
+        Func<Task> act = () => cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            entries,
+            CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Fact(DisplayName = "Delete throws when cancellation is requested")]
+    [Trait("Category", "Unit")]
+    public async Task DeleteAsyncWhenCancellationIsRequestedThrowsOperationCanceledException()
+    {
+        // Arrange
+        var cache = new FilePullRequestDetailsCache();
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        // Act
+        Func<Task> act = () => cache.DeleteAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            cancellation.Token);
+
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     private static PullRequestDetailsCacheEntry CreateEntry(

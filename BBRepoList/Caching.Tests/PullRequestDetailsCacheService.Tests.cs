@@ -55,6 +55,61 @@ public sealed class PullRequestDetailsCacheServiceTests
                 lastEntry));
     }
 
+    [Fact(DisplayName = "Save entries delegates to cache")]
+    [Trait("Category", "Unit")]
+    public async Task SaveEntriesAsyncDelegatesToCache()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        PullRequestDetailsCacheEntry[] entries = [CreateEntry(1, "fingerprint")];
+        var cache = new Mock<IPullRequestDetailsCache>(MockBehavior.Strict);
+        cache.Setup(instance => instance.SaveEntriesAsync(
+                _workspace,
+                _repositorySlug,
+                _currentUserId,
+                entries,
+                cancellation.Token))
+            .Returns(Task.CompletedTask);
+        var service = new PullRequestDetailsCacheService(cache.Object);
+
+        // Act
+        await service.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            entries,
+            cancellation.Token);
+
+        // Assert
+        cache.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Delete delegates to cache")]
+    [Trait("Category", "Unit")]
+    public async Task DeleteAsyncDelegatesToCache()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        var cache = new Mock<IPullRequestDetailsCache>(MockBehavior.Strict);
+        cache.Setup(instance => instance.DeleteAsync(
+                _workspace,
+                _repositorySlug,
+                _currentUserId,
+                cancellation.Token))
+            .Returns(Task.CompletedTask);
+        var service = new PullRequestDetailsCacheService(cache.Object);
+
+        // Act
+        await service.DeleteAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            cancellation.Token);
+
+        // Assert
+        cache.VerifyAll();
+    }
+
     [Fact(DisplayName = "Try create activity summary returns cached values when fingerprint matches")]
     [Trait("Category", "Unit")]
     public void TryCreateActivitySummaryWhenFingerprintMatchesReturnsCachedValues()
@@ -116,6 +171,26 @@ public sealed class PullRequestDetailsCacheServiceTests
         cacheEntry.Should().BeNull();
     }
 
+    [Fact(DisplayName = "Try create activity summary throws when entries are null")]
+    [Trait("Category", "Unit")]
+    public void TryCreateActivitySummaryWhenEntriesAreNullThrowsArgumentNullException()
+    {
+        // Arrange
+        var service = new PullRequestDetailsCacheService(Mock.Of<IPullRequestDetailsCache>());
+        var pullRequest = CreateSnapshot("fingerprint");
+        IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry> entries = null!;
+
+        // Act
+        Action act = () => service.TryCreateActivitySummary(
+            pullRequest,
+            entries,
+            out _,
+            out _);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     [Fact(DisplayName = "Create entry maps pull request and activity summary values")]
     [Trait("Category", "Unit")]
     public void CreateEntryWhenValuesAreValidReturnsMappedEntry()
@@ -140,6 +215,22 @@ public sealed class PullRequestDetailsCacheServiceTests
             activitySummary.LastActivityOn,
             activitySummary.HasCurrentUserDiscussion,
             activitySummary.CommentsCount));
+    }
+
+    [Fact(DisplayName = "Create entry throws when activity summary is null")]
+    [Trait("Category", "Unit")]
+    public void CreateEntryWhenActivitySummaryIsNullThrowsArgumentNullException()
+    {
+        // Arrange
+        var service = new PullRequestDetailsCacheService(Mock.Of<IPullRequestDetailsCache>());
+        var pullRequest = CreateSnapshot("fingerprint");
+        PullRequestActivitySummary activitySummary = null!;
+
+        // Act
+        Action act = () => service.CreateEntry(pullRequest, activitySummary);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
     }
 
     private static PullRequestSnapshot CreateSnapshot(string? fingerprint) =>
