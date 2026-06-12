@@ -113,7 +113,7 @@
                             <DataGridTemplateColumn Header="AI review" Width="112" CanUserSort="False">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Copy for AI"
+                                        <Button Content="Copy"
                                                 Style="{StaticResource ActionButtonStyle}"
                                                 Padding="8,3"
                                                 Margin="4"
