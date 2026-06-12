@@ -110,6 +110,20 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="AI review" Width="112" CanUserSort="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="Copy for AI"
+                                                Style="{StaticResource ActionButtonStyle}"
+                                                Padding="8,3"
+                                                Margin="4"
+                                                ToolTip="Copy a PR review prompt with Bitbucket access credentials to the clipboard"
+                                                AutomationProperties.Name="Copy pull request review prompt for AI"
+                                                Command="{Binding DataContext.CopyForAiCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>

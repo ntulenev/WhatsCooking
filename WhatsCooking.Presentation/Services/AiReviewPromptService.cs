@@ -57,6 +57,11 @@ internal sealed partial class AiReviewPromptService : IAiReviewPromptService
         return template
             .Replace("{{BITBUCKET_EMAIL}}", options.AuthEmail, StringComparison.Ordinal)
             .Replace("{{BITBUCKET_API_TOKEN}}", options.AuthApiToken, StringComparison.Ordinal)
+            .Replace(
+                "{{BITBUCKET_API_BASE_URL}}",
+                options.BaseUrl.ToString(),
+                StringComparison.Ordinal)
+            .Replace("{{BITBUCKET_WORKSPACE}}", options.Workspace, StringComparison.Ordinal)
             .Replace("{{PULL_REQUEST_URL}}", pullRequest.PullRequestUrl.ToString(), StringComparison.Ordinal)
             .Replace("{{REPOSITORY_NAME}}", pullRequest.RepositoryName, StringComparison.Ordinal)
             .Replace(

@@ -23,6 +23,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <param name="rowMapper">Pull request row mapper.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
+    /// <param name="aiReviewPromptService">AI review prompt clipboard service.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
         IDashboardLoadUseCase loadUseCase,
@@ -30,6 +31,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         PullRequestRowMapper rowMapper,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
+        IAiReviewPromptService aiReviewPromptService,
         IUserPreferencesService preferencesService)
     {
         ArgumentNullException.ThrowIfNull(loadUseCase, nameof(loadUseCase));
@@ -37,11 +39,13 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ArgumentNullException.ThrowIfNull(rowMapper, nameof(rowMapper));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
+        ArgumentNullException.ThrowIfNull(aiReviewPromptService, nameof(aiReviewPromptService));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loadUseCase = loadUseCase;
         _rowMapper = rowMapper;
         _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
+        _aiReviewPromptService = aiReviewPromptService;
         TelemetryDashboard = telemetryDashboard;
         _preferencesService = preferencesService;
         _preferences = _preferencesService.Load();
@@ -60,6 +64,9 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         LoadCommand.ExecutionFailed += OnLoadCommandExecutionFailed;
         CancelCommand = new RelayCommand(LoadCommand.Cancel, () => LoadCommand.CanBeCanceled);
         OpenUrlCommand = new RelayCommand(OpenUrl);
+        CopyForAiCommand = new RelayCommand(
+            CopyForAi,
+            static parameter => parameter is PullRequestRow);
         ResetFiltersCommand = new RelayCommand(ResetFilters);
         ToggleOpenReviewedFilterCommand = new RelayCommand(ToggleOpenReviewedFilter);
         ToggleMergedReviewedFilterCommand = new RelayCommand(ToggleMergedReviewedFilter);
@@ -379,6 +386,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     public ICommand OpenUrlCommand { get; }
 
     /// <summary>
+    /// Command that copies an AI review prompt for an open pull request.
+    /// </summary>
+    public ICommand CopyForAiCommand { get; }
+
+    /// <summary>
     /// Command that clears all table filters.
     /// </summary>
     public ICommand ResetFiltersCommand { get; }
@@ -508,6 +520,17 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             return;
         }
         _externalUrlLauncher.Open(url);
+    }
+
+    private void CopyForAi(object? parameter)
+    {
+        if (parameter is not PullRequestRow pullRequest)
+        {
+            return;
+        }
+
+        _aiReviewPromptService.CopyPrompt(pullRequest);
+        Status = $"Copied AI review prompt for {pullRequest.RepositoryName} #{pullRequest.PullRequestId}";
     }
 
     private void ShowLoadError(string message)
@@ -712,6 +735,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private readonly IDialogService _dialogService;
 
     private readonly IExternalUrlLauncher _externalUrlLauncher;
+
+    private readonly IAiReviewPromptService _aiReviewPromptService;
 
     private readonly IUserPreferencesService _preferencesService;
 

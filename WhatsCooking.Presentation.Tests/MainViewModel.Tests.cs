@@ -25,6 +25,7 @@ public sealed class MainViewModelTests
     [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
+    [InlineData(6)]
     public void ConstructorWhenRequiredDependencyIsNullThrowsArgumentNullException(int dependencyIndex)
     {
         // Arrange
@@ -35,6 +36,7 @@ public sealed class MainViewModelTests
         var rowMapper = CreateRowMapper();
         var dialogService = new Mock<IDialogService>(MockBehavior.Strict).Object;
         var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict).Object;
+        var aiReviewPromptService = new Mock<IAiReviewPromptService>(MockBehavior.Strict).Object;
         var preferencesService = new Mock<IUserPreferencesService>(MockBehavior.Strict).Object;
 
         // Act
@@ -44,7 +46,8 @@ public sealed class MainViewModelTests
             dependencyIndex == 2 ? null! : rowMapper,
             dependencyIndex == 3 ? null! : dialogService,
             dependencyIndex == 4 ? null! : externalUrlLauncher,
-            dependencyIndex == 5 ? null! : preferencesService);
+            dependencyIndex == 5 ? null! : aiReviewPromptService,
+            dependencyIndex == 6 ? null! : preferencesService);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -213,6 +216,12 @@ public sealed class MainViewModelTests
             .Which.Title.Should().Be("Merged title");
         viewModel.Status.Should().Be("Loaded 1 open PRs and 1 merged PRs");
         viewModel.TelemetryDashboard.TelemetryRequestsCount.Should().Be(3);
+        fixture.AiReviewPromptService.Setup(instance => instance.CopyPrompt(
+            It.Is<PullRequestRow>(row => row.PullRequestId == openPullRequest.PullRequestId.Value)));
+
+        viewModel.CopyForAiCommand.Execute(viewModel.OpenPullRequestsView.Single());
+
+        viewModel.Status.Should().Be("Copied AI review prompt for Payments #10");
 
         var reviewedRow = viewModel.OpenPullRequestsView.Single();
         var openViewChanges = new List<NotifyCollectionChangedAction>();
@@ -251,6 +260,7 @@ public sealed class MainViewModelTests
         loadCalls.Should().Be(1);
         saveCalls.Should().Be(1);
         fixture.LoadUseCase.VerifyAll();
+        fixture.AiReviewPromptService.VerifyAll();
         fixture.PreferencesService.VerifyAll();
     }
 
@@ -371,6 +381,7 @@ public sealed class MainViewModelTests
         var telemetryDebouncer = new Mock<IDebouncer>(MockBehavior.Strict);
         var dialogService = new Mock<IDialogService>(MockBehavior.Strict);
         var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict);
+        var aiReviewPromptService = new Mock<IAiReviewPromptService>(MockBehavior.Strict);
         var preferencesService = new Mock<IUserPreferencesService>(MockBehavior.Strict);
         preferencesService.Setup(instance => instance.Load())
             .Returns(preferences ?? new UserPreferences());
@@ -381,6 +392,7 @@ public sealed class MainViewModelTests
             telemetryDebouncer,
             dialogService,
             externalUrlLauncher,
+            aiReviewPromptService,
             preferencesService);
     }
 
@@ -402,6 +414,7 @@ public sealed class MainViewModelTests
         Mock<IDebouncer> TelemetryDebouncer,
         Mock<IDialogService> DialogService,
         Mock<IExternalUrlLauncher> ExternalUrlLauncher,
+        Mock<IAiReviewPromptService> AiReviewPromptService,
         Mock<IUserPreferencesService> PreferencesService)
     {
         public MainViewModel CreateViewModel() =>
@@ -411,6 +424,7 @@ public sealed class MainViewModelTests
                 CreateRowMapper(),
                 DialogService.Object,
                 ExternalUrlLauncher.Object,
+                AiReviewPromptService.Object,
                 PreferencesService.Object);
     }
 }

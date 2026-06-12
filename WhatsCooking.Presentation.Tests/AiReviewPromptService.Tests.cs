@@ -16,7 +16,8 @@ public sealed class AiReviewPromptServiceTests
     {
         // Arrange
         const string template =
-            "{{BITBUCKET_EMAIL}}|{{BITBUCKET_API_TOKEN}}|{{PULL_REQUEST_URL}}|" +
+            "{{BITBUCKET_EMAIL}}|{{BITBUCKET_API_TOKEN}}|{{BITBUCKET_API_BASE_URL}}|" +
+            "{{BITBUCKET_WORKSPACE}}|{{PULL_REQUEST_URL}}|" +
             "{{REPOSITORY_NAME}}|{{PULL_REQUEST_ID}}|{{PULL_REQUEST_TITLE}}|" +
             "{{PULL_REQUEST_AUTHOR}}|{{PULL_REQUEST_OPENED_ON}}|" +
             "{{PULL_REQUEST_DESCRIPTION}}|{{JIRA_ISSUE_KEY}}";
@@ -43,6 +44,7 @@ public sealed class AiReviewPromptServiceTests
         var options = new BitbucketOptions
         {
             BaseUrl = new Uri("https://api.bitbucket.org/2.0/"),
+            Workspace = "platform",
             AuthEmail = "user@example.com",
             AuthApiToken = "secret-token"
         };
@@ -52,7 +54,8 @@ public sealed class AiReviewPromptServiceTests
 
         // Assert
         result.Should().Be(
-            "user@example.com|secret-token|https://bitbucket.org/platform/payments/pull-requests/42|" +
+            "user@example.com|secret-token|https://api.bitbucket.org/2.0/|platform|" +
+            "https://bitbucket.org/platform/payments/pull-requests/42|" +
             "Payments|42|ADF-19223 Add retries|Nikita|2026-06-12T10:30:00.0000000+00:00|" +
             "Implements the requested retry policy.|ADF-19223");
     }

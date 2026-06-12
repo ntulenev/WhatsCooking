@@ -10,6 +10,8 @@ The credentials in this prompt are sensitive. Use them only to retrieve the revi
 
 - Bitbucket account: `{{BITBUCKET_EMAIL}}`
 - Bitbucket API token: `{{BITBUCKET_API_TOKEN}}`
+- Bitbucket API base URL: `{{BITBUCKET_API_BASE_URL}}`
+- Bitbucket workspace: `{{BITBUCKET_WORKSPACE}}`
 
 Use HTTP Basic authentication with the account as the username and the API token as the password.
 
