@@ -25,6 +25,9 @@ public sealed class BitbucketTelemetryService : IBitbucketTelemetryService
     }
 
     /// <inheritdoc />
+    public void Reset() => _requestCounts.Clear();
+
+    /// <inheritdoc />
     public void TrackRequest(Uri requestUri)
     {
         ArgumentNullException.ThrowIfNull(requestUri);

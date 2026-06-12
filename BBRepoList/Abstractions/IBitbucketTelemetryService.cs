@@ -8,6 +8,11 @@ namespace BBRepoList.Abstractions;
 public interface IBitbucketTelemetryService
 {
     /// <summary>
+    /// Clears all tracked requests for a new load operation.
+    /// </summary>
+    void Reset();
+
+    /// <summary>
     /// Tracks a Bitbucket API request.
     /// </summary>
     /// <param name="requestUri">Request URI.</param>

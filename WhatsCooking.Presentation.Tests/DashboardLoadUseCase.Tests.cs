@@ -148,6 +148,7 @@ public sealed class DashboardLoadUseCaseTests
         var loadResult = new PullRequestLoadResult(repositories, [], []);
         var telemetry = new BitbucketTelemetrySnapshot(true, 2, [new BitbucketApiRequestStatistic("user", 2)]);
         var loaderCalls = 0;
+        var resetCalls = 0;
         var telemetryCalls = 0;
         var progress = new RecordingProgress<PullRequestLoadProgress>();
 
@@ -160,6 +161,8 @@ public sealed class DashboardLoadUseCaseTests
             .Callback(() => loaderCalls++)
             .ReturnsAsync(loadResult);
         var telemetryService = new Mock<IBitbucketTelemetryService>(MockBehavior.Strict);
+        telemetryService.Setup(instance => instance.Reset())
+            .Callback(() => resetCalls++);
         telemetryService.Setup(instance => instance.GetSnapshot())
             .Callback(() => telemetryCalls++)
             .Returns(telemetry);
@@ -186,6 +189,7 @@ public sealed class DashboardLoadUseCaseTests
                 Telemetry = telemetry
             });
         loaderCalls.Should().Be(1);
+        resetCalls.Should().Be(1);
         telemetryCalls.Should().Be(1);
         loader.VerifyAll();
         telemetryService.VerifyAll();
@@ -314,9 +318,16 @@ public sealed class DashboardLoadUseCaseTests
             loader ?? new Mock<IPullRequestDashboardLoader>(MockBehavior.Strict).Object,
             demoDataProvider ?? new Mock<IDemoPullRequestDashboardProvider>(MockBehavior.Strict).Object,
             demoTelemetryProvider ?? new Mock<IDemoTelemetryProvider>(MockBehavior.Strict).Object,
-            telemetryService ?? new Mock<IBitbucketTelemetryService>(MockBehavior.Strict).Object,
+            telemetryService ?? CreateTelemetryService(),
             timeProvider ?? new FixedTimeProvider(new DateTimeOffset(2026, 6, 8, 12, 0, 0, TimeSpan.Zero)),
             options ?? CreateOptions());
+
+    private static IBitbucketTelemetryService CreateTelemetryService()
+    {
+        var telemetryService = new Mock<IBitbucketTelemetryService>(MockBehavior.Strict);
+        telemetryService.Setup(instance => instance.Reset());
+        return telemetryService.Object;
+    }
 
     private static IOptions<BitbucketOptions> CreateOptions() =>
         Options.Create(new BitbucketOptions

@@ -125,6 +125,26 @@ public sealed class BitbucketTelemetryServiceTests
         ]);
     }
 
+    [Fact(DisplayName = "Reset clears tracked request statistics")]
+    [Trait("Category", "Unit")]
+    public void ResetWhenRequestsAreTrackedStartsNewTelemetryInterval()
+    {
+        // Arrange
+        var service = CreateService(enabled: true);
+        service.TrackRequest(new Uri("/2.0/user", UriKind.Relative));
+        service.TrackRequest(new Uri("/2.0/repositories/workspace", UriKind.Relative));
+
+        // Act
+        service.Reset();
+        service.TrackRequest(new Uri("/2.0/user", UriKind.Relative));
+        var snapshot = service.GetSnapshot();
+
+        // Assert
+        snapshot.TotalRequests.Should().Be(1);
+        snapshot.RequestStatistics.Should().ContainSingle()
+            .Which.Should().Be(new BitbucketApiRequestStatistic("GET /user", 1));
+    }
+
     [Fact(DisplayName = "Track request is thread safe")]
     [Trait("Category", "Unit")]
     public void TrackRequestWhenCalledConcurrentlyCountsEveryRequest()

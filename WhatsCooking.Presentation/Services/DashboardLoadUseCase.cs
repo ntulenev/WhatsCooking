@@ -98,6 +98,7 @@ internal sealed class DashboardLoadUseCase : IDashboardLoadUseCase
                 _demoTelemetryProvider.Create());
         }
 
+        _telemetryService.Reset();
         var result = await _loader
             .LoadAsync(filterPattern, mergedPullRequestsDays, progress, cancellationToken)
             .ConfigureAwait(false);
