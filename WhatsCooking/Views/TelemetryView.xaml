@@ -26,12 +26,29 @@
                     <TextBlock Text="{Binding TelemetryDashboard.TelemetryRequestsCount}" FontWeight="SemiBold" Margin="0,0,22,0" />
                     <TextBlock Text="Endpoints" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
                     <TextBlock Text="{Binding TelemetryDashboard.TelemetryEndpointsCount}" FontWeight="SemiBold" Margin="0,0,22,0" />
-                    <TextBlock Text="Cache hits" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
-                    <TextBlock Text="{Binding TelemetryDashboard.CacheHits}" FontWeight="SemiBold" Margin="0,0,22,0" />
-                    <TextBlock Text="API loads" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
-                    <TextBlock Text="{Binding TelemetryDashboard.CacheMisses}" FontWeight="SemiBold" Margin="0,0,22,0" />
-                    <TextBlock Text="Hit rate" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
-                    <TextBlock Text="{Binding TelemetryDashboard.CacheHitRate}" FontWeight="SemiBold" />
+                    <TextBlock Text="Activity cached"
+                               Style="{DynamicResource MutedTextStyle}"
+                               Margin="0,0,6,0"
+                               ToolTip="PR metadata is always requested to validate the cache. This count shows activity summaries reused without calling the pull request activity API." />
+                    <TextBlock Text="{Binding TelemetryDashboard.CacheHits}"
+                               FontWeight="SemiBold"
+                               Margin="0,0,22,0"
+                               ToolTip="PR activity summaries reused from cache." />
+                    <TextBlock Text="Activity API loads"
+                               Style="{DynamicResource MutedTextStyle}"
+                               Margin="0,0,6,0"
+                               ToolTip="PR activity API loads required after the cache was missing or stale." />
+                    <TextBlock Text="{Binding TelemetryDashboard.CacheMisses}"
+                               FontWeight="SemiBold"
+                               Margin="0,0,22,0"
+                               ToolTip="PR activity API loads required after the cache was missing or stale." />
+                    <TextBlock Text="Activity cache rate"
+                               Style="{DynamicResource MutedTextStyle}"
+                               Margin="0,0,6,0"
+                               ToolTip="Share of PR activity summaries reused from cache. PR metadata requests are not included." />
+                    <TextBlock Text="{Binding TelemetryDashboard.CacheHitRate}"
+                               FontWeight="SemiBold"
+                               ToolTip="Share of PR activity summaries reused from cache. PR metadata requests are not included." />
                 </WrapPanel>
                 <TextBlock Grid.Column="1" Text="Filter" Style="{DynamicResource MutedTextStyle}" Margin="18,0,6,0" />
                 <TextBox Grid.Column="2"
