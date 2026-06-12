@@ -22,6 +22,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
@@ -47,16 +48,62 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             entries,
             cancellation.Token);
         var result = await cache.ReadEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
         result.Should().Equal(entries.Reverse());
+    }
+
+    [Fact(DisplayName = "Open and merged entries are stored independently")]
+    [Trait("Category", "Unit")]
+    public async Task SaveEntriesAsyncWhenScopesDifferKeepsIndependentEntries()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        var openEntry = CreateEntry(1, "open");
+        var mergedEntry = CreateEntry(2, "merged");
+
+        // Act
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            PullRequestDetailsCacheScope.Open,
+            [openEntry],
+            cancellation.Token);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            PullRequestDetailsCacheScope.Merged,
+            [mergedEntry],
+            cancellation.Token);
+        var openResult = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            PullRequestDetailsCacheScope.Open,
+            cancellation.Token);
+        var mergedResult = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            PullRequestDetailsCacheScope.Merged,
+            cancellation.Token);
+
+        // Assert
+        openResult.Should().Equal(openEntry);
+        mergedResult.Should().Equal(mergedEntry);
     }
 
     [Fact(DisplayName = "Save entries excludes entries with invalid cached values")]
@@ -80,12 +127,14 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             entries,
             cancellation.Token);
         var result = await cache.ReadEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
@@ -104,6 +153,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             [CreateEntry(1, "existing")],
             cancellation.Token);
         PullRequestDetailsCacheEntry[] invalidEntries =
@@ -117,6 +167,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             invalidEntries,
             cancellation.Token);
 
@@ -136,6 +187,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             [CreateEntry(1, "fingerprint")],
             cancellation.Token);
 
@@ -144,12 +196,14 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             [],
             cancellation.Token);
         var result = await cache.ReadEntriesAsync(
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
@@ -169,6 +223,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             [CreateEntry(1, "fingerprint")],
             cancellation.Token);
         var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
@@ -179,6 +234,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
@@ -197,6 +253,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             [CreateEntry(1, "fingerprint")],
             cancellation.Token);
         var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
@@ -209,6 +266,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
@@ -228,6 +286,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             entries,
             CancellationToken.None);
 
@@ -249,6 +308,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
@@ -270,6 +330,7 @@ public sealed class FilePullRequestDetailsCacheTests
     private static readonly BitbucketWorkspace _workspace = new("workspace");
     private static readonly RepositorySlug _repositorySlug = new("repository");
     private static readonly BitbucketId _currentUserId = new("user");
+    private const PullRequestDetailsCacheScope _scope = PullRequestDetailsCacheScope.Merged;
 
     private sealed class TemporaryDirectory : IDisposable
     {

@@ -24,10 +24,11 @@ public sealed class PullRequestDetailsCacheService : IPullRequestDetailsCacheSer
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         CancellationToken cancellationToken)
     {
         var cacheEntries = await _cache
-            .ReadEntriesAsync(workspace, repositorySlug, currentUserId, cancellationToken)
+            .ReadEntriesAsync(workspace, repositorySlug, currentUserId, scope, cancellationToken)
             .ConfigureAwait(false);
 
         return cacheEntries
@@ -40,17 +41,19 @@ public sealed class PullRequestDetailsCacheService : IPullRequestDetailsCacheSer
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         IReadOnlyCollection<PullRequestDetailsCacheEntry> entries,
         CancellationToken cancellationToken) =>
-        _cache.SaveEntriesAsync(workspace, repositorySlug, currentUserId, entries, cancellationToken);
+        _cache.SaveEntriesAsync(workspace, repositorySlug, currentUserId, scope, entries, cancellationToken);
 
     /// <inheritdoc />
     public Task DeleteAsync(
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         CancellationToken cancellationToken) =>
-        _cache.DeleteAsync(workspace, repositorySlug, currentUserId, cancellationToken);
+        _cache.DeleteAsync(workspace, repositorySlug, currentUserId, scope, cancellationToken);
 
     /// <inheritdoc />
     public bool TryCreateActivitySummary(

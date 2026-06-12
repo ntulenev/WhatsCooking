@@ -31,9 +31,10 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         CancellationToken cancellationToken)
     {
-        var cacheFilePath = GetCacheFilePath(workspace, repositorySlug, currentUserId);
+        var cacheFilePath = GetCacheFilePath(workspace, repositorySlug, currentUserId, scope);
         if (!File.Exists(cacheFilePath))
         {
             return [];
@@ -71,6 +72,7 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         IReadOnlyCollection<PullRequestDetailsCacheEntry> entries,
         CancellationToken cancellationToken)
     {
@@ -78,11 +80,11 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
 
         if (entries.Count == 0)
         {
-            await DeleteAsync(workspace, repositorySlug, currentUserId, cancellationToken).ConfigureAwait(false);
+            await DeleteAsync(workspace, repositorySlug, currentUserId, scope, cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        var cacheFilePath = GetCacheFilePath(workspace, repositorySlug, currentUserId);
+        var cacheFilePath = GetCacheFilePath(workspace, repositorySlug, currentUserId, scope);
         var cacheDirectory = Path.GetDirectoryName(cacheFilePath);
         if (string.IsNullOrWhiteSpace(cacheDirectory))
         {
@@ -102,7 +104,7 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
 
             if (validEntries.Length == 0)
             {
-                await DeleteAsync(workspace, repositorySlug, currentUserId, cancellationToken).ConfigureAwait(false);
+                await DeleteAsync(workspace, repositorySlug, currentUserId, scope, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -128,13 +130,14 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
-            var cacheFilePath = GetCacheFilePath(workspace, repositorySlug, currentUserId);
+            var cacheFilePath = GetCacheFilePath(workspace, repositorySlug, currentUserId, scope);
             if (File.Exists(cacheFilePath))
             {
                 File.Delete(cacheFilePath);
@@ -148,13 +151,23 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
         return Task.CompletedTask;
     }
 
-    private string GetCacheFilePath(BitbucketWorkspace workspace, RepositorySlug repositorySlug, BitbucketId currentUserId)
+    private string GetCacheFilePath(
+        BitbucketWorkspace workspace,
+        RepositorySlug repositorySlug,
+        BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope)
     {
         var workspaceSegment = GetHashSegment(workspace.Value);
         var userSegment = GetHashSegment(currentUserId.Value);
         var repositorySegment = GetHashSegment(repositorySlug.Value);
+        var fileName = scope switch
+        {
+            PullRequestDetailsCacheScope.Open => $"{repositorySegment}.json",
+            PullRequestDetailsCacheScope.Merged => $"{repositorySegment}.merged.json",
+            _ => throw new ArgumentOutOfRangeException(nameof(scope), scope, "Unsupported pull request cache scope.")
+        };
 
-        return Path.Combine(_cacheRootDirectory, workspaceSegment, userSegment, $"{repositorySegment}.json");
+        return Path.Combine(_cacheRootDirectory, workspaceSegment, userSegment, fileName);
     }
 
     private static string GetHashSegment(string value)

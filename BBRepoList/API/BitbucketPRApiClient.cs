@@ -88,7 +88,12 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         try
         {
             var cacheEntriesByPullRequestId = await _cacheService
-                .ReadEntriesByPullRequestIdAsync(workspace, repositorySlug, currentUserId, cancellationToken)
+                .ReadEntriesByPullRequestIdAsync(
+                    workspace,
+                    repositorySlug,
+                    currentUserId,
+                    PullRequestDetailsCacheScope.Open,
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             var openPullRequests = await GetPullRequestSnapshotsAsync(
@@ -100,7 +105,12 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
             if (openPullRequests.Count == 0)
             {
                 await _cacheService
-                    .DeleteAsync(workspace, repositorySlug, currentUserId, cancellationToken)
+                    .DeleteAsync(
+                        workspace,
+                        repositorySlug,
+                        currentUserId,
+                        PullRequestDetailsCacheScope.Open,
+                        cancellationToken)
                     .ConfigureAwait(false);
                 return [];
             }
@@ -134,7 +144,13 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
             }
 
             await _cacheService
-                .SaveEntriesAsync(workspace, repositorySlug, currentUserId, updatedCacheEntries, cancellationToken)
+                .SaveEntriesAsync(
+                    workspace,
+                    repositorySlug,
+                    currentUserId,
+                    PullRequestDetailsCacheScope.Open,
+                    updatedCacheEntries,
+                    cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (HttpRequestException)

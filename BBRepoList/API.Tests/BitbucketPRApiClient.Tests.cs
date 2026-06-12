@@ -120,12 +120,14 @@ public sealed class BitbucketPRApiClientTests
                 workspace,
                 repository.Slug!.Value,
                 currentUserId,
+                PullRequestDetailsCacheScope.Open,
                 It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>());
         cache.Setup(instance => instance.DeleteAsync(
                 workspace,
                 repository.Slug!.Value,
                 currentUserId,
+                PullRequestDetailsCacheScope.Open,
                 It.Is<CancellationToken>(token => token == cancellation.Token)))
             .Returns(Task.CompletedTask);
         var client = CreateClient(transport: transport, cache: cache);
@@ -199,6 +201,7 @@ public sealed class BitbucketPRApiClientTests
                 workspace,
                 repositorySlug,
                 currentUserId,
+                PullRequestDetailsCacheScope.Open,
                 It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(cachedEntries);
         var cachedSummaryOut = cachedSummary;
@@ -222,6 +225,7 @@ public sealed class BitbucketPRApiClientTests
                 workspace,
                 repositorySlug,
                 currentUserId,
+                PullRequestDetailsCacheScope.Open,
                 It.Is<IReadOnlyCollection<PullRequestDetailsCacheEntry>>(entries =>
                     entries.Count == 2
                     && entries.Contains(cachedEntry)
@@ -344,6 +348,7 @@ public sealed class BitbucketPRApiClientTests
                 It.Is<BitbucketWorkspace>(value => value == workspace),
                 It.Is<RepositorySlug>(value => value == repositorySlug),
                 It.Is<BitbucketId>(value => value == currentUserId),
+                PullRequestDetailsCacheScope.Open,
                 It.Is<CancellationToken>(token => token == cancellation.Token)))
             .ReturnsAsync(new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>());
         var transport = new Mock<IBitbucketTransport>();

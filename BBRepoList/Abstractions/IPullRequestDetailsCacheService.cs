@@ -13,12 +13,14 @@ public interface IPullRequestDetailsCacheService
     /// <param name="workspace">Bitbucket workspace identifier.</param>
     /// <param name="repositorySlug">Repository slug.</param>
     /// <param name="currentUserId">Current authenticated Bitbucket user identifier.</param>
+    /// <param name="scope">Pull request population to read.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Cached entries keyed by pull request identifier.</returns>
     Task<IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry>> ReadEntriesByPullRequestIdAsync(
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -27,12 +29,14 @@ public interface IPullRequestDetailsCacheService
     /// <param name="workspace">Bitbucket workspace identifier.</param>
     /// <param name="repositorySlug">Repository slug.</param>
     /// <param name="currentUserId">Current authenticated Bitbucket user identifier.</param>
+    /// <param name="scope">Pull request population to save.</param>
     /// <param name="entries">Entries to persist.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task SaveEntriesAsync(
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         IReadOnlyCollection<PullRequestDetailsCacheEntry> entries,
         CancellationToken cancellationToken);
 
@@ -42,11 +46,13 @@ public interface IPullRequestDetailsCacheService
     /// <param name="workspace">Bitbucket workspace identifier.</param>
     /// <param name="repositorySlug">Repository slug.</param>
     /// <param name="currentUserId">Current authenticated Bitbucket user identifier.</param>
+    /// <param name="scope">Pull request population to delete.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task DeleteAsync(
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
         BitbucketId currentUserId,
+        PullRequestDetailsCacheScope scope,
         CancellationToken cancellationToken);
 
     /// <summary>

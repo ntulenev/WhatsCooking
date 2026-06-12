@@ -37,6 +37,7 @@ public sealed class PullRequestDetailsCacheServiceTests
                 _workspace,
                 _repositorySlug,
                 _currentUserId,
+                _scope,
                 cancellation.Token))
             .ReturnsAsync([firstEntry, lastEntry]);
         var service = new PullRequestDetailsCacheService(cache.Object);
@@ -46,6 +47,7 @@ public sealed class PullRequestDetailsCacheServiceTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
@@ -67,6 +69,7 @@ public sealed class PullRequestDetailsCacheServiceTests
                 _workspace,
                 _repositorySlug,
                 _currentUserId,
+                _scope,
                 entries,
                 cancellation.Token))
             .Returns(Task.CompletedTask);
@@ -77,6 +80,7 @@ public sealed class PullRequestDetailsCacheServiceTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             entries,
             cancellation.Token);
 
@@ -95,6 +99,7 @@ public sealed class PullRequestDetailsCacheServiceTests
                 _workspace,
                 _repositorySlug,
                 _currentUserId,
+                _scope,
                 cancellation.Token))
             .Returns(Task.CompletedTask);
         var service = new PullRequestDetailsCacheService(cache.Object);
@@ -104,6 +109,7 @@ public sealed class PullRequestDetailsCacheServiceTests
             _workspace,
             _repositorySlug,
             _currentUserId,
+            _scope,
             cancellation.Token);
 
         // Assert
@@ -252,4 +258,5 @@ public sealed class PullRequestDetailsCacheServiceTests
     private static readonly BitbucketWorkspace _workspace = new("workspace");
     private static readonly RepositorySlug _repositorySlug = new("repository");
     private static readonly BitbucketId _currentUserId = new("user");
+    private const PullRequestDetailsCacheScope _scope = PullRequestDetailsCacheScope.Merged;
 }
