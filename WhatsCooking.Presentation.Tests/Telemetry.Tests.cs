@@ -114,6 +114,9 @@ public sealed class TelemetryTests
         viewModel.IsTelemetryEnabled.Should().BeTrue();
         viewModel.TelemetryRequestsCount.Should().Be(5);
         viewModel.TelemetryEndpointsCount.Should().Be(2);
+        viewModel.CacheHits.Should().Be(3);
+        viewModel.CacheMisses.Should().Be(2);
+        viewModel.CacheHitRate.Should().Be("60.0 %");
         viewModel.TelemetryView.Select(row => row.ApiName).Should().Equal("repositories", "user");
         calls.Should().Be(1);
         telemetryService.VerifyAll();
@@ -177,5 +180,7 @@ public sealed class TelemetryTests
             [
                 new BitbucketApiRequestStatistic("repositories", 4),
                 new BitbucketApiRequestStatistic("user", 1)
-            ]);
+            ],
+            CacheHits: 3,
+            CacheMisses: 2);
 }

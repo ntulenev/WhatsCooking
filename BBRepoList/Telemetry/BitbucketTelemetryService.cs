@@ -25,7 +25,12 @@ public sealed class BitbucketTelemetryService : IBitbucketTelemetryService
     }
 
     /// <inheritdoc />
-    public void Reset() => _requestCounts.Clear();
+    public void Reset()
+    {
+        _requestCounts.Clear();
+        _ = Interlocked.Exchange(ref _cacheHits, 0);
+        _ = Interlocked.Exchange(ref _cacheMisses, 0);
+    }
 
     /// <inheritdoc />
     public void TrackRequest(Uri requestUri)
@@ -39,6 +44,24 @@ public sealed class BitbucketTelemetryService : IBitbucketTelemetryService
 
         var apiName = NormalizeApiName(requestUri);
         IncrementRequestCount(apiName);
+    }
+
+    /// <inheritdoc />
+    public void TrackCacheHit()
+    {
+        if (_isEnabled)
+        {
+            _ = Interlocked.Increment(ref _cacheHits);
+        }
+    }
+
+    /// <inheritdoc />
+    public void TrackCacheMiss()
+    {
+        if (_isEnabled)
+        {
+            _ = Interlocked.Increment(ref _cacheMisses);
+        }
     }
 
     /// <inheritdoc />
@@ -58,7 +81,9 @@ public sealed class BitbucketTelemetryService : IBitbucketTelemetryService
         return new BitbucketTelemetrySnapshot(
             true,
             requestStatistics.Sum(static statistic => statistic.RequestCount),
-            requestStatistics);
+            requestStatistics,
+            Volatile.Read(ref _cacheHits),
+            Volatile.Read(ref _cacheMisses));
     }
 
     private void IncrementRequestCount(string apiName)
@@ -126,4 +151,6 @@ public sealed class BitbucketTelemetryService : IBitbucketTelemetryService
 
     private readonly ConcurrentDictionary<string, int> _requestCounts = new(StringComparer.Ordinal);
     private readonly bool _isEnabled;
+    private int _cacheHits;
+    private int _cacheMisses;
 }

@@ -27,6 +27,7 @@ public sealed class BitbucketPRApiClientTests
             Mock.Of<IBitbucketPullRequestActivityLoader>(),
             Mock.Of<IPullRequestSnapshotMapper>(),
             Mock.Of<IPullRequestDetailsCacheService>(),
+            Mock.Of<IBitbucketTelemetryService>(),
             CreateOptions());
 
         // Assert
@@ -245,12 +246,16 @@ public sealed class BitbucketPRApiClientTests
         var analyzer = new Mock<IPullRequestActivityAnalyzer>(MockBehavior.Strict);
         analyzer.Setup(instance => instance.CreateSummary(freshActivities, secondSnapshot, currentUserId))
             .Returns(freshSummary);
+        var telemetry = new Mock<IBitbucketTelemetryService>(MockBehavior.Strict);
+        telemetry.Setup(instance => instance.TrackCacheHit());
+        telemetry.Setup(instance => instance.TrackCacheMiss());
         var client = CreateClient(
             transport,
             analyzer,
             activityLoader,
             mapper,
-            cache);
+            cache,
+            telemetry);
 
         // Act
         var result = await client.GetOpenPullRequestDetailsAsync(
@@ -267,6 +272,9 @@ public sealed class BitbucketPRApiClientTests
             firstSnapshot.Id,
             It.Is<CancellationToken>(token => token == cancellation.Token)), Times.Never);
         cache.VerifyAll();
+        telemetry.Verify(instance => instance.TrackCacheHit(), Times.Once);
+        telemetry.Verify(instance => instance.TrackCacheMiss(), Times.Once);
+        telemetry.VerifyNoOtherCalls();
     }
 
     [Fact(DisplayName = "Get merged pull requests stops after first item older than boundary")]
@@ -434,12 +442,15 @@ public sealed class BitbucketPRApiClientTests
             .Returns(Task.CompletedTask);
         var activityLoader = new Mock<IBitbucketPullRequestActivityLoader>(MockBehavior.Strict);
         var analyzer = new Mock<IPullRequestActivityAnalyzer>(MockBehavior.Strict);
+        var telemetry = new Mock<IBitbucketTelemetryService>(MockBehavior.Strict);
+        telemetry.Setup(instance => instance.TrackCacheHit());
         var client = CreateClient(
             transport,
             analyzer,
             activityLoader,
             mapper,
-            cache);
+            cache,
+            telemetry);
 
         // Act
         var result = await client.GetMergedPullRequestsAsync(
@@ -455,6 +466,8 @@ public sealed class BitbucketPRApiClientTests
         activityLoader.VerifyNoOtherCalls();
         analyzer.VerifyNoOtherCalls();
         cache.VerifyAll();
+        telemetry.Verify(instance => instance.TrackCacheHit(), Times.Once);
+        telemetry.VerifyNoOtherCalls();
     }
 
     [Fact(DisplayName = "Get open details suppresses HTTP request failures")]
@@ -498,13 +511,15 @@ public sealed class BitbucketPRApiClientTests
         Mock<IPullRequestActivityAnalyzer>? analyzer = null,
         Mock<IBitbucketPullRequestActivityLoader>? activityLoader = null,
         Mock<IPullRequestSnapshotMapper>? mapper = null,
-        Mock<IPullRequestDetailsCacheService>? cache = null) =>
+        Mock<IPullRequestDetailsCacheService>? cache = null,
+        Mock<IBitbucketTelemetryService>? telemetry = null) =>
         new(
             (transport ?? new Mock<IBitbucketTransport>()).Object,
             (analyzer ?? new Mock<IPullRequestActivityAnalyzer>()).Object,
             (activityLoader ?? new Mock<IBitbucketPullRequestActivityLoader>()).Object,
             (mapper ?? new Mock<IPullRequestSnapshotMapper>()).Object,
             (cache ?? new Mock<IPullRequestDetailsCacheService>()).Object,
+            (telemetry ?? new Mock<IBitbucketTelemetryService>()).Object,
             CreateOptions());
 
     private static Repository CreateRepository() =>

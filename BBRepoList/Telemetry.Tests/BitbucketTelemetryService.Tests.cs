@@ -108,6 +108,8 @@ public sealed class BitbucketTelemetryServiceTests
         var service = CreateService(enabled: true);
         service.TrackRequest(new Uri("/2.0/user", UriKind.Relative));
         service.TrackRequest(new Uri("/2.0/repositories/workspace", UriKind.Relative));
+        service.TrackCacheHit();
+        service.TrackCacheMiss();
         service.TrackRequest(new Uri("/2.0/repositories/workspace", UriKind.Relative));
         service.TrackRequest(new Uri("/2.0/alpha", UriKind.Relative));
         service.TrackRequest(new Uri("/2.0/alpha", UriKind.Relative));
@@ -143,6 +145,27 @@ public sealed class BitbucketTelemetryServiceTests
         snapshot.TotalRequests.Should().Be(1);
         snapshot.RequestStatistics.Should().ContainSingle()
             .Which.Should().Be(new BitbucketApiRequestStatistic("GET /user", 1));
+        snapshot.CacheHits.Should().Be(0);
+        snapshot.CacheMisses.Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Cache telemetry tracks hits and misses")]
+    [Trait("Category", "Unit")]
+    public void TrackCacheWhenTelemetryIsEnabledCountsCacheOutcomes()
+    {
+        // Arrange
+        var service = CreateService(enabled: true);
+
+        // Act
+        service.TrackCacheHit();
+        service.TrackCacheHit();
+        service.TrackCacheMiss();
+        var snapshot = service.GetSnapshot();
+
+        // Assert
+        snapshot.CacheHits.Should().Be(2);
+        snapshot.CacheMisses.Should().Be(1);
+        snapshot.TotalRequests.Should().Be(0);
     }
 
     [Fact(DisplayName = "Track request is thread safe")]

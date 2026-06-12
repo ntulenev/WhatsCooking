@@ -59,5 +59,7 @@ public sealed class DemoProvidersTests
         result.RequestStatistics.Should().HaveCount(10);
         result.TotalRequests.Should().Be(result.RequestStatistics.Sum(statistic => statistic.RequestCount));
         result.RequestStatistics.Should().OnlyContain(statistic => statistic.RequestCount > 0);
+        result.CacheHits.Should().BeGreaterThan(0);
+        result.CacheMisses.Should().BeGreaterThan(0);
     }
 }

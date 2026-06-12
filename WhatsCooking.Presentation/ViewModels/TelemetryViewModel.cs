@@ -60,6 +60,30 @@ internal sealed class TelemetryViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
+    /// Number of pull request activity summaries loaded from cache.
+    /// </summary>
+    public int CacheHits {
+        get;
+        private set => SetProperty(ref field, value);
+    }
+
+    /// <summary>
+    /// Number of pull request activity summaries loaded from the API after a cache miss.
+    /// </summary>
+    public int CacheMisses {
+        get;
+        private set => SetProperty(ref field, value);
+    }
+
+    /// <summary>
+    /// Formatted cache hit rate for pull request activity summaries.
+    /// </summary>
+    public string CacheHitRate {
+        get;
+        private set => SetProperty(ref field, value);
+    } = "0.0 %";
+
+    /// <summary>
     /// Whether Bitbucket API telemetry is enabled.
     /// </summary>
     public bool IsTelemetryEnabled {
@@ -94,6 +118,11 @@ internal sealed class TelemetryViewModel : ObservableObject, IDisposable
         IsTelemetryEnabled = snapshot.IsEnabled;
         TelemetryRequestsCount = snapshot.TotalRequests;
         TelemetryEndpointsCount = snapshot.RequestStatistics.Count;
+        CacheHits = snapshot.CacheHits;
+        CacheMisses = snapshot.CacheMisses;
+        var cacheLookups = snapshot.CacheHits + snapshot.CacheMisses;
+        CacheHitRate = (cacheLookups > 0 ? (double)snapshot.CacheHits / cacheLookups : 0)
+            .ToString("P1", System.Globalization.CultureInfo.InvariantCulture);
         _telemetryRows.Clear();
         for (var i = 0; i < snapshot.RequestStatistics.Count; i++)
         {

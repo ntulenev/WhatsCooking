@@ -19,6 +19,16 @@ public interface IBitbucketTelemetryService
     void TrackRequest(Uri requestUri);
 
     /// <summary>
+    /// Tracks a pull request activity cache hit.
+    /// </summary>
+    void TrackCacheHit();
+
+    /// <summary>
+    /// Tracks a pull request activity cache miss that requires an API load.
+    /// </summary>
+    void TrackCacheMiss();
+
+    /// <summary>
     /// Returns the telemetry snapshot for the current run.
     /// </summary>
     /// <returns>Current telemetry snapshot.</returns>

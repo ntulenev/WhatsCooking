@@ -32,6 +32,11 @@ internal sealed class DemoTelemetryProvider : IDemoTelemetryProvider
         ];
         var totalRequests = statistics.Sum(static statistic => statistic.RequestCount);
 
-        return new BitbucketTelemetrySnapshot(true, totalRequests, statistics);
+        return new BitbucketTelemetrySnapshot(
+            true,
+            totalRequests,
+            statistics,
+            CacheHits: 14,
+            CacheMisses: 6);
     }
 }

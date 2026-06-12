@@ -20,6 +20,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
     /// <param name="activityLoader">Pull request activity loader.</param>
     /// <param name="snapshotMapper">Pull request snapshot mapper.</param>
     /// <param name="cacheService">Pull request details cache service.</param>
+    /// <param name="telemetryService">Bitbucket telemetry service.</param>
     /// <param name="options">Bitbucket configuration options.</param>
     public BitbucketPRApiClient(
         IBitbucketTransport transport,
@@ -27,6 +28,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         IBitbucketPullRequestActivityLoader activityLoader,
         IPullRequestSnapshotMapper snapshotMapper,
         IPullRequestDetailsCacheService cacheService,
+        IBitbucketTelemetryService telemetryService,
         IOptions<BitbucketOptions> options)
     {
         ArgumentNullException.ThrowIfNull(transport);
@@ -34,6 +36,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         ArgumentNullException.ThrowIfNull(activityLoader);
         ArgumentNullException.ThrowIfNull(snapshotMapper);
         ArgumentNullException.ThrowIfNull(cacheService);
+        ArgumentNullException.ThrowIfNull(telemetryService);
         ArgumentNullException.ThrowIfNull(options);
 
         _transport = transport;
@@ -41,6 +44,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         _activityLoader = activityLoader;
         _snapshotMapper = snapshotMapper;
         _cacheService = cacheService;
+        _telemetryService = telemetryService;
         _options = options.Value;
     }
 
@@ -128,11 +132,13 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
                     out var cachedDetail,
                     out var cacheEntry))
                 {
+                    _telemetryService.TrackCacheHit();
                     details.Add(cachedDetail);
                     updatedCacheEntries.Add(cacheEntry);
                     continue;
                 }
 
+                _telemetryService.TrackCacheMiss();
                 var activities = await _activityLoader.GetActivitiesAsync(
                     repositorySlug,
                     pullRequest.Id,
@@ -219,12 +225,17 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
                         out activitySummary,
                         out cacheEntry))
                     {
+                        _telemetryService.TrackCacheMiss();
                         var activities = await _activityLoader.GetActivitiesAsync(
                             repositorySlug,
                             pullRequest.Id,
                             token).ConfigureAwait(false);
                         activitySummary = _activityAnalyzer.CreateSummary(activities, pullRequest, currentUserId);
                         cacheEntry = _cacheService.CreateEntry(pullRequest, activitySummary);
+                    }
+                    else
+                    {
+                        _telemetryService.TrackCacheHit();
                     }
 
                     pullRequests.Add(CreateMergedPullRequest(repository, pullRequest, pullRequestDto.UpdatedOn.Value, activitySummary));
@@ -396,6 +407,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
     private readonly IBitbucketPullRequestActivityLoader _activityLoader;
     private readonly IPullRequestSnapshotMapper _snapshotMapper;
     private readonly IPullRequestDetailsCacheService _cacheService;
+    private readonly IBitbucketTelemetryService _telemetryService;
     private readonly BitbucketOptions _options;
 
     private const string MERGED_PULL_REQUEST_FIELDS =

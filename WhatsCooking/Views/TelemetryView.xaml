@@ -14,28 +14,27 @@
 
             <Grid Margin="10,8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="90" />
-                    <ColumnDefinition Width="18" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="90" />
-                    <ColumnDefinition Width="18" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="90" />
-                    <ColumnDefinition Width="18" />
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="260" />
-                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="Enabled" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
-                <TextBlock Grid.Column="1" Text="{Binding TelemetryDashboard.IsTelemetryEnabled}" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="3" Text="Requests" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
-                <TextBlock Grid.Column="4" Text="{Binding TelemetryDashboard.TelemetryRequestsCount}" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="6" Text="Endpoints" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
-                <TextBlock Grid.Column="7" Text="{Binding TelemetryDashboard.TelemetryEndpointsCount}" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="9" Text="Filter" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
-                <TextBox Grid.Column="10"
+                <WrapPanel VerticalAlignment="Center">
+                    <TextBlock Text="Enabled" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
+                    <TextBlock Text="{Binding TelemetryDashboard.IsTelemetryEnabled}" FontWeight="SemiBold" Margin="0,0,22,0" />
+                    <TextBlock Text="Requests" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
+                    <TextBlock Text="{Binding TelemetryDashboard.TelemetryRequestsCount}" FontWeight="SemiBold" Margin="0,0,22,0" />
+                    <TextBlock Text="Endpoints" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
+                    <TextBlock Text="{Binding TelemetryDashboard.TelemetryEndpointsCount}" FontWeight="SemiBold" Margin="0,0,22,0" />
+                    <TextBlock Text="Cache hits" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
+                    <TextBlock Text="{Binding TelemetryDashboard.CacheHits}" FontWeight="SemiBold" Margin="0,0,22,0" />
+                    <TextBlock Text="API loads" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
+                    <TextBlock Text="{Binding TelemetryDashboard.CacheMisses}" FontWeight="SemiBold" Margin="0,0,22,0" />
+                    <TextBlock Text="Hit rate" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
+                    <TextBlock Text="{Binding TelemetryDashboard.CacheHitRate}" FontWeight="SemiBold" />
+                </WrapPanel>
+                <TextBlock Grid.Column="1" Text="Filter" Style="{DynamicResource MutedTextStyle}" Margin="18,0,6,0" />
+                <TextBox Grid.Column="2"
                          AutomationProperties.Name="Telemetry filter"
                          Text="{Binding TelemetryDashboard.TelemetryFilter, UpdateSourceTrigger=PropertyChanged}" />
             </Grid>
