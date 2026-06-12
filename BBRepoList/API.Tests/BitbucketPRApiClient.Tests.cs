@@ -277,6 +277,7 @@ public sealed class BitbucketPRApiClientTests
         var repository = CreateRepository();
         var repositorySlug = repository.Slug!.Value;
         var currentUserId = new BitbucketId("current-user");
+        var workspace = new BitbucketWorkspace("workspace");
         var mergedSince = new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero);
         var recentDto = CreatePullRequestDto(10, "Recent", mergedSince.AddDays(2));
         var oldDto = CreatePullRequestDto(9, "Old", mergedSince.AddMinutes(-1));
@@ -306,11 +307,47 @@ public sealed class BitbucketPRApiClientTests
         var analyzer = new Mock<IPullRequestActivityAnalyzer>(MockBehavior.Strict);
         analyzer.Setup(instance => instance.CreateSummary(activities, recentSnapshot, currentUserId))
             .Returns(summary);
+        var cacheEntry = new PullRequestDetailsCacheEntry(
+            recentSnapshot.Id,
+            recentSnapshot.CacheFingerprint!,
+            summary.FirstNonAuthorActivityOn,
+            summary.LastActivityOn,
+            summary.HasCurrentUserDiscussion,
+            summary.CommentsCount);
+        IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry> cachedEntries =
+            new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>();
+        var cache = new Mock<IPullRequestDetailsCacheService>(MockBehavior.Strict);
+        cache.Setup(instance => instance.ReadEntriesByPullRequestIdAsync(
+                workspace,
+                repositorySlug,
+                currentUserId,
+                PullRequestDetailsCacheScope.Merged,
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .ReturnsAsync(cachedEntries);
+        PullRequestActivitySummary unusedSummary = null!;
+        PullRequestDetailsCacheEntry unusedEntry = null!;
+        cache.Setup(instance => instance.TryCreateActivitySummary(
+                recentSnapshot,
+                cachedEntries,
+                out unusedSummary,
+                out unusedEntry))
+            .Returns(false);
+        cache.Setup(instance => instance.CreateEntry(recentSnapshot, summary)).Returns(cacheEntry);
+        cache.Setup(instance => instance.SaveEntriesAsync(
+                workspace,
+                repositorySlug,
+                currentUserId,
+                PullRequestDetailsCacheScope.Merged,
+                It.Is<IReadOnlyCollection<PullRequestDetailsCacheEntry>>(entries =>
+                    entries.Count == 1 && entries.Contains(cacheEntry)),
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .Returns(Task.CompletedTask);
         var client = CreateClient(
             transport,
             analyzer,
             activityLoader,
-            mapper);
+            mapper,
+            cache);
 
         // Act
         var result = await client.GetMergedPullRequestsAsync(
@@ -330,6 +367,94 @@ public sealed class BitbucketPRApiClientTests
         mapper.Verify(instance => instance.CreateSnapshot(
             It.Is<PullRequestDto>(dto => dto.Id != recentDto.Id),
             It.Is<BitbucketId>(id => id == currentUserId)), Times.Never);
+        cache.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Get merged pull requests reuses cached activity when fingerprint matches")]
+    [Trait("Category", "Unit")]
+    public async Task GetMergedPullRequestsWhenCacheMatchesSkipsActivityLoading()
+    {
+        // Arrange
+        var repository = CreateRepository();
+        var repositorySlug = repository.Slug!.Value;
+        var currentUserId = new BitbucketId("current-user");
+        var workspace = new BitbucketWorkspace("workspace");
+        var mergedSince = new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        var pullRequestDto = CreatePullRequestDto(10, "Cached", mergedSince.AddDays(2));
+        var pullRequest = CreateSnapshot(10, "Cached", "merged-fingerprint");
+        var cachedSummary = new PullRequestActivitySummary(
+            pullRequest.CreatedOn.AddHours(1),
+            pullRequest.CreatedOn.AddHours(2),
+            true,
+            4);
+        var cachedEntry = new PullRequestDetailsCacheEntry(
+            pullRequest.Id,
+            pullRequest.CacheFingerprint!,
+            cachedSummary.FirstNonAuthorActivityOn,
+            cachedSummary.LastActivityOn,
+            cachedSummary.HasCurrentUserDiscussion,
+            cachedSummary.CommentsCount);
+        IReadOnlyDictionary<PullRequestId, PullRequestDetailsCacheEntry> cachedEntries =
+            new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>
+            {
+                [pullRequest.Id] = cachedEntry
+            };
+        using var cancellation = new CancellationTokenSource();
+        var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
+        transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
+                It.Is<Uri>(url => url.OriginalString.Contains("state=MERGED", StringComparison.Ordinal)),
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .ReturnsAsync(new PullRequestPageDto([pullRequestDto], null));
+        var mapper = new Mock<IPullRequestSnapshotMapper>(MockBehavior.Strict);
+        mapper.Setup(instance => instance.CreateSnapshot(pullRequestDto, currentUserId)).Returns(pullRequest);
+        var cache = new Mock<IPullRequestDetailsCacheService>(MockBehavior.Strict);
+        cache.Setup(instance => instance.ReadEntriesByPullRequestIdAsync(
+                workspace,
+                repositorySlug,
+                currentUserId,
+                PullRequestDetailsCacheScope.Merged,
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .ReturnsAsync(cachedEntries);
+        var cachedSummaryOut = cachedSummary;
+        var cachedEntryOut = cachedEntry;
+        cache.Setup(instance => instance.TryCreateActivitySummary(
+                pullRequest,
+                cachedEntries,
+                out cachedSummaryOut,
+                out cachedEntryOut))
+            .Returns(true);
+        cache.Setup(instance => instance.SaveEntriesAsync(
+                workspace,
+                repositorySlug,
+                currentUserId,
+                PullRequestDetailsCacheScope.Merged,
+                It.Is<IReadOnlyCollection<PullRequestDetailsCacheEntry>>(entries =>
+                    entries.Count == 1 && entries.Contains(cachedEntry)),
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .Returns(Task.CompletedTask);
+        var activityLoader = new Mock<IBitbucketPullRequestActivityLoader>(MockBehavior.Strict);
+        var analyzer = new Mock<IPullRequestActivityAnalyzer>(MockBehavior.Strict);
+        var client = CreateClient(
+            transport,
+            analyzer,
+            activityLoader,
+            mapper,
+            cache);
+
+        // Act
+        var result = await client.GetMergedPullRequestsAsync(
+            repository,
+            mergedSince,
+            currentUserId,
+            cancellation.Token);
+
+        // Assert
+        result.Should().ContainSingle();
+        result[0].Title.Should().Be("Cached");
+        result[0].CommentsCount.Should().Be(cachedSummary.CommentsCount);
+        activityLoader.VerifyNoOtherCalls();
+        analyzer.VerifyNoOtherCalls();
+        cache.VerifyAll();
     }
 
     [Fact(DisplayName = "Get open details suppresses HTTP request failures")]

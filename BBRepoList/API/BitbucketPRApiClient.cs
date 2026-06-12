@@ -176,10 +176,20 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         }
 
         var repositorySlug = repository.Slug!.Value;
+        var workspace = new BitbucketWorkspace(_options.Workspace);
         var pullRequests = new List<MergedPullRequest>();
 
         try
         {
+            var cacheEntriesByPullRequestId = await _cacheService
+                .ReadEntriesByPullRequestIdAsync(
+                    workspace,
+                    repositorySlug,
+                    currentUserId,
+                    PullRequestDetailsCacheScope.Merged,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            var updatedCacheEntries = new List<PullRequestDetailsCacheEntry>();
             var url = CreateMergedPullRequestsUrl(repositorySlug);
 
             await ForEachPullRequestDtoAsync(
@@ -200,16 +210,38 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
                     }
 
                     var pullRequest = _snapshotMapper.CreateSnapshot(pullRequestDto, currentUserId);
-                    var activities = await _activityLoader.GetActivitiesAsync(
-                        repositorySlug,
-                        pullRequest.Id,
-                        token).ConfigureAwait(false);
-                    var activitySummary = _activityAnalyzer.CreateSummary(activities, pullRequest, currentUserId);
+                    PullRequestActivitySummary activitySummary;
+                    PullRequestDetailsCacheEntry cacheEntry;
+
+                    if (!_cacheService.TryCreateActivitySummary(
+                        pullRequest,
+                        cacheEntriesByPullRequestId,
+                        out activitySummary,
+                        out cacheEntry))
+                    {
+                        var activities = await _activityLoader.GetActivitiesAsync(
+                            repositorySlug,
+                            pullRequest.Id,
+                            token).ConfigureAwait(false);
+                        activitySummary = _activityAnalyzer.CreateSummary(activities, pullRequest, currentUserId);
+                        cacheEntry = _cacheService.CreateEntry(pullRequest, activitySummary);
+                    }
 
                     pullRequests.Add(CreateMergedPullRequest(repository, pullRequest, pullRequestDto.UpdatedOn.Value, activitySummary));
+                    updatedCacheEntries.Add(cacheEntry);
                     return true;
                 },
                 cancellationToken).ConfigureAwait(false);
+
+            await _cacheService
+                .SaveEntriesAsync(
+                    workspace,
+                    repositorySlug,
+                    currentUserId,
+                    PullRequestDetailsCacheScope.Merged,
+                    updatedCacheEntries,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (HttpRequestException)
         {
