@@ -46,6 +46,16 @@ internal sealed class PullRequestRow : ObservableObject
     public string Author { get; }
 
     /// <summary>
+    /// Pull request creation timestamp.
+    /// </summary>
+    public DateTimeOffset OpenedOn { get; }
+
+    /// <summary>
+    /// Pull request description text.
+    /// </summary>
+    public string? DescriptionText { get; }
+
+    /// <summary>
     /// Pull request description length.
     /// </summary>
     public int DescriptionLength { get; }
@@ -187,6 +197,8 @@ internal sealed class PullRequestRow : ObservableObject
         PullRequestId = detail.PullRequestId.Value;
         Title = detail.Title;
         Author = detail.AuthorDisplayName ?? "-";
+        OpenedOn = detail.OpenedOn;
+        DescriptionText = detail.DescriptionText;
         DescriptionLength = detail.DescriptionText?.Length ?? 0;
         IsDescriptionShort = detail.HasShortOrMissingDescription(options.MinimalDescriptionLength);
         var openFor = detail.GetOpenDuration(asOf);
@@ -235,6 +247,8 @@ internal sealed class PullRequestRow : ObservableObject
         PullRequestId = pullRequest.PullRequestId.Value;
         Title = pullRequest.Title;
         Author = pullRequest.AuthorDisplayName ?? "-";
+        OpenedOn = pullRequest.OpenedOn;
+        DescriptionText = pullRequest.DescriptionText;
         DescriptionLength = pullRequest.DescriptionText?.Length ?? 0;
         IsDescriptionShort = pullRequest.HasShortOrMissingDescription(options.MinimalDescriptionLength);
         var openFor = pullRequest.GetOpenDuration();

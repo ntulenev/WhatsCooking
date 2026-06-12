@@ -33,6 +33,8 @@ public partial class App : Application
                 _ = services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
                 _ = services.AddSingleton<IDialogService, WpfDialogService>();
                 _ = services.AddSingleton<IExternalUrlLauncher, WpfExternalUrlLauncher>();
+                _ = services.AddSingleton<IClipboardService, WpfClipboardService>();
+                _ = services.AddSingleton<IAiReviewPromptService, AiReviewPromptService>();
                 _ = services.AddSingleton<IDemoPullRequestDashboardProvider, DemoPullRequestDashboardProvider>();
                 _ = services.AddSingleton<IDemoTelemetryProvider, DemoTelemetryProvider>();
                 _ = services.AddTransient<IDebouncer, TimerDebouncer>();
