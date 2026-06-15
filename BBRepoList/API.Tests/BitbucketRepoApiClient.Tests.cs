@@ -122,6 +122,24 @@ public sealed class BitbucketRepoApiClientTests
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
+    [Fact(DisplayName = "Get repositories rejects unsupported search mode")]
+    [Trait("Category", "Unit")]
+    public async Task GetRepositoriesWhenSearchModeIsUnsupportedThrowsInvalidOperationException()
+    {
+        // Arrange
+        var client = new BitbucketRepoApiClient(
+            Mock.Of<IBitbucketTransport>(),
+            CreateOptions());
+        var filter = new FilterPattern("repository", (RepositorySearchMode)int.MaxValue);
+
+        // Act
+        Func<Task> act = () => ReadAllAsync(client.GetRepositoriesAsync(filter, CancellationToken.None));
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage($"Unsupported search mode: {(RepositorySearchMode)int.MaxValue}.");
+    }
+
     private static async Task<List<Repository>> ReadAllAsync(IAsyncEnumerable<Repository> source)
     {
         var result = new List<Repository>();

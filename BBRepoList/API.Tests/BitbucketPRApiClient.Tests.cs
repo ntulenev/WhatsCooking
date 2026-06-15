@@ -145,6 +145,54 @@ public sealed class BitbucketPRApiClientTests
         cache.VerifyAll();
     }
 
+    [Fact(DisplayName = "Get open details ignores malformed pull request payloads")]
+    [Trait("Category", "Unit")]
+    public async Task GetOpenPullRequestDetailsWhenPullRequestIsMalformedDeletesCache()
+    {
+        // Arrange
+        var repository = CreateRepository();
+        var currentUserId = new BitbucketId("current-user");
+        var workspace = new BitbucketWorkspace("workspace");
+        var malformedPullRequest = new PullRequestDto(
+            Id: null,
+            Title: "Malformed",
+            CreatedOn: new DateTimeOffset(2026, 5, 1, 12, 0, 0, TimeSpan.Zero));
+        using var cancellation = new CancellationTokenSource();
+        var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
+        transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
+                CreateOpenPullRequestSnapshotsUrl(),
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .ReturnsAsync(new PullRequestPageDto([malformedPullRequest], null));
+        var cache = new Mock<IPullRequestDetailsCacheService>(MockBehavior.Strict);
+        cache.Setup(instance => instance.ReadEntriesByPullRequestIdAsync(
+                workspace,
+                repository.Slug!.Value,
+                currentUserId,
+                PullRequestDetailsCacheScope.Open,
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .ReturnsAsync(new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>());
+        cache.Setup(instance => instance.DeleteAsync(
+                workspace,
+                repository.Slug!.Value,
+                currentUserId,
+                PullRequestDetailsCacheScope.Open,
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .Returns(Task.CompletedTask);
+        var mapper = new Mock<IPullRequestSnapshotMapper>(MockBehavior.Strict);
+        var client = CreateClient(transport: transport, mapper: mapper, cache: cache);
+
+        // Act
+        var result = await client.GetOpenPullRequestDetailsAsync(
+            repository,
+            currentUserId,
+            cancellation.Token);
+
+        // Assert
+        result.Should().BeEmpty();
+        mapper.VerifyNoOtherCalls();
+        cache.VerifyAll();
+    }
+
     [Fact(DisplayName = "Get open details reuses cache and loads only changed activity")]
     [Trait("Category", "Unit")]
     public async Task GetOpenPullRequestDetailsWhenCachePartiallyMatchesUsesExpectedSources()
@@ -468,6 +516,64 @@ public sealed class BitbucketPRApiClientTests
         cache.VerifyAll();
         telemetry.Verify(instance => instance.TrackCacheHit(), Times.Once);
         telemetry.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "Get merged pull requests skips repository without slug")]
+    [Trait("Category", "Unit")]
+    public async Task GetMergedPullRequestsWhenRepositoryHasNoSlugSkipsDependencies()
+    {
+        // Arrange
+        var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
+        var cache = new Mock<IPullRequestDetailsCacheService>(MockBehavior.Strict);
+        var client = CreateClient(transport: transport, cache: cache);
+
+        // Act
+        var result = await client.GetMergedPullRequestsAsync(
+            new Repository("Repository"),
+            DateTimeOffset.UtcNow,
+            new BitbucketId("current-user"),
+            CancellationToken.None);
+
+        // Assert
+        result.Should().BeEmpty();
+        transport.VerifyNoOtherCalls();
+        cache.VerifyNoOtherCalls();
+    }
+
+    [Fact(DisplayName = "Get merged pull requests suppresses HTTP request failures")]
+    [Trait("Category", "Unit")]
+    public async Task GetMergedPullRequestsWhenTransportFailsReturnsEmptyList()
+    {
+        // Arrange
+        var repository = CreateRepository();
+        var currentUserId = new BitbucketId("current-user");
+        var workspace = new BitbucketWorkspace("workspace");
+        using var cancellation = new CancellationTokenSource();
+        var cache = new Mock<IPullRequestDetailsCacheService>(MockBehavior.Strict);
+        cache.Setup(instance => instance.ReadEntriesByPullRequestIdAsync(
+                workspace,
+                repository.Slug!.Value,
+                currentUserId,
+                PullRequestDetailsCacheScope.Merged,
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .ReturnsAsync(new Dictionary<PullRequestId, PullRequestDetailsCacheEntry>());
+        var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
+        transport.Setup(instance => instance.GetAsync<PullRequestPageDto>(
+                It.Is<Uri>(url => url.OriginalString.Contains("state=MERGED", StringComparison.Ordinal)),
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .ThrowsAsync(new HttpRequestException("Failure"));
+        var client = CreateClient(transport: transport, cache: cache);
+
+        // Act
+        var result = await client.GetMergedPullRequestsAsync(
+            repository,
+            new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero),
+            currentUserId,
+            cancellation.Token);
+
+        // Assert
+        result.Should().BeEmpty();
+        cache.VerifyAll();
     }
 
     [Fact(DisplayName = "Get open details suppresses HTTP request failures")]

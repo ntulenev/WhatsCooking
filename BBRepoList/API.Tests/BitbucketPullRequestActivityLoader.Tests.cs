@@ -104,6 +104,36 @@ public sealed class BitbucketPullRequestActivityLoaderTests
         result.Should().BeEmpty();
     }
 
+    [Fact(DisplayName = "Get activities ignores values without properties")]
+    [Trait("Category", "Unit")]
+    public async Task GetActivitiesWhenValueHasNoPropertiesReturnsEmptyList()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        var transport = new Mock<IBitbucketTransport>();
+        transport.Setup(instance => instance.GetAsync<PullRequestActivityPageDto>(
+                It.IsAny<Uri>(),
+                It.Is<CancellationToken>(token => token == cancellation.Token)))
+            .ReturnsAsync(new PullRequestActivityPageDto(
+                [new PullRequestActivityDto { Properties = null }],
+                null));
+        var parser = new Mock<IBitbucketJsonParser>(MockBehavior.Strict);
+        var loader = new BitbucketPullRequestActivityLoader(
+            transport.Object,
+            parser.Object,
+            CreateOptions());
+
+        // Act
+        var result = await loader.GetActivitiesAsync(
+            new RepositorySlug("repository"),
+            new PullRequestId(1),
+            cancellation.Token);
+
+        // Assert
+        result.Should().BeEmpty();
+        parser.VerifyNoOtherCalls();
+    }
+
     private static PullRequestActivityPageDto CreatePage(
         Uri? next,
         params (string Property, string Value)[] values) =>
