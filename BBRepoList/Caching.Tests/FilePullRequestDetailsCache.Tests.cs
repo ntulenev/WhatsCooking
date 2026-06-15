@@ -241,6 +241,35 @@ public sealed class FilePullRequestDetailsCacheTests
         result.Should().BeEmpty();
     }
 
+    [Fact(DisplayName = "Read entries returns empty collection when cache file is locked")]
+    [Trait("Category", "Integration")]
+    public async Task ReadEntriesAsyncWhenCacheFileIsLockedReturnsEmptyCollection()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            _scope,
+            [CreateEntry(1, "fingerprint")],
+            CancellationToken.None);
+        var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
+        using var lockedFile = new FileStream(cacheFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        // Act
+        var result = await cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            _scope,
+            CancellationToken.None);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
     [Fact(DisplayName = "Read entries ignores cache documents with unsupported versions")]
     [Trait("Category", "Unit")]
     public async Task ReadEntriesAsyncWhenCacheVersionIsUnsupportedReturnsEmptyCollection()
@@ -313,6 +342,85 @@ public sealed class FilePullRequestDetailsCacheTests
 
         // Assert
         await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact(DisplayName = "Save entries ignores failures to create the cache directory")]
+    [Trait("Category", "Integration")]
+    public async Task SaveEntriesAsyncWhenCacheRootIsAFileDoesNotThrow()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var blockingFilePath = Path.Combine(directory.Path, "blocking-file");
+        await File.WriteAllTextAsync(
+            blockingFilePath,
+            "content",
+            TestContext.Current.CancellationToken);
+        var cache = new FilePullRequestDetailsCache(blockingFilePath);
+
+        // Act
+        Func<Task> act = () => cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            _scope,
+            [CreateEntry(1, "fingerprint")],
+            CancellationToken.None);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+        Directory.EnumerateFiles(directory.Path, "*.tmp", SearchOption.AllDirectories).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Delete ignores failures when cache file is locked")]
+    [Trait("Category", "Integration")]
+    public async Task DeleteAsyncWhenCacheFileIsLockedDoesNotThrow()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            _scope,
+            [CreateEntry(1, "fingerprint")],
+            CancellationToken.None);
+        var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
+        using var lockedFile = new FileStream(cacheFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        // Act
+        Func<Task> act = () => cache.DeleteAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            _scope,
+            CancellationToken.None);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+        File.Exists(cacheFilePath).Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Cache rejects unsupported pull request scope")]
+    [Trait("Category", "Unit")]
+    public async Task ReadEntriesAsyncWhenScopeIsUnsupportedThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        var unsupportedScope = (PullRequestDetailsCacheScope)int.MaxValue;
+
+        // Act
+        Func<Task> act = () => cache.ReadEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            unsupportedScope,
+            CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>()
+            .WithParameterName("scope");
     }
 
     private static PullRequestDetailsCacheEntry CreateEntry(
