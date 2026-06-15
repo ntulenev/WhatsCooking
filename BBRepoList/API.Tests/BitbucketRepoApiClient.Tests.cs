@@ -131,9 +131,10 @@ public sealed class BitbucketRepoApiClientTests
             Mock.Of<IBitbucketTransport>(),
             CreateOptions());
         var filter = new FilterPattern("repository", (RepositorySearchMode)int.MaxValue);
+        using var cancellation = new CancellationTokenSource();
 
         // Act
-        Func<Task> act = () => ReadAllAsync(client.GetRepositoriesAsync(filter, CancellationToken.None));
+        Func<Task> act = () => ReadAllAsync(client.GetRepositoriesAsync(filter, cancellation.Token));
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()

@@ -247,6 +247,7 @@ public sealed class FilePullRequestDetailsCacheTests
     {
         // Arrange
         using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
         var cache = new FilePullRequestDetailsCache(directory.Path);
         await cache.SaveEntriesAsync(
             _workspace,
@@ -254,7 +255,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _currentUserId,
             _scope,
             [CreateEntry(1, "fingerprint")],
-            CancellationToken.None);
+            cancellation.Token);
         var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
         using var lockedFile = new FileStream(cacheFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
@@ -264,7 +265,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _repositorySlug,
             _currentUserId,
             _scope,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeEmpty();
@@ -309,6 +310,7 @@ public sealed class FilePullRequestDetailsCacheTests
         // Arrange
         var cache = new FilePullRequestDetailsCache();
         IReadOnlyCollection<PullRequestDetailsCacheEntry> entries = null!;
+        using var cancellation = new CancellationTokenSource();
 
         // Act
         Func<Task> act = () => cache.SaveEntriesAsync(
@@ -317,7 +319,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _currentUserId,
             _scope,
             entries,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -356,6 +358,7 @@ public sealed class FilePullRequestDetailsCacheTests
             "content",
             TestContext.Current.CancellationToken);
         var cache = new FilePullRequestDetailsCache(blockingFilePath);
+        using var cancellation = new CancellationTokenSource();
 
         // Act
         Func<Task> act = () => cache.SaveEntriesAsync(
@@ -364,7 +367,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _currentUserId,
             _scope,
             [CreateEntry(1, "fingerprint")],
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -377,6 +380,7 @@ public sealed class FilePullRequestDetailsCacheTests
     {
         // Arrange
         using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
         var cache = new FilePullRequestDetailsCache(directory.Path);
         await cache.SaveEntriesAsync(
             _workspace,
@@ -384,7 +388,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _currentUserId,
             _scope,
             [CreateEntry(1, "fingerprint")],
-            CancellationToken.None);
+            cancellation.Token);
         var cacheFilePath = Directory.EnumerateFiles(directory.Path, "*.json", SearchOption.AllDirectories).Single();
         using var lockedFile = new FileStream(cacheFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
@@ -394,7 +398,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _repositorySlug,
             _currentUserId,
             _scope,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -409,6 +413,7 @@ public sealed class FilePullRequestDetailsCacheTests
         using var directory = new TemporaryDirectory();
         var cache = new FilePullRequestDetailsCache(directory.Path);
         var unsupportedScope = (PullRequestDetailsCacheScope)int.MaxValue;
+        using var cancellation = new CancellationTokenSource();
 
         // Act
         Func<Task> act = () => cache.ReadEntriesAsync(
@@ -416,7 +421,7 @@ public sealed class FilePullRequestDetailsCacheTests
             _repositorySlug,
             _currentUserId,
             unsupportedScope,
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>()

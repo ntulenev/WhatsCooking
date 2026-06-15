@@ -523,6 +523,7 @@ public sealed class BitbucketPRApiClientTests
     public async Task GetMergedPullRequestsWhenRepositoryHasNoSlugSkipsDependencies()
     {
         // Arrange
+        using var cancellation = new CancellationTokenSource();
         var transport = new Mock<IBitbucketTransport>(MockBehavior.Strict);
         var cache = new Mock<IPullRequestDetailsCacheService>(MockBehavior.Strict);
         var client = CreateClient(transport: transport, cache: cache);
@@ -532,7 +533,7 @@ public sealed class BitbucketPRApiClientTests
             new Repository("Repository"),
             DateTimeOffset.UtcNow,
             new BitbucketId("current-user"),
-            CancellationToken.None);
+            cancellation.Token);
 
         // Assert
         result.Should().BeEmpty();
