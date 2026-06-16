@@ -100,7 +100,7 @@ public sealed class UserPreferencesServiceTests
         var preferencesPath = Path.Combine(
             Path.GetTempPath(),
             "WhatsCooking.Infrastructure.Tests",
-            Guid.NewGuid().ToString("N"),
+            Guid.CreateVersion7().ToString("N"),
             "preferences.json");
         using var service = new UserPreferencesService(
             NullLogger<UserPreferencesService>.Instance,
@@ -383,7 +383,7 @@ public sealed class UserPreferencesServiceTests
             Path = System.IO.Path.Combine(
                 System.IO.Path.GetTempPath(),
                 "WhatsCooking.Infrastructure.Tests",
-                Guid.NewGuid().ToString("N"));
+                Guid.CreateVersion7().ToString("N"));
             Directory.CreateDirectory(Path);
         }
 

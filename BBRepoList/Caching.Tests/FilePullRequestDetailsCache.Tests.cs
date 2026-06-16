@@ -452,7 +452,7 @@ public sealed class FilePullRequestDetailsCacheTests
             Path = System.IO.Path.Combine(
                 System.IO.Path.GetTempPath(),
                 "WhatsCooking.Tests",
-                Guid.NewGuid().ToString("N"));
+                Guid.CreateVersion7().ToString("N"));
             _ = Directory.CreateDirectory(Path);
         }
 

@@ -114,7 +114,7 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
                 Entries = validEntries
             };
 
-            var tempFilePath = $"{cacheFilePath}.{Guid.NewGuid():N}.tmp";
+            var tempFilePath = $"{cacheFilePath}.{Guid.CreateVersion7():N}.tmp";
             var json = JsonSerializer.Serialize(document, _serializerOptions);
             await File.WriteAllTextAsync(tempFilePath, json, cancellationToken).ConfigureAwait(false);
             File.Move(tempFilePath, cacheFilePath, overwrite: true);
