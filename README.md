@@ -22,7 +22,7 @@ This project is a logical continuation of my CLI/reporting project [ntulenev/BBR
 - Use `Hide reviewed` in the `Reviewed` column to remove reviewed pull requests from the current table, then use `Show all` to display them again.
 - Copy a ready-to-use AI review prompt for an open pull request, including its Bitbucket URL, metadata, description, detected Jira issue key, and API access details.
 - Cache open and merged pull request activity summaries to avoid reloading unchanged `/activity` data from Bitbucket.
-- Track per-load Bitbucket API requests and pull request activity cache efficiency in a dedicated telemetry tab.
+- Track per-load Bitbucket API requests, pull request activity cache efficiency, and current cache size in a dedicated telemetry tab.
 - Run the UI with synthetic demo data when Bitbucket credentials are not available.
 - Show repository-scanning progress while data is being loaded and allow an active load to be cancelled.
 
@@ -84,6 +84,8 @@ Telemetry counters are reset every time `Load` starts, so the tab describes the 
 
 `Activity cached` is the number of PR activity summaries reused from the local cache. `Activity API loads` is the number of PRs for which the `/activity` endpoint had to be loaded. `Activity cache rate` is calculated from those two values. The application still requests lightweight PR metadata to discover pull requests and validate cached fingerprints; a cache hit avoids loading the more expensive activity history, not all Bitbucket API calls.
 
+The telemetry tab also shows the current pull request details cache size. Use `Clear cache` to delete the persisted cache after confirming the action in the popup dialog.
+
 ### Pull Request Activity Cache
 
 Activity-derived values such as first response, last activity, discussion participation, and comment count are stored separately for open and merged pull requests under:
@@ -94,7 +96,7 @@ Activity-derived values such as first response, last activity, discussion partic
 
 On later loads, a cached summary is reused when the PR fingerprint still matches the current Bitbucket metadata. Otherwise, the application reloads `/activity` and refreshes the cache entry. This is especially effective for merged pull requests, which rarely change after merging.
 
-The cache contains derived PR activity data but no Bitbucket API credentials. It can be deleted safely to force activity data to be loaded again.
+The cache contains derived PR activity data but no Bitbucket API credentials. It can be deleted safely to force activity data to be loaded again. The telemetry tab provides a `Clear cache` button for this, and the displayed cache size is refreshed after clearing.
 
 ### AI Review Prompt
 
