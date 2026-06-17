@@ -16,6 +16,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="260" />
                 </Grid.ColumnDefinitions>
 
@@ -50,8 +51,32 @@
                                FontWeight="SemiBold"
                                ToolTip="Share of PR activity summaries reused from cache. PR metadata requests are not included." />
                 </WrapPanel>
-                <TextBlock Grid.Column="1" Text="Filter" Style="{DynamicResource MutedTextStyle}" Margin="18,0,6,0" />
-                <TextBox Grid.Column="2"
+                <Border Grid.Column="1"
+                        Margin="18,0,0,0"
+                        Padding="10,5"
+                        Background="{DynamicResource PanelAltBrush}"
+                        BorderBrush="{DynamicResource SubtleBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        AutomationProperties.Name="Pull request cache">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Cache size" Style="{DynamicResource MutedTextStyle}" Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding TelemetryDashboard.CacheSize}"
+                                   FontWeight="SemiBold"
+                                   MinWidth="58"
+                                   Margin="0,0,10,0"
+                                   ToolTip="Persisted pull request details cache size." />
+                        <Button Content="Clear cache"
+                                AutomationProperties.Name="Clear pull request cache"
+                                Command="{Binding TelemetryDashboard.ClearCacheCommand}"
+                                Style="{DynamicResource ActionButtonStyle}"
+                                MinHeight="24"
+                                Padding="8,2"
+                                ToolTip="Clear persisted pull request details cache." />
+                    </StackPanel>
+                </Border>
+                <TextBlock Grid.Column="2" Text="Filter" Style="{DynamicResource MutedTextStyle}" Margin="18,0,6,0" />
+                <TextBox Grid.Column="3"
                          AutomationProperties.Name="Telemetry filter"
                          Text="{Binding TelemetryDashboard.TelemetryFilter, UpdateSourceTrigger=PropertyChanged}" />
             </Grid>
