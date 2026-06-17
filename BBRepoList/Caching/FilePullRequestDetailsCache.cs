@@ -27,6 +27,26 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
     }
 
     /// <inheritdoc />
+    public long GetSizeInBytes()
+    {
+        try
+        {
+            if (!Directory.Exists(_cacheRootDirectory))
+            {
+                return 0;
+            }
+
+            return Directory
+                .EnumerateFiles(_cacheRootDirectory, "*", SearchOption.AllDirectories)
+                .Sum(static filePath => new FileInfo(filePath).Length);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return 0;
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<PullRequestDetailsCacheEntry>> ReadEntriesAsync(
         BitbucketWorkspace workspace,
         RepositorySlug repositorySlug,
@@ -149,6 +169,21 @@ public sealed class FilePullRequestDetailsCache : IPullRequestDetailsCache
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public void Clear()
+    {
+        try
+        {
+            if (Directory.Exists(_cacheRootDirectory))
+            {
+                Directory.Delete(_cacheRootDirectory, recursive: true);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+        }
     }
 
     private string GetCacheFilePath(

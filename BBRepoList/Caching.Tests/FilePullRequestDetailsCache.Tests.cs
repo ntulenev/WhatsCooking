@@ -405,6 +405,102 @@ public sealed class FilePullRequestDetailsCacheTests
         File.Exists(cacheFilePath).Should().BeTrue();
     }
 
+    [Fact(DisplayName = "Get size returns total cache file size")]
+    [Trait("Category", "Unit")]
+    public async Task GetSizeInBytesWhenCacheFilesExistReturnsTotalSize()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            PullRequestDetailsCacheScope.Open,
+            [CreateEntry(1, "open")],
+            cancellation.Token);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            PullRequestDetailsCacheScope.Merged,
+            [CreateEntry(2, "merged")],
+            cancellation.Token);
+        var expectedSize = Directory
+            .EnumerateFiles(directory.Path, "*", SearchOption.AllDirectories)
+            .Sum(static filePath => new FileInfo(filePath).Length);
+
+        // Act
+        var result = cache.GetSizeInBytes();
+
+        // Assert
+        result.Should().Be(expectedSize);
+    }
+
+    [Fact(DisplayName = "Get size returns zero when cache root does not exist")]
+    [Trait("Category", "Unit")]
+    public void GetSizeInBytesWhenCacheRootDoesNotExistReturnsZero()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var missingPath = Path.Combine(directory.Path, "missing");
+        var cache = new FilePullRequestDetailsCache(missingPath);
+
+        // Act
+        var result = cache.GetSizeInBytes();
+
+        // Assert
+        result.Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Clear deletes all cache files")]
+    [Trait("Category", "Unit")]
+    public async Task ClearWhenCacheExistsDeletesAllFiles()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        using var cancellation = new CancellationTokenSource();
+        var cache = new FilePullRequestDetailsCache(directory.Path);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            PullRequestDetailsCacheScope.Open,
+            [CreateEntry(1, "open")],
+            cancellation.Token);
+        await cache.SaveEntriesAsync(
+            _workspace,
+            _repositorySlug,
+            _currentUserId,
+            PullRequestDetailsCacheScope.Merged,
+            [CreateEntry(2, "merged")],
+            cancellation.Token);
+
+        // Act
+        cache.Clear();
+
+        // Assert
+        Directory.Exists(directory.Path).Should().BeFalse();
+        cache.GetSizeInBytes().Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Clear ignores missing cache root")]
+    [Trait("Category", "Unit")]
+    public void ClearWhenCacheRootDoesNotExistDoesNotThrow()
+    {
+        // Arrange
+        using var directory = new TemporaryDirectory();
+        var missingPath = Path.Combine(directory.Path, "missing");
+        var cache = new FilePullRequestDetailsCache(missingPath);
+
+        // Act
+        Action act = cache.Clear;
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
     [Fact(DisplayName = "Cache rejects unsupported pull request scope")]
     [Trait("Category", "Unit")]
     public async Task ReadEntriesAsyncWhenScopeIsUnsupportedThrowsArgumentOutOfRangeException()

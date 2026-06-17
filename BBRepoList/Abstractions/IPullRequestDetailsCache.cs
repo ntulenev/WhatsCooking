@@ -8,6 +8,12 @@ namespace BBRepoList.Abstractions;
 public interface IPullRequestDetailsCache
 {
     /// <summary>
+    /// Gets the total size of the persisted pull request detail cache.
+    /// </summary>
+    /// <returns>Cache size in bytes, or 0 when cache is unavailable.</returns>
+    long GetSizeInBytes();
+
+    /// <summary>
     /// Reads cached pull request detail entries for a repository and current user.
     /// </summary>
     /// <param name="workspace">Bitbucket workspace identifier.</param>
@@ -54,4 +60,9 @@ public interface IPullRequestDetailsCache
         BitbucketId currentUserId,
         PullRequestDetailsCacheScope scope,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Deletes all persisted pull request detail cache entries.
+    /// </summary>
+    void Clear();
 }
