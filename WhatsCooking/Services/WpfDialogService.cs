@@ -23,6 +23,19 @@ internal sealed class WpfDialogService : IDialogService
     }
 
     /// <inheritdoc />
+    public bool ConfirmClearCache()
+    {
+        var result = MessageBox.Show(
+            "Clear the pull request details cache? Cached data will be downloaded again when needed.",
+            "Clear cache",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No);
+
+        return result == MessageBoxResult.Yes;
+    }
+
+    /// <inheritdoc />
     public void ShowLoadError(string message)
     {
         _ = MessageBox.Show(message, "Load failed", MessageBoxButton.OK, MessageBoxImage.Error);

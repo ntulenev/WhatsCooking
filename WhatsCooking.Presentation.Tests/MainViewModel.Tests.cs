@@ -32,6 +32,8 @@ public sealed class MainViewModelTests
         var loadUseCase = new Mock<IDashboardLoadUseCase>(MockBehavior.Strict).Object;
         var telemetryViewModel = new TelemetryViewModel(
             new Mock<IBitbucketTelemetryService>(MockBehavior.Strict).Object,
+            Mock.Of<IPullRequestDetailsCache>(instance => instance.GetSizeInBytes() == 0),
+            Mock.Of<IDialogService>(),
             new Mock<IDebouncer>(MockBehavior.Strict).Object);
         var rowMapper = CreateRowMapper();
         var dialogService = new Mock<IDialogService>(MockBehavior.Strict).Object;
@@ -378,6 +380,8 @@ public sealed class MainViewModelTests
         var loadUseCase = new Mock<IDashboardLoadUseCase>(MockBehavior.Strict);
         var telemetryService = new Mock<IBitbucketTelemetryService>(MockBehavior.Strict);
         telemetryService.Setup(instance => instance.GetSnapshot()).Returns(emptyTelemetry);
+        var cache = new Mock<IPullRequestDetailsCache>(MockBehavior.Strict);
+        cache.Setup(instance => instance.GetSizeInBytes()).Returns(0);
         var telemetryDebouncer = new Mock<IDebouncer>(MockBehavior.Strict);
         var dialogService = new Mock<IDialogService>(MockBehavior.Strict);
         var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict);
@@ -389,6 +393,7 @@ public sealed class MainViewModelTests
         return new MainViewModelFixture(
             loadUseCase,
             telemetryService,
+            cache,
             telemetryDebouncer,
             dialogService,
             externalUrlLauncher,
@@ -411,6 +416,7 @@ public sealed class MainViewModelTests
     private sealed record MainViewModelFixture(
         Mock<IDashboardLoadUseCase> LoadUseCase,
         Mock<IBitbucketTelemetryService> TelemetryService,
+        Mock<IPullRequestDetailsCache> Cache,
         Mock<IDebouncer> TelemetryDebouncer,
         Mock<IDialogService> DialogService,
         Mock<IExternalUrlLauncher> ExternalUrlLauncher,
@@ -420,7 +426,7 @@ public sealed class MainViewModelTests
         public MainViewModel CreateViewModel() =>
             new(
                 LoadUseCase.Object,
-                new TelemetryViewModel(TelemetryService.Object, TelemetryDebouncer.Object),
+                new TelemetryViewModel(TelemetryService.Object, Cache.Object, DialogService.Object, TelemetryDebouncer.Object),
                 CreateRowMapper(),
                 DialogService.Object,
                 ExternalUrlLauncher.Object,
