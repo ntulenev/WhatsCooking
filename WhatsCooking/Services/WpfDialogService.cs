@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 
+using WhatsCooking.Views;
+
 namespace WhatsCooking.Services;
 
 /// <summary>
@@ -12,32 +14,26 @@ internal sealed class WpfDialogService : IDialogService
     /// <inheritdoc />
     public bool ConfirmReload()
     {
-        var result = MessageBox.Show(
-            "Pull requests are already loaded. Reload data from Bitbucket?",
+        return StyledDialogWindow.ShowConfirmation(
+            Application.Current?.MainWindow,
             "Reload data",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question,
-            MessageBoxResult.No);
-
-        return result == MessageBoxResult.Yes;
+            "Pull requests are already loaded. Reload data from Bitbucket?",
+            "?");
     }
 
     /// <inheritdoc />
     public bool ConfirmClearCache()
     {
-        var result = MessageBox.Show(
-            "Clear the pull request details cache? Cached data will be downloaded again when needed.",
+        return StyledDialogWindow.ShowConfirmation(
+            Application.Current?.MainWindow,
             "Clear cache",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning,
-            MessageBoxResult.No);
-
-        return result == MessageBoxResult.Yes;
+            "Clear the pull request details cache? Cached data will be downloaded again when needed.",
+            "!");
     }
 
     /// <inheritdoc />
     public void ShowLoadError(string message)
     {
-        _ = MessageBox.Show(message, "Load failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        StyledDialogWindow.ShowMessage(Application.Current?.MainWindow, "Load failed", message, "!");
     }
 }

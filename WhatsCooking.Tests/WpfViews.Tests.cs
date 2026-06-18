@@ -47,4 +47,20 @@ public sealed class WpfViewsTests
             view.Content.Should().NotBeNull();
         });
     }
+
+    [Fact(DisplayName = "Styled dialog window loads XAML content")]
+    [Trait("Category", "Unit")]
+    public void StyledDialogWindowConstructorWhenCalledLoadsContent()
+    {
+        StaTest.Run(() =>
+        {
+            // Act
+            var window = new StyledDialogWindow();
+
+            // Assert
+            window.Content.Should().NotBeNull();
+            window.DialogTitle.Should().BeEmpty();
+            window.Message.Should().BeEmpty();
+        });
+    }
 }

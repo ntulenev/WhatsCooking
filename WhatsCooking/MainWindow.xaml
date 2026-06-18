@@ -210,6 +210,9 @@
         </TabControl>
     </Grid>
 
+        <Border x:Name="DialogOverlay"
+                Background="#99000000"
+                Visibility="Collapsed" />
         <views:LoadingOverlay Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" />
     </Grid>
 </Window>

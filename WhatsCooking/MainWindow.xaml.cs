@@ -46,6 +46,17 @@ internal sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Shows the modal dialog overlay until the returned scope is disposed.
+    /// </summary>
+    /// <returns>Scope that hides the overlay when disposed.</returns>
+    internal IDisposable ShowDialogOverlay()
+    {
+        _dialogOverlayScopes++;
+        DialogOverlay.Visibility = Visibility.Visible;
+        return new DialogOverlayScope(this);
+    }
+
     private void ApplyTheme(bool isLightTheme)
     {
         if (SystemParameters.HighContrast)
@@ -228,6 +239,44 @@ internal sealed partial class MainWindow : Window
         }
     }
 
+    private void HideDialogOverlay()
+    {
+        if (_dialogOverlayScopes <= 0)
+        {
+            DialogOverlay.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        _dialogOverlayScopes--;
+        if (_dialogOverlayScopes == 0)
+        {
+            DialogOverlay.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private sealed class DialogOverlayScope : IDisposable
+    {
+        public DialogOverlayScope(MainWindow owner)
+        {
+            _owner = owner;
+        }
+
+        public void Dispose()
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _owner.HideDialogOverlay();
+            _isDisposed = true;
+        }
+
+        private readonly MainWindow _owner;
+
+        private bool _isDisposed;
+    }
+
     [LibraryImport("dwmapi.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int DwmSetWindowAttribute(
@@ -239,4 +288,6 @@ internal sealed partial class MainWindow : Window
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
     private readonly MainViewModel _viewModel;
+
+    private int _dialogOverlayScopes;
 }
