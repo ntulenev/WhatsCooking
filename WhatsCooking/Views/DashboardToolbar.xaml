@@ -16,11 +16,18 @@
 
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="What's Cooking" FontSize="18" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="1" Text="{Binding Status}" Style="{DynamicResource MutedTextStyle}" />
+                <TextBlock Grid.Column="1"
+                           Margin="16,0,0,0"
+                           AutomationProperties.Name="Loaded pull request data timestamp"
+                           Text="{Binding LoadedAt}"
+                           Style="{DynamicResource MutedTextStyle}" />
+                <TextBlock Grid.Column="3" Text="{Binding Status}" Style="{DynamicResource MutedTextStyle}" />
             </Grid>
 
             <Grid Grid.Row="1" Margin="0,8,0,0">

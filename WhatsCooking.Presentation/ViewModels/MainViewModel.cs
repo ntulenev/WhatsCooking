@@ -153,6 +153,14 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     } = "Ready";
 
     /// <summary>
+    /// Local date and time when the currently displayed pull request data was loaded.
+    /// </summary>
+    public string LoadedAt {
+        get;
+        private set => SetProperty(ref field, value);
+    } = string.Empty;
+
+    /// <summary>
     /// Gets or sets a value indicating whether the light UI theme is enabled.
     /// </summary>
     public bool IsLightTheme {
@@ -482,6 +490,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         RepositoriesCount = snapshot.Repositories.Count;
         OpenPullRequestsCount = snapshot.OpenPullRequests.Count;
         MergedPullRequestsCount = snapshot.MergedPullRequests.Count;
+        LoadedAt = $"Loaded: {snapshot.AsOf.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)}";
         TelemetryDashboard.LoadTelemetry(snapshot.Telemetry);
     }
 

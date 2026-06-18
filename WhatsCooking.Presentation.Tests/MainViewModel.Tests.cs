@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using System.Globalization;
 
 using BBRepoList.Abstractions;
 using BBRepoList.Configuration;
@@ -78,6 +79,7 @@ public sealed class MainViewModelTests
         viewModel.SelectedSearchMode.Should().Be(RepositorySearchMode.Contains);
         viewModel.UiScale.Should().Be(1.5);
         viewModel.Status.Should().Be("Ready");
+        viewModel.LoadedAt.Should().BeEmpty();
         viewModel.TelemetryDashboard.TelemetryRequestsCount.Should().Be(0);
         MainViewModel.SearchModes.Cast<RepositorySearchMode>().Should().BeEquivalentTo(Enum.GetValues<RepositorySearchMode>());
         fixture.PreferencesService.VerifyAll();
@@ -217,6 +219,7 @@ public sealed class MainViewModelTests
         viewModel.MergedPullRequestsView.Should().ContainSingle()
             .Which.Title.Should().Be("Merged title");
         viewModel.Status.Should().Be("Loaded 1 open PRs and 1 merged PRs");
+        viewModel.LoadedAt.Should().Be($"Loaded: {asOf.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)}");
         viewModel.TelemetryDashboard.TelemetryRequestsCount.Should().Be(3);
         fixture.AiReviewPromptService.Setup(instance => instance.CopyPrompt(
             It.Is<PullRequestRow>(row => row.PullRequestId == openPullRequest.PullRequestId.Value)));
