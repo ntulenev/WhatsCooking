@@ -14,6 +14,7 @@ This project is a logical continuation of my CLI/reporting project [ntulenev/BBR
 - Choose the period for recently merged pull requests directly in the UI.
 - View open pull requests and recently merged pull requests in separate tabs.
 - Use global search, per-column filters, column sorting, and one-click filter reset.
+- Use `Fit` to resize the current table columns once to the available window width, then adjust them manually if needed.
 - Remember the repository search mode and phrase after pressing `Load`.
 - Switch between the default dark theme and a light theme; the selected theme is remembered between launches.
 - Adjust UI scale with `Ctrl +` and `Ctrl -`; the selected scale is remembered between launches.

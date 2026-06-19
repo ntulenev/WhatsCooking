@@ -78,7 +78,11 @@
                          ToolTip="Global search across all columns" />
 
                 <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{DynamicResource PrimaryButtonStyle}" />
-                <Button Grid.Column="13" Content="Cancel" Command="{Binding CancelCommand}" Style="{DynamicResource ActionButtonStyle}" />
+                <Button Grid.Column="13"
+                        Content="Fit"
+                        Click="OnFitColumnsClick"
+                        Style="{DynamicResource ActionButtonStyle}"
+                        ToolTip="Fit the current grid columns to the window width" />
                 <Button Grid.Column="15" Content="Reset Filters" Command="{Binding ResetFiltersCommand}" Style="{DynamicResource ActionButtonStyle}" />
                 <TextBlock Grid.Column="17" Text="Theme" Style="{DynamicResource MutedTextStyle}" />
                 <CheckBox Grid.Column="19"

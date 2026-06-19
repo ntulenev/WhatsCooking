@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace WhatsCooking.Views;
@@ -15,5 +16,13 @@ internal sealed partial class DashboardToolbar : UserControl
     public DashboardToolbar()
     {
         InitializeComponent();
+    }
+
+    private void OnFitColumnsClick(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            mainWindow.FitCurrentDataGridColumns();
+        }
     }
 }

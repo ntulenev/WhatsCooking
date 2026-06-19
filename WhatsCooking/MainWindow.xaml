@@ -21,7 +21,7 @@
 
         <views:DashboardToolbar Grid.Row="0" />
 
-        <TabControl Grid.Row="1" Margin="10,8,10,10">
+        <TabControl x:Name="DashboardTabs" Grid.Row="1" Margin="10,8,10,10">
             <TabItem Header="Open PR details">
                 <Border Background="{DynamicResource PanelBrush}" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="12" Padding="0">
                     <DataGrid AutomationProperties.Name="Open pull requests" ItemsSource="{Binding OpenPullRequestsView}">

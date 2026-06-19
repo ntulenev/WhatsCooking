@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -55,6 +56,25 @@ internal sealed partial class MainWindow : Window
         _dialogOverlayScopes++;
         DialogOverlay.Visibility = Visibility.Visible;
         return new DialogOverlayScope(this);
+    }
+
+    /// <summary>
+    /// Fits the columns of the data grid in the currently selected tab to the current available width.
+    /// </summary>
+    internal void FitCurrentDataGridColumns()
+    {
+        if (DashboardTabs.SelectedItem is not TabItem { Content: DependencyObject tabContent })
+        {
+            return;
+        }
+
+        var dataGrid = FindDescendant<DataGrid>(tabContent);
+        if (dataGrid is null)
+        {
+            return;
+        }
+
+        FitDataGridColumns(dataGrid);
     }
 
     private void ApplyTheme(bool isLightTheme)
@@ -252,6 +272,91 @@ internal sealed partial class MainWindow : Window
         {
             DialogOverlay.Visibility = Visibility.Collapsed;
         }
+    }
+
+    private static void FitDataGridColumns(DataGrid dataGrid)
+    {
+        dataGrid.UpdateLayout();
+        var visibleColumns = dataGrid.Columns
+            .Where(static column => column.Visibility == Visibility.Visible)
+            .ToArray();
+
+        if (visibleColumns.Length == 0)
+        {
+            return;
+        }
+
+        var availableWidth = GetAvailableDataGridWidth(dataGrid);
+        if (availableWidth <= 0)
+        {
+            return;
+        }
+
+        var columnWeights = visibleColumns
+            .Select(GetColumnWeight)
+            .ToArray();
+        var totalWeight = columnWeights.Sum();
+        if (totalWeight <= 0)
+        {
+            return;
+        }
+
+        const double minimumColumnWidth = 44;
+        const double fitPadding = 4;
+        var fittedWidth = Math.Max(visibleColumns.Length * minimumColumnWidth, availableWidth - fitPadding);
+
+        for (var index = 0; index < visibleColumns.Length; index++)
+        {
+            var column = visibleColumns[index];
+            var width = fittedWidth * columnWeights[index] / totalWeight;
+            column.MinWidth = Math.Min(column.MinWidth <= 0 ? minimumColumnWidth : column.MinWidth, minimumColumnWidth);
+            column.Width = new DataGridLength(Math.Max(minimumColumnWidth, width), DataGridLengthUnitType.Pixel);
+        }
+    }
+
+    private static double GetColumnWeight(DataGridColumn column)
+    {
+        if (column.ActualWidth > 0)
+        {
+            return column.ActualWidth;
+        }
+
+        return column.Width.Value > 0
+            ? column.Width.Value
+            : 1;
+    }
+
+    private static double GetAvailableDataGridWidth(DataGrid dataGrid)
+    {
+        var scrollViewer = FindDescendant<ScrollViewer>(dataGrid);
+        if (scrollViewer?.ViewportWidth > 0)
+        {
+            return scrollViewer.ViewportWidth;
+        }
+
+        return Math.Max(0, dataGrid.ActualWidth - SystemParameters.VerticalScrollBarWidth - 2);
+    }
+
+    private static T? FindDescendant<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        var childCount = VisualTreeHelper.GetChildrenCount(parent);
+        for (var index = 0; index < childCount; index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            var descendant = FindDescendant<T>(child);
+            if (descendant is not null)
+            {
+                return descendant;
+            }
+        }
+
+        return null;
     }
 
     private sealed class DialogOverlayScope : IDisposable
