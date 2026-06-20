@@ -269,6 +269,106 @@ public sealed class MainViewModelTests
         fixture.PreferencesService.VerifyAll();
     }
 
+    [Fact(DisplayName = "Reload shows counts for newly loaded pull requests")]
+    [Trait("Category", "Unit")]
+    public async Task LoadCommandWhenReloadAddsPullRequestsShowsNewPullRequestCounts()
+    {
+        // Arrange
+        var asOf = new DateTimeOffset(2026, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var repository = new Repository("Payments", slug: new RepositorySlug("payments"));
+        var firstSnapshot = CreateSnapshot(
+            asOf,
+            repository,
+            openPullRequestIds: [10],
+            mergedPullRequestIds: [9]);
+        var secondSnapshot = CreateSnapshot(
+            asOf.AddMinutes(5),
+            repository,
+            openPullRequestIds: [10, 11, 12],
+            mergedPullRequestIds: [9, 8]);
+        var loadResults = new Queue<DashboardLoadResult>([
+            new DashboardLoadResult.Success(firstSnapshot),
+            new DashboardLoadResult.Success(secondSnapshot)
+        ]);
+        var fixture = CreateFixture();
+        fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
+                new FilterPattern(string.Empty, RepositorySearchMode.StartWith),
+                1,
+                It.IsAny<IProgress<PullRequestLoadProgress>?>(),
+                It.Is<CancellationToken>(token => token.CanBeCanceled)))
+            .Returns(() => Task.FromResult(loadResults.Dequeue()));
+        fixture.PreferencesService.Setup(instance => instance.Save(
+            It.Is<UserPreferences>(preferences =>
+                preferences.SearchPhrase == string.Empty
+                && preferences.SearchMode == RepositorySearchMode.StartWith)));
+        fixture.DialogService.Setup(instance => instance.ConfirmReload())
+            .Returns(true);
+        fixture.DialogService.Setup(instance => instance.ShowReloadSummary(
+            "Since the last reload, 2 new open PRs and 1 new merged PR were added."));
+        using var viewModel = fixture.CreateViewModel();
+
+        // Act
+        await viewModel.LoadCommand.ExecuteAsync();
+        await viewModel.LoadCommand.ExecuteAsync();
+
+        // Assert
+        viewModel.OpenPullRequestsCount.Should().Be(3);
+        viewModel.MergedPullRequestsCount.Should().Be(2);
+        fixture.DialogService.Verify(instance => instance.ConfirmReload(), Times.Once);
+        fixture.DialogService.Verify(instance => instance.ShowReloadSummary(
+            "Since the last reload, 2 new open PRs and 1 new merged PR were added."), Times.Once);
+        fixture.LoadUseCase.VerifyAll();
+        fixture.PreferencesService.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Reload reports when there are no new pull requests")]
+    [Trait("Category", "Unit")]
+    public async Task LoadCommandWhenReloadHasNoNewPullRequestsShowsNoNewPullRequestsMessage()
+    {
+        // Arrange
+        var asOf = new DateTimeOffset(2026, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var repository = new Repository("Payments", slug: new RepositorySlug("payments"));
+        var firstSnapshot = CreateSnapshot(
+            asOf,
+            repository,
+            openPullRequestIds: [10],
+            mergedPullRequestIds: [9]);
+        var secondSnapshot = CreateSnapshot(
+            asOf.AddMinutes(5),
+            repository,
+            openPullRequestIds: [10],
+            mergedPullRequestIds: [9]);
+        var loadResults = new Queue<DashboardLoadResult>([
+            new DashboardLoadResult.Success(firstSnapshot),
+            new DashboardLoadResult.Success(secondSnapshot)
+        ]);
+        var fixture = CreateFixture();
+        fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
+                new FilterPattern(string.Empty, RepositorySearchMode.StartWith),
+                1,
+                It.IsAny<IProgress<PullRequestLoadProgress>?>(),
+                It.Is<CancellationToken>(token => token.CanBeCanceled)))
+            .Returns(() => Task.FromResult(loadResults.Dequeue()));
+        fixture.PreferencesService.Setup(instance => instance.Save(
+            It.Is<UserPreferences>(preferences =>
+                preferences.SearchPhrase == string.Empty
+                && preferences.SearchMode == RepositorySearchMode.StartWith)));
+        fixture.DialogService.Setup(instance => instance.ConfirmReload())
+            .Returns(true);
+        fixture.DialogService.Setup(instance => instance.ShowReloadSummary("No new PRs."));
+        using var viewModel = fixture.CreateViewModel();
+
+        // Act
+        await viewModel.LoadCommand.ExecuteAsync();
+        await viewModel.LoadCommand.ExecuteAsync();
+
+        // Assert
+        fixture.DialogService.Verify(instance => instance.ConfirmReload(), Times.Once);
+        fixture.DialogService.Verify(instance => instance.ShowReloadSummary("No new PRs."), Times.Once);
+        fixture.LoadUseCase.VerifyAll();
+        fixture.PreferencesService.VerifyAll();
+    }
+
     [Fact(DisplayName = "Load command shows use case failure")]
     [Trait("Category", "Unit")]
     public async Task LoadCommandWhenUseCaseFailsShowsFailure()
@@ -415,6 +515,37 @@ public sealed class MainViewModelTests
                 TtfrThresholdHours = 4
             }
         }));
+
+    private static PullRequestDashboardSnapshot CreateSnapshot(
+        DateTimeOffset asOf,
+        Repository repository,
+        IReadOnlyList<int> openPullRequestIds,
+        IReadOnlyList<int> mergedPullRequestIds) =>
+        new(
+            asOf,
+            [repository],
+            openPullRequestIds.Select(id => new PullRequestDetail(
+                repository,
+                new PullRequestId(id),
+                $"Open title {id}",
+                asOf.AddHours(-2),
+                null,
+                "Nikita",
+                asOf.AddHours(-1),
+                asOf.AddMinutes(-30),
+                true)).ToArray(),
+            mergedPullRequestIds.Select(id => new MergedPullRequest(
+                repository,
+                new PullRequestId(id),
+                $"Merged title {id}",
+                asOf.AddDays(-2),
+                null,
+                "Nikita",
+                asOf.AddDays(-1),
+                asOf.AddHours(-3),
+                false,
+                asOf.AddHours(-2))).ToArray(),
+            new BitbucketTelemetrySnapshot(true, 3, [new BitbucketApiRequestStatistic("user", 3)]));
 
     private sealed record MainViewModelFixture(
         Mock<IDashboardLoadUseCase> LoadUseCase,
