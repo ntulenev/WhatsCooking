@@ -149,6 +149,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
             && descriptor.Lifetime == ServiceLifetime.Singleton);
         AssertRegistration<IBitbucketRetryPolicy, BitbucketRetryPolicy>(services, ServiceLifetime.Singleton);
         AssertRegistration<IBitbucketTelemetryService, BitbucketTelemetryService>(services, ServiceLifetime.Singleton);
+        AssertRegistration<IBitbucketErrorResponseParser, BitbucketErrorResponseParser>(services, ServiceLifetime.Singleton);
         AssertRegistration<IPullRequestDetailsCache, FilePullRequestDetailsCache>(services, ServiceLifetime.Singleton);
         AssertRegistration<IPullRequestDetailsCacheService, PullRequestDetailsCacheService>(services, ServiceLifetime.Singleton);
         AssertRegistration<IBitbucketAuthApiClient, BitbucketAuthApiClient>(services, ServiceLifetime.Transient);
@@ -182,6 +183,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         var cache = provider.GetRequiredService<IPullRequestDetailsCache>();
         var cacheService = provider.GetRequiredService<IPullRequestDetailsCacheService>();
         var diffService = provider.GetRequiredService<IPullRequestDiffService>();
+        var errorResponseParser = provider.GetRequiredService<IBitbucketErrorResponseParser>();
         var telemetry = provider.GetRequiredService<IBitbucketTelemetryService>();
         var timeProvider = provider.GetRequiredService<TimeProvider>();
 
@@ -190,6 +192,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         cache.Should().BeOfType<FilePullRequestDetailsCache>();
         cacheService.Should().BeOfType<PullRequestDetailsCacheService>();
         diffService.Should().BeOfType<PullRequestDiffService>();
+        errorResponseParser.Should().BeOfType<BitbucketErrorResponseParser>();
         telemetry.Should().BeOfType<BitbucketTelemetryService>();
         timeProvider.Should().BeSameAs(TimeProvider.System);
     }

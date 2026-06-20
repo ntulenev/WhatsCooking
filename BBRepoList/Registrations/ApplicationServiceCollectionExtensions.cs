@@ -81,6 +81,7 @@ public static class ApplicationServiceCollectionExtensions
 
         _ = services.AddSingleton<IBitbucketRetryPolicy, BitbucketRetryPolicy>();
         _ = services.AddSingleton<IBitbucketTelemetryService, BitbucketTelemetryService>();
+        _ = services.AddSingleton<IBitbucketErrorResponseParser, BitbucketErrorResponseParser>();
 
         return services;
     }
