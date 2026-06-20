@@ -64,6 +64,7 @@ public static class ApplicationServiceCollectionExtensions
     private static IServiceCollection AddApplicationWorkflow(this IServiceCollection services)
     {
         _ = services.AddTransient<IRepoService, RepositoryService>();
+        _ = services.AddSingleton<IPullRequestDiffService, PullRequestDiffService>();
         return services;
     }
 

@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Windows.Input;
 
+using BBRepoList.Abstractions;
 using BBRepoList.Models;
 
 using WhatsCooking.Services;
@@ -21,6 +22,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <param name="loadUseCase">Dashboard loading use case.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
     /// <param name="rowMapper">Pull request row mapper.</param>
+    /// <param name="pullRequestDiffService">Pull request diff service.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
     /// <param name="aiReviewPromptService">AI review prompt clipboard service.</param>
@@ -29,6 +31,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         IDashboardLoadUseCase loadUseCase,
         TelemetryViewModel telemetryDashboard,
         PullRequestRowMapper rowMapper,
+        IPullRequestDiffService pullRequestDiffService,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
         IAiReviewPromptService aiReviewPromptService,
@@ -37,12 +40,14 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ArgumentNullException.ThrowIfNull(loadUseCase, nameof(loadUseCase));
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
         ArgumentNullException.ThrowIfNull(rowMapper, nameof(rowMapper));
+        ArgumentNullException.ThrowIfNull(pullRequestDiffService, nameof(pullRequestDiffService));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
         ArgumentNullException.ThrowIfNull(aiReviewPromptService, nameof(aiReviewPromptService));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loadUseCase = loadUseCase;
         _rowMapper = rowMapper;
+        _pullRequestDiffService = pullRequestDiffService;
         _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
         _aiReviewPromptService = aiReviewPromptService;
@@ -436,9 +441,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             return;
         }
 
-        var previousOpenPullRequestKeys = isReload ? CreatePullRequestKeys(_openPullRequests) : null;
-        var previousMergedPullRequestKeys = isReload ? CreatePullRequestKeys(_mergedPullRequests) : null;
-
         IsLoading = true;
         Status = "Starting";
         try
@@ -459,10 +461,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             {
                 case DashboardLoadResult.Success success:
                     var reloadSummary = isReload
-                        ? BuildReloadSummary(
-                            success.Snapshot,
-                            previousOpenPullRequestKeys!,
-                            previousMergedPullRequestKeys!)
+                        ? BuildReloadSummary(_pullRequestDiffService.Compare(
+                            _loadedOpenPullRequests,
+                            _loadedMergedPullRequests,
+                            success.Snapshot.OpenPullRequests,
+                            success.Snapshot.MergedPullRequests))
                         : null;
                     ApplyDashboardSnapshot(success.Snapshot);
                     Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
@@ -487,43 +490,20 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         }
     }
 
-    private static string BuildReloadSummary(
-        PullRequestDashboardSnapshot snapshot,
-        ISet<PullRequestKey> previousOpenPullRequestKeys,
-        ISet<PullRequestKey> previousMergedPullRequestKeys)
+    private static string BuildReloadSummary(PullRequestDiffSummary summary)
     {
-        var newOpenPullRequestsCount = snapshot.OpenPullRequests.Count(
-            pullRequest => !previousOpenPullRequestKeys.Contains(CreatePullRequestKey(pullRequest)));
-        var newMergedPullRequestsCount = snapshot.MergedPullRequests.Count(
-            pullRequest => !previousMergedPullRequestKeys.Contains(CreatePullRequestKey(pullRequest)));
-
-        if (newOpenPullRequestsCount == 0 && newMergedPullRequestsCount == 0)
+        if (!summary.HasNewPullRequests)
         {
             return "No new PRs.";
         }
 
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"Since the last reload, {newOpenPullRequestsCount} {FormatPlural(newOpenPullRequestsCount, "new open PR", "new open PRs")} and {newMergedPullRequestsCount} {FormatPlural(newMergedPullRequestsCount, "new merged PR", "new merged PRs")} were added.");
+            $"Since the last reload, {summary.NewOpenPullRequestsCount} {FormatPlural(summary.NewOpenPullRequestsCount, "new open PR", "new open PRs")} and {summary.NewMergedPullRequestsCount} {FormatPlural(summary.NewMergedPullRequestsCount, "new merged PR", "new merged PRs")} were added.");
     }
 
     private static string FormatPlural(int count, string singular, string plural) =>
         count == 1 ? singular : plural;
-
-    private static HashSet<PullRequestKey> CreatePullRequestKeys(IEnumerable<PullRequestRow> pullRequests) =>
-        [.. pullRequests.Select(CreatePullRequestKey)];
-
-    private static PullRequestKey CreatePullRequestKey(PullRequestRow pullRequest) =>
-        new(GetRepositoryKey(pullRequest.RepositorySlug, pullRequest.RepositoryName), pullRequest.PullRequestId);
-
-    private static PullRequestKey CreatePullRequestKey(PullRequestDetail pullRequest) =>
-        new(GetRepositoryKey(pullRequest.RepositorySlug, pullRequest.RepositoryName), pullRequest.PullRequestId.Value);
-
-    private static PullRequestKey CreatePullRequestKey(MergedPullRequest pullRequest) =>
-        new(GetRepositoryKey(pullRequest.RepositorySlug, pullRequest.RepositoryName), pullRequest.PullRequestId.Value);
-
-    private static string GetRepositoryKey(RepositorySlug? slug, string repositoryName) =>
-        slug?.Value ?? repositoryName;
 
     private void ApplyDashboardSnapshot(PullRequestDashboardSnapshot snapshot)
     {
@@ -536,6 +516,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _mergedPullRequests.Clear();
         _mergedPullRequests.AddRange(snapshot.MergedPullRequests.Select(
             (pullRequest, index) => _rowMapper.MapMerged(index + 1, pullRequest, snapshot.AsOf)));
+        _loadedOpenPullRequests = [.. snapshot.OpenPullRequests];
+        _loadedMergedPullRequests = [.. snapshot.MergedPullRequests];
         SubscribeToPullRequestRows();
         RefreshViews();
 
@@ -793,6 +775,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly PullRequestRowMapper _rowMapper;
 
+    private readonly IPullRequestDiffService _pullRequestDiffService;
+
     private readonly IDialogService _dialogService;
 
     private readonly IExternalUrlLauncher _externalUrlLauncher;
@@ -807,6 +791,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly List<PullRequestRow> _mergedPullRequests = [];
 
+    private IReadOnlyCollection<PullRequestDetail> _loadedOpenPullRequests = [];
+
+    private IReadOnlyCollection<MergedPullRequest> _loadedMergedPullRequests = [];
+
     private readonly Dictionary<string, string[]> _validationErrors = new(StringComparer.Ordinal);
 
     private int _mergedPullRequestsDays;
@@ -820,6 +808,4 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private string _searchPhrase;
 
     private RepositorySearchMode _selectedSearchMode;
-
-    private readonly record struct PullRequestKey(string RepositoryKey, int PullRequestId);
 }
