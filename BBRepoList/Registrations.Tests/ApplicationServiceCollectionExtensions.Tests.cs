@@ -160,6 +160,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         AssertRegistration<IPullRequestFingerprintBuilder, PullRequestFingerprintBuilder>(services, ServiceLifetime.Transient);
         AssertRegistration<IPullRequestSnapshotMapper, PullRequestSnapshotMapper>(services, ServiceLifetime.Transient);
         AssertRegistration<IRepoService, RepositoryService>(services, ServiceLifetime.Transient);
+        AssertRegistration<IPullRequestDiffService, PullRequestDiffService>(services, ServiceLifetime.Singleton);
     }
 
     [Fact(DisplayName = "Add application services resolves application service graph")]
@@ -180,6 +181,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         var repositoryService = provider.GetRequiredService<IRepoService>();
         var cache = provider.GetRequiredService<IPullRequestDetailsCache>();
         var cacheService = provider.GetRequiredService<IPullRequestDetailsCacheService>();
+        var diffService = provider.GetRequiredService<IPullRequestDiffService>();
         var telemetry = provider.GetRequiredService<IBitbucketTelemetryService>();
         var timeProvider = provider.GetRequiredService<TimeProvider>();
 
@@ -187,6 +189,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         repositoryService.Should().BeOfType<RepositoryService>();
         cache.Should().BeOfType<FilePullRequestDetailsCache>();
         cacheService.Should().BeOfType<PullRequestDetailsCacheService>();
+        diffService.Should().BeOfType<PullRequestDiffService>();
         telemetry.Should().BeOfType<BitbucketTelemetryService>();
         timeProvider.Should().BeSameAs(TimeProvider.System);
     }
