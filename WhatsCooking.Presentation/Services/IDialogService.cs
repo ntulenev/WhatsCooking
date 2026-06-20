@@ -22,4 +22,10 @@ internal interface IDialogService
     /// </summary>
     /// <param name="message">Error message to show.</param>
     void ShowLoadError(string message);
+
+    /// <summary>
+    /// Shows pull request reload summary.
+    /// </summary>
+    /// <param name="message">Reload summary message to show.</param>
+    void ShowReloadSummary(string message);
 }

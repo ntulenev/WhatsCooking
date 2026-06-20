@@ -430,10 +430,14 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             return;
         }
 
-        if (HasLoadedPullRequests() && !_dialogService.ConfirmReload())
+        var isReload = HasLoadedPullRequests();
+        if (isReload && !_dialogService.ConfirmReload())
         {
             return;
         }
+
+        var previousOpenPullRequestKeys = isReload ? CreatePullRequestKeys(_openPullRequests) : null;
+        var previousMergedPullRequestKeys = isReload ? CreatePullRequestKeys(_mergedPullRequests) : null;
 
         IsLoading = true;
         Status = "Starting";
@@ -454,8 +458,18 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             switch (result)
             {
                 case DashboardLoadResult.Success success:
+                    var reloadSummary = isReload
+                        ? BuildReloadSummary(
+                            success.Snapshot,
+                            previousOpenPullRequestKeys!,
+                            previousMergedPullRequestKeys!)
+                        : null;
                     ApplyDashboardSnapshot(success.Snapshot);
                     Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
+                    if (reloadSummary is not null)
+                    {
+                        _dialogService.ShowReloadSummary(reloadSummary);
+                    }
                     break;
                 case DashboardLoadResult.Cancelled:
                     Status = "Cancelled";
@@ -472,6 +486,44 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             IsLoading = false;
         }
     }
+
+    private static string BuildReloadSummary(
+        PullRequestDashboardSnapshot snapshot,
+        ISet<PullRequestKey> previousOpenPullRequestKeys,
+        ISet<PullRequestKey> previousMergedPullRequestKeys)
+    {
+        var newOpenPullRequestsCount = snapshot.OpenPullRequests.Count(
+            pullRequest => !previousOpenPullRequestKeys.Contains(CreatePullRequestKey(pullRequest)));
+        var newMergedPullRequestsCount = snapshot.MergedPullRequests.Count(
+            pullRequest => !previousMergedPullRequestKeys.Contains(CreatePullRequestKey(pullRequest)));
+
+        if (newOpenPullRequestsCount == 0 && newMergedPullRequestsCount == 0)
+        {
+            return "No new PRs.";
+        }
+
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"Since the last reload, {newOpenPullRequestsCount} {FormatPlural(newOpenPullRequestsCount, "new open PR", "new open PRs")} and {newMergedPullRequestsCount} {FormatPlural(newMergedPullRequestsCount, "new merged PR", "new merged PRs")} were added.");
+    }
+
+    private static string FormatPlural(int count, string singular, string plural) =>
+        count == 1 ? singular : plural;
+
+    private static HashSet<PullRequestKey> CreatePullRequestKeys(IEnumerable<PullRequestRow> pullRequests) =>
+        [.. pullRequests.Select(CreatePullRequestKey)];
+
+    private static PullRequestKey CreatePullRequestKey(PullRequestRow pullRequest) =>
+        new(GetRepositoryKey(pullRequest.RepositorySlug, pullRequest.RepositoryName), pullRequest.PullRequestId);
+
+    private static PullRequestKey CreatePullRequestKey(PullRequestDetail pullRequest) =>
+        new(GetRepositoryKey(pullRequest.RepositorySlug, pullRequest.RepositoryName), pullRequest.PullRequestId.Value);
+
+    private static PullRequestKey CreatePullRequestKey(MergedPullRequest pullRequest) =>
+        new(GetRepositoryKey(pullRequest.RepositorySlug, pullRequest.RepositoryName), pullRequest.PullRequestId.Value);
+
+    private static string GetRepositoryKey(RepositorySlug? slug, string repositoryName) =>
+        slug?.Value ?? repositoryName;
 
     private void ApplyDashboardSnapshot(PullRequestDashboardSnapshot snapshot)
     {
@@ -768,4 +820,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private string _searchPhrase;
 
     private RepositorySearchMode _selectedSearchMode;
+
+    private readonly record struct PullRequestKey(string RepositoryKey, int PullRequestId);
 }

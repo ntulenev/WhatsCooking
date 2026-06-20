@@ -31,6 +31,11 @@ internal sealed class PullRequestRow : ObservableObject
     public int PullRequestId { get; }
 
     /// <summary>
+    /// Repository slug in workspace scope.
+    /// </summary>
+    public RepositorySlug? RepositorySlug { get; }
+
+    /// <summary>
     /// Pull request title.
     /// </summary>
     public string Title { get; }
@@ -342,5 +347,4 @@ internal sealed class PullRequestRow : ObservableObject
 
     private bool _isReviewed;
 
-    private RepositorySlug? RepositorySlug { get; }
 }

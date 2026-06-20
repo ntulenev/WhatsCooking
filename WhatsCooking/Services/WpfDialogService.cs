@@ -36,4 +36,10 @@ internal sealed class WpfDialogService : IDialogService
     {
         StyledDialogWindow.ShowMessage(Application.Current?.MainWindow, "Load failed", message, "!");
     }
+
+    /// <inheritdoc />
+    public void ShowReloadSummary(string message)
+    {
+        StyledDialogWindow.ShowMessage(Application.Current?.MainWindow, "Pull request updates", message, "i");
+    }
 }
