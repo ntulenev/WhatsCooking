@@ -104,6 +104,60 @@ public sealed class PullRequestRowTests
         row.ActivityAgeOrMerged.Should().Be("-");
     }
 
+    [Fact(DisplayName = "Open row shows current user approval when no request changes exist")]
+    [Trait("Category", "Unit")]
+    public void OpenRowConstructorWhenCurrentUserApprovedShowsApprovalActivity()
+    {
+        // Arrange
+        var asOf = new DateTimeOffset(2026, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var detail = new PullRequestDetail(
+            new Repository("Repo", slug: new RepositorySlug("repo")),
+            new PullRequestId(1),
+            "Title",
+            asOf.AddHours(-1),
+            null,
+            "Author",
+            firstNonAuthorActivityOn: null,
+            lastActivityOn: null,
+            hasCurrentUserDiscussion: false,
+            approvalsCount: 1,
+            hasCurrentUserApproval: true);
+
+        // Act
+        var row = new PullRequestRow(1, detail, asOf, CreateOptions());
+
+        // Assert
+        row.HasCurrentUserApproval.Should().BeTrue();
+        row.HasCurrentUserActivity.Should().BeTrue();
+        row.CurrentUserActivity.Should().Be("Approval");
+    }
+
+    [Fact(DisplayName = "Open row shows current user comment when comment is only activity")]
+    [Trait("Category", "Unit")]
+    public void OpenRowConstructorWhenCurrentUserCommentedShowsCommentActivity()
+    {
+        // Arrange
+        var asOf = new DateTimeOffset(2026, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var detail = new PullRequestDetail(
+            new Repository("Repo", slug: new RepositorySlug("repo")),
+            new PullRequestId(1),
+            "Title",
+            asOf.AddHours(-1),
+            null,
+            "Author",
+            firstNonAuthorActivityOn: null,
+            lastActivityOn: asOf.AddMinutes(-5),
+            hasCurrentUserDiscussion: true);
+
+        // Act
+        var row = new PullRequestRow(1, detail, asOf, CreateOptions());
+
+        // Assert
+        row.HasCurrentUserDiscussion.Should().BeTrue();
+        row.HasCurrentUserActivity.Should().BeTrue();
+        row.CurrentUserActivity.Should().Be("Comment");
+    }
+
     [Fact(DisplayName = "Merged row constructor maps merge age and review state")]
     [Trait("Category", "Unit")]
     public void MergedRowConstructorWhenPullRequestIsValidMapsMergeAgeAndReviewState()

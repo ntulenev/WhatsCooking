@@ -64,4 +64,15 @@ public sealed class BitbucketErrorResponseParserTests
 
         result.Should().Be("HTML error response: Denied");
     }
+
+    [Fact(DisplayName = "Parse skips incomplete short HTML tag")]
+    [Trait("Category", "Unit")]
+    public void ParseWhenHtmlContainsIncompleteShortTagSkipsTag()
+    {
+        var parser = new BitbucketErrorResponseParser();
+
+        var result = parser.Parse("<html><body>Denied <h</body></html>", "text/html");
+
+        result.Should().Be("HTML error response: Denied");
+    }
 }

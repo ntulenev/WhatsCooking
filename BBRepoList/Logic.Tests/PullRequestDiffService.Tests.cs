@@ -56,6 +56,27 @@ public sealed class PullRequestDiffServiceTests
         result.HasNewPullRequests.Should().BeFalse();
     }
 
+    [Fact(DisplayName = "Compare uses repository name when slug is missing")]
+    [Trait("Category", "Unit")]
+    public void CompareWhenRepositorySlugIsMissingUsesRepositoryNameAsIdentity()
+    {
+        // Arrange
+        var previousRepository = new Repository("Payments");
+        var currentRepository = new Repository("Payments");
+        var service = new PullRequestDiffService();
+
+        // Act
+        var result = service.Compare(
+            previousOpenPullRequests: [CreateOpenPullRequest(previousRepository, 1)],
+            previousMergedPullRequests: [CreateMergedPullRequest(previousRepository, 10)],
+            currentOpenPullRequests: [CreateOpenPullRequest(currentRepository, 1)],
+            currentMergedPullRequests: [CreateMergedPullRequest(currentRepository, 10)]);
+
+        // Assert
+        result.Should().Be(new PullRequestDiffSummary(0, 0));
+        result.HasNewPullRequests.Should().BeFalse();
+    }
+
     [Fact(DisplayName = "Compare throws when required collection is null")]
     [Trait("Category", "Unit")]
     public void CompareWhenRequiredCollectionIsNullThrowsArgumentNullException()

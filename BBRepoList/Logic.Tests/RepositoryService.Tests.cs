@@ -250,6 +250,26 @@ public sealed class RepositoryServiceTests
         result.Should().BeEmpty();
     }
 
+    [Fact(DisplayName = "Get merged pull requests returns empty result for empty repositories")]
+    [Trait("Category", "Unit")]
+    public async Task GetMergedPullRequestsAsyncWhenRepositoriesAreEmptyReturnsEmptyResult()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetMergedPullRequestsAsync(
+            [],
+            new DateTimeOffset(2026, 5, 1, 0, 0, 0, TimeSpan.Zero),
+            _currentUserId,
+            progress: null,
+            cancellation.Token);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
     [Fact(DisplayName = "Get open pull request details observes cancellation")]
     [Trait("Category", "Unit")]
     public async Task GetOpenPullRequestDetailsAsyncWhenCancelledThrowsOperationCanceledException()
