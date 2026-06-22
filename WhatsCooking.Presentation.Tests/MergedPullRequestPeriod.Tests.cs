@@ -37,4 +37,20 @@ public sealed class MergedPullRequestPeriodTests
         // Assert
         parsed.Should().BeFalse();
     }
+
+    [Fact(DisplayName = "Validate returns parsed days or user-facing error")]
+    [Trait("Category", "Unit")]
+    public void ValidateReturnsParsedDaysOrUserFacingError()
+    {
+        // Act
+        var valid = MergedPullRequestPeriod.Validate("7");
+        var invalid = MergedPullRequestPeriod.Validate("0");
+
+        // Assert
+        valid.Should().Be(new MergedPullRequestPeriodValidation(true, 7, null));
+        invalid.Should().Be(new MergedPullRequestPeriodValidation(
+            false,
+            0,
+            "Enter a whole number from 1 to 365."));
+    }
 }

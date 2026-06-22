@@ -642,16 +642,15 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private void ValidateMergedPullRequestsDays(string value)
     {
         const string propertyName = nameof(MergedPullRequestsDaysInput);
-        if (!MergedPullRequestPeriod.TryParse(value, out var days))
+        var validation = MergedPullRequestPeriod.Validate(value);
+        if (!validation.IsValid)
         {
-            SetValidationError(
-                propertyName,
-                $"Enter a whole number from {MergedPullRequestPeriod.MINIMUM_DAYS} to {MergedPullRequestPeriod.MAXIMUM_DAYS}.");
+            SetValidationError(propertyName, validation.Error ?? "Invalid merged pull request period.");
             return;
         }
 
         ClearValidationError(propertyName);
-        MergedPullRequestsDays = days;
+        MergedPullRequestsDays = validation.Days;
     }
 
     private void SetValidationError(string propertyName, string error)
