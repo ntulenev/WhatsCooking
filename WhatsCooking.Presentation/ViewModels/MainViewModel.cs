@@ -60,8 +60,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _searchPhrase = _preferences.SearchPhrase ?? string.Empty;
         _mergedPullRequestsDays = 1;
         _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
-        OpenPullRequestFilters = new PullRequestFilterState(RefreshOpenPullRequestsView);
-        MergedPullRequestFilters = new PullRequestFilterState(RefreshMergedPullRequestsView);
+        _openPullRequests = new PullRequestGridViewState(() => GlobalSearch);
+        _mergedPullRequests = new PullRequestGridViewState(() => GlobalSearch);
+        OpenPullRequestFilters = _openPullRequests.Filters;
+        MergedPullRequestFilters = _mergedPullRequests.Filters;
         OpenPullRequestFilters.PropertyChanged += OnOpenPullRequestFilterPropertyChanged;
         MergedPullRequestFilters.PropertyChanged += OnMergedPullRequestFilterPropertyChanged;
         LoadCommand = new AsyncRelayCommand(LoadAsync, CanLoad);
@@ -339,12 +341,12 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Loaded open pull request rows.
     /// </summary>
-    public BulkObservableCollection<PullRequestRow> OpenPullRequestsView { get; } = [];
+    public BulkObservableCollection<PullRequestRow> OpenPullRequestsView => _openPullRequests.View;
 
     /// <summary>
     /// Loaded recently merged pull request rows.
     /// </summary>
-    public BulkObservableCollection<PullRequestRow> MergedPullRequestsView { get; } = [];
+    public BulkObservableCollection<PullRequestRow> MergedPullRequestsView => _mergedPullRequests.View;
 
     /// <summary>
     /// Open pull request grid filters.
@@ -509,17 +511,12 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        UnsubscribeFromPullRequestRows();
-        _openPullRequests.Clear();
-        _openPullRequests.AddRange(snapshot.OpenPullRequests.Select(
+        _openPullRequests.ReplaceAll(snapshot.OpenPullRequests.Select(
             (pullRequest, index) => _rowMapper.MapOpen(index + 1, pullRequest, snapshot.AsOf)));
-        _mergedPullRequests.Clear();
-        _mergedPullRequests.AddRange(snapshot.MergedPullRequests.Select(
+        _mergedPullRequests.ReplaceAll(snapshot.MergedPullRequests.Select(
             (pullRequest, index) => _rowMapper.MapMerged(index + 1, pullRequest, snapshot.AsOf)));
         _loadedOpenPullRequests = [.. snapshot.OpenPullRequests];
         _loadedMergedPullRequests = [.. snapshot.MergedPullRequests];
-        SubscribeToPullRequestRows();
-        RefreshViews();
 
         RepositoriesCount = snapshot.Repositories.Count;
         OpenPullRequestsCount = snapshot.OpenPullRequests.Count;
@@ -584,25 +581,15 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void RefreshViews()
     {
-        RefreshOpenPullRequestsView();
-        RefreshMergedPullRequestsView();
+        _openPullRequests.Refresh();
+        _mergedPullRequests.Refresh();
     }
-
-    private void RefreshOpenPullRequestsView() =>
-        OpenPullRequestsView.ReplaceAll(
-            _openPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, OpenPullRequestFilters)));
-
-    private void RefreshMergedPullRequestsView() =>
-        MergedPullRequestsView.ReplaceAll(
-            _mergedPullRequests.Where(row => PullRequestRowFilter.Matches(row, GlobalSearch, MergedPullRequestFilters)));
 
     private void SchedulePullRequestFilterRefresh() => RefreshViews();
 
-    private void ToggleOpenReviewedFilter() =>
-        OpenPullRequestFilters.HideReviewed = !OpenPullRequestFilters.HideReviewed;
+    private void ToggleOpenReviewedFilter() => _openPullRequests.ToggleReviewedFilter();
 
-    private void ToggleMergedReviewedFilter() =>
-        MergedPullRequestFilters.HideReviewed = !MergedPullRequestFilters.HideReviewed;
+    private void ToggleMergedReviewedFilter() => _mergedPullRequests.ToggleReviewedFilter();
 
     private void OnOpenPullRequestFilterPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -622,63 +609,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         }
     }
 
-    private void SubscribeToPullRequestRows()
-    {
-        foreach (var row in _openPullRequests.Concat(_mergedPullRequests))
-        {
-            row.PropertyChanged += OnPullRequestRowPropertyChanged;
-        }
-    }
-
-    private void UnsubscribeFromPullRequestRows()
-    {
-        foreach (var row in _openPullRequests.Concat(_mergedPullRequests))
-        {
-            row.PropertyChanged -= OnPullRequestRowPropertyChanged;
-        }
-    }
-
-    private void OnPullRequestRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName != nameof(PullRequestRow.IsReviewed)
-            || sender is not PullRequestRow row)
-        {
-            return;
-        }
-
-        if (_openPullRequests.Contains(row))
-        {
-            UpdateReviewedRowVisibility(row, OpenPullRequestFilters, OpenPullRequestsView);
-            return;
-        }
-
-        if (_mergedPullRequests.Contains(row))
-        {
-            UpdateReviewedRowVisibility(row, MergedPullRequestFilters, MergedPullRequestsView);
-        }
-    }
-
-    private static void UpdateReviewedRowVisibility(
-        PullRequestRow row,
-        PullRequestFilterState filters,
-        BulkObservableCollection<PullRequestRow> view)
-    {
-        if (!filters.HideReviewed)
-        {
-            return;
-        }
-
-        if (row.IsReviewed)
-        {
-            _ = view.Remove(row);
-        }
-    }
-
     private void ResetFilters()
     {
         GlobalSearch = string.Empty;
-        OpenPullRequestFilters.Reset();
-        MergedPullRequestFilters.Reset();
+        _openPullRequests.ResetFilters();
+        _mergedPullRequests.ResetFilters();
         RaiseMergedFilterPropertiesChanged();
         TelemetryDashboard.ResetFilter();
     }
@@ -755,7 +690,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// </summary>
     public void Dispose()
     {
-        UnsubscribeFromPullRequestRows();
+        _openPullRequests.Dispose();
+        _mergedPullRequests.Dispose();
         OpenPullRequestFilters.PropertyChanged -= OnOpenPullRequestFilterPropertyChanged;
         MergedPullRequestFilters.PropertyChanged -= OnMergedPullRequestFilterPropertyChanged;
         LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
@@ -787,9 +723,9 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private UserPreferences _preferences;
 
-    private readonly List<PullRequestRow> _openPullRequests = [];
+    private readonly PullRequestGridViewState _openPullRequests;
 
-    private readonly List<PullRequestRow> _mergedPullRequests = [];
+    private readonly PullRequestGridViewState _mergedPullRequests;
 
     private IReadOnlyCollection<PullRequestDetail> _loadedOpenPullRequests = [];
 
