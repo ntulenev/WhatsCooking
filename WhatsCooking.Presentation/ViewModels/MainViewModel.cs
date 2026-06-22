@@ -52,12 +52,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _externalUrlLauncher = externalUrlLauncher;
         _aiReviewPromptService = aiReviewPromptService;
         TelemetryDashboard = telemetryDashboard;
-        _preferencesService = preferencesService;
-        _preferences = _preferencesService.Load();
+        _preferences = new MainViewModelPreferences(preferencesService);
         _isLightTheme = _preferences.IsLightTheme;
-        _uiScale = NormalizeUiScale(_preferences.UiScale);
-        _selectedSearchMode = _preferences.SearchMode ?? RepositorySearchMode.StartWith;
-        _searchPhrase = _preferences.SearchPhrase ?? string.Empty;
+        _uiScale = _preferences.UiScale;
+        _selectedSearchMode = _preferences.SearchMode;
+        _searchPhrase = _preferences.SearchPhrase;
         _mergedPullRequestsDays = 1;
         _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
         _openPullRequests = new PullRequestGridViewState(() => GlobalSearch);
@@ -176,8 +175,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         {
             if (SetProperty(ref _isLightTheme, value))
             {
-                _preferences = _preferences with { IsLightTheme = value };
-                _preferencesService.Save(_preferences);
+                _preferences.SaveTheme(value);
             }
         }
     }
@@ -189,11 +187,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         get => _uiScale;
         private set
         {
-            var normalizedValue = NormalizeUiScale(value);
+            var normalizedValue = MainViewModelPreferences.NormalizeUiScale(value);
             if (SetProperty(ref _uiScale, normalizedValue))
             {
-                _preferences = _preferences with { UiScale = normalizedValue };
-                _preferencesService.Save(_preferences);
+                _preferences.SaveUiScale(normalizedValue);
             }
         }
     }
@@ -531,22 +528,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void SaveLoadPreferences()
     {
-        _preferences = _preferences with
-        {
-            SearchMode = SelectedSearchMode,
-            SearchPhrase = SearchPhrase
-        };
-        _preferencesService.Save(_preferences);
-    }
-
-    private static double NormalizeUiScale(double? value)
-    {
-        if (value is null || double.IsNaN(value.Value) || double.IsInfinity(value.Value))
-        {
-            return DEFAULT_UI_SCALE;
-        }
-
-        return Math.Round(Math.Clamp(value.Value, MIN_UI_SCALE, MAX_UI_SCALE), 2);
+        _preferences.SaveLoadPreferences(SelectedSearchMode, SearchPhrase);
     }
 
     private bool CanLoad() => !IsLoading && !HasErrors;
@@ -698,12 +680,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         LoadCommand.Dispose();
     }
 
-    private const double DEFAULT_UI_SCALE = 1.0;
-
-    private const double MIN_UI_SCALE = 0.75;
-
-    private const double MAX_UI_SCALE = 1.5;
-
     private const double UI_SCALE_STEP = 0.05;
 
     private readonly IDashboardLoadUseCase _loadUseCase;
@@ -718,9 +694,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly IAiReviewPromptService _aiReviewPromptService;
 
-    private readonly IUserPreferencesService _preferencesService;
-
-    private UserPreferences _preferences;
+    private readonly MainViewModelPreferences _preferences;
 
     private readonly PullRequestGridViewState _openPullRequests;
 
