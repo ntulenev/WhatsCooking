@@ -460,7 +460,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             {
                 case DashboardLoadResult.Success success:
                     var reloadSummary = isReload
-                        ? BuildReloadSummary(_pullRequestDiffService.Compare(
+                        ? PullRequestReloadSummaryFormatter.Format(_pullRequestDiffService.Compare(
                             _dashboardState.LoadedOpenPullRequests,
                             _dashboardState.LoadedMergedPullRequests,
                             success.Snapshot.OpenPullRequests,
@@ -488,21 +488,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             IsLoading = false;
         }
     }
-
-    private static string BuildReloadSummary(PullRequestDiffSummary summary)
-    {
-        if (!summary.HasNewPullRequests)
-        {
-            return "No new PRs.";
-        }
-
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"Since the last reload, {summary.NewOpenPullRequestsCount} {FormatPlural(summary.NewOpenPullRequestsCount, "new open PR", "new open PRs")} and {summary.NewMergedPullRequestsCount} {FormatPlural(summary.NewMergedPullRequestsCount, "new merged PR", "new merged PRs")} were added.");
-    }
-
-    private static string FormatPlural(int count, string singular, string plural) =>
-        count == 1 ? singular : plural;
 
     private void ApplyDashboardSnapshot(PullRequestDashboardSnapshot snapshot)
     {
