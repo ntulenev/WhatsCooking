@@ -59,10 +59,9 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _searchPhrase = _preferences.SearchPhrase;
         _mergedPullRequestsDays = 1;
         _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
-        _openPullRequests = new PullRequestGridViewState(() => GlobalSearch);
-        _mergedPullRequests = new PullRequestGridViewState(() => GlobalSearch);
-        OpenPullRequestFilters = _openPullRequests.Filters;
-        MergedPullRequestFilters = _mergedPullRequests.Filters;
+        _dashboardState = new PullRequestDashboardViewState(() => GlobalSearch);
+        OpenPullRequestFilters = _dashboardState.OpenPullRequests.Filters;
+        MergedPullRequestFilters = _dashboardState.MergedPullRequests.Filters;
         OpenPullRequestFilters.PropertyChanged += OnOpenPullRequestFilterPropertyChanged;
         MergedPullRequestFilters.PropertyChanged += OnMergedPullRequestFilterPropertyChanged;
         LoadCommand = new AsyncRelayCommand(LoadAsync, CanLoad);
@@ -339,12 +338,12 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Loaded open pull request rows.
     /// </summary>
-    public BulkObservableCollection<PullRequestRow> OpenPullRequestsView => _openPullRequests.View;
+    public BulkObservableCollection<PullRequestRow> OpenPullRequestsView => _dashboardState.OpenPullRequests.View;
 
     /// <summary>
     /// Loaded recently merged pull request rows.
     /// </summary>
-    public BulkObservableCollection<PullRequestRow> MergedPullRequestsView => _mergedPullRequests.View;
+    public BulkObservableCollection<PullRequestRow> MergedPullRequestsView => _dashboardState.MergedPullRequests.View;
 
     /// <summary>
     /// Open pull request grid filters.
@@ -462,8 +461,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
                 case DashboardLoadResult.Success success:
                     var reloadSummary = isReload
                         ? BuildReloadSummary(_pullRequestDiffService.Compare(
-                            _loadedOpenPullRequests,
-                            _loadedMergedPullRequests,
+                            _dashboardState.LoadedOpenPullRequests,
+                            _dashboardState.LoadedMergedPullRequests,
                             success.Snapshot.OpenPullRequests,
                             success.Snapshot.MergedPullRequests))
                         : null;
@@ -509,12 +508,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        _openPullRequests.ReplaceAll(snapshot.OpenPullRequests.Select(
-            (pullRequest, index) => _rowMapper.MapOpen(index + 1, pullRequest, snapshot.AsOf)));
-        _mergedPullRequests.ReplaceAll(snapshot.MergedPullRequests.Select(
-            (pullRequest, index) => _rowMapper.MapMerged(index + 1, pullRequest, snapshot.AsOf)));
-        _loadedOpenPullRequests = [.. snapshot.OpenPullRequests];
-        _loadedMergedPullRequests = [.. snapshot.MergedPullRequests];
+        _dashboardState.ApplySnapshot(snapshot, _rowMapper);
 
         RepositoriesCount = snapshot.Repositories.Count;
         OpenPullRequestsCount = snapshot.OpenPullRequests.Count;
@@ -534,7 +528,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private bool CanLoad() => !IsLoading && !HasErrors;
 
-    private bool HasLoadedPullRequests() => _openPullRequests.Count > 0 || _mergedPullRequests.Count > 0;
+    private bool HasLoadedPullRequests() => _dashboardState.HasLoadedPullRequests;
 
     private void OpenUrl(object? parameter)
     {
@@ -564,15 +558,14 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void RefreshViews()
     {
-        _openPullRequests.Refresh();
-        _mergedPullRequests.Refresh();
+        _dashboardState.Refresh();
     }
 
     private void SchedulePullRequestFilterRefresh() => RefreshViews();
 
-    private void ToggleOpenReviewedFilter() => _openPullRequests.ToggleReviewedFilter();
+    private void ToggleOpenReviewedFilter() => _dashboardState.OpenPullRequests.ToggleReviewedFilter();
 
-    private void ToggleMergedReviewedFilter() => _mergedPullRequests.ToggleReviewedFilter();
+    private void ToggleMergedReviewedFilter() => _dashboardState.MergedPullRequests.ToggleReviewedFilter();
 
     private void OnOpenPullRequestFilterPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -595,8 +588,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private void ResetFilters()
     {
         GlobalSearch = string.Empty;
-        _openPullRequests.ResetFilters();
-        _mergedPullRequests.ResetFilters();
+        _dashboardState.ResetFilters();
         RaiseMergedFilterPropertiesChanged();
         TelemetryDashboard.ResetFilter();
     }
@@ -670,8 +662,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// </summary>
     public void Dispose()
     {
-        _openPullRequests.Dispose();
-        _mergedPullRequests.Dispose();
+        _dashboardState.Dispose();
         OpenPullRequestFilters.PropertyChanged -= OnOpenPullRequestFilterPropertyChanged;
         MergedPullRequestFilters.PropertyChanged -= OnMergedPullRequestFilterPropertyChanged;
         LoadCommand.PropertyChanged -= OnLoadCommandPropertyChanged;
@@ -695,13 +686,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly MainViewModelPreferences _preferences;
 
-    private readonly PullRequestGridViewState _openPullRequests;
-
-    private readonly PullRequestGridViewState _mergedPullRequests;
-
-    private IReadOnlyCollection<PullRequestDetail> _loadedOpenPullRequests = [];
-
-    private IReadOnlyCollection<MergedPullRequest> _loadedMergedPullRequests = [];
+    private readonly PullRequestDashboardViewState _dashboardState;
 
     private readonly ValidationErrorStore _validationErrors = new();
 
