@@ -132,22 +132,23 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     }
 
     /// <inheritdoc />
-    public bool HasErrors => _validationErrors.Count > 0;
+    public bool HasErrors => _validationErrors.HasErrors;
 
     /// <inheritdoc />
-    public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+    public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged {
+        add => _validationErrors.ErrorsChanged += value;
+        remove => _validationErrors.ErrorsChanged -= value;
+    }
 
     /// <inheritdoc />
     public System.Collections.IEnumerable GetErrors(string? propertyName)
     {
         if (string.IsNullOrEmpty(propertyName))
         {
-            return _validationErrors.Values.SelectMany(static errors => errors);
+            return _validationErrors.GetErrors(propertyName);
         }
 
-        return _validationErrors.TryGetValue(propertyName, out var errors)
-            ? errors
-            : [];
+        return _validationErrors.GetErrors(propertyName);
     }
 
     /// <summary>
@@ -637,20 +638,18 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private void SetValidationError(string propertyName, string error)
     {
-        _validationErrors[propertyName] = [error];
-        ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        _validationErrors.SetError(propertyName, error);
         OnPropertyChanged(nameof(HasErrors));
         RaiseCommandStates();
     }
 
     private void ClearValidationError(string propertyName)
     {
-        if (!_validationErrors.Remove(propertyName))
+        if (!_validationErrors.ClearError(propertyName))
         {
             return;
         }
 
-        ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         OnPropertyChanged(nameof(HasErrors));
         RaiseCommandStates();
     }
@@ -704,7 +703,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private IReadOnlyCollection<MergedPullRequest> _loadedMergedPullRequests = [];
 
-    private readonly Dictionary<string, string[]> _validationErrors = new(StringComparer.Ordinal);
+    private readonly ValidationErrorStore _validationErrors = new();
 
     private int _mergedPullRequestsDays;
 
