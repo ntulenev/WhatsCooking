@@ -27,18 +27,16 @@ public sealed class MainViewModelTests
     [InlineData(4)]
     [InlineData(5)]
     [InlineData(6)]
-    [InlineData(7)]
     public void ConstructorWhenRequiredDependencyIsNullThrowsArgumentNullException(int dependencyIndex)
     {
         // Arrange
-        var loadUseCase = new Mock<IDashboardLoadUseCase>(MockBehavior.Strict).Object;
+        var loadCoordinator = new Mock<IDashboardLoadCoordinator>(MockBehavior.Strict).Object;
         var telemetryViewModel = new TelemetryViewModel(
             new Mock<IBitbucketTelemetryService>(MockBehavior.Strict).Object,
             Mock.Of<IPullRequestDetailsCache>(instance => instance.GetSizeInBytes() == 0),
             Mock.Of<IDialogService>(),
             new Mock<IDebouncer>(MockBehavior.Strict).Object);
         var rowMapper = CreateRowMapper();
-        var reloadSummaryService = new Mock<IDashboardReloadSummaryService>(MockBehavior.Strict).Object;
         var dialogService = new Mock<IDialogService>(MockBehavior.Strict).Object;
         var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict).Object;
         var aiReviewPromptService = new Mock<IAiReviewPromptService>(MockBehavior.Strict).Object;
@@ -46,14 +44,13 @@ public sealed class MainViewModelTests
 
         // Act
         Action act = () => _ = new MainViewModel(
-            dependencyIndex == 0 ? null! : loadUseCase,
+            dependencyIndex == 0 ? null! : loadCoordinator,
             dependencyIndex == 1 ? null! : telemetryViewModel,
             dependencyIndex == 2 ? null! : rowMapper,
-            dependencyIndex == 3 ? null! : reloadSummaryService,
-            dependencyIndex == 4 ? null! : dialogService,
-            dependencyIndex == 5 ? null! : externalUrlLauncher,
-            dependencyIndex == 6 ? null! : aiReviewPromptService,
-            dependencyIndex == 7 ? null! : preferencesService);
+            dependencyIndex == 3 ? null! : dialogService,
+            dependencyIndex == 4 ? null! : externalUrlLauncher,
+            dependencyIndex == 5 ? null! : aiReviewPromptService,
+            dependencyIndex == 6 ? null! : preferencesService);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -192,13 +189,16 @@ public sealed class MainViewModelTests
         var fixture = CreateFixture();
         var loadCalls = 0;
         var saveCalls = 0;
-        fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
+        fixture.LoadCoordinator.Setup(instance => instance.LoadAsync(
                 new FilterPattern("pay", RepositorySearchMode.Contains),
                 7,
+                false,
+                It.Is<IReadOnlyCollection<PullRequestDetail>>(items => items.Count == 0),
+                It.Is<IReadOnlyCollection<MergedPullRequest>>(items => items.Count == 0),
                 It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 It.Is<CancellationToken>(token => token.CanBeCanceled)))
             .Callback(() => loadCalls++)
-            .ReturnsAsync(new DashboardLoadResult.Success(snapshot));
+            .ReturnsAsync(new DashboardLoadCoordinatorResult.Success(snapshot, ReloadSummary: null));
         fixture.PreferencesService.Setup(instance => instance.Save(
                 It.Is<UserPreferences>(preferences =>
                     preferences.SearchPhrase == "pay"
@@ -267,7 +267,7 @@ public sealed class MainViewModelTests
 
         loadCalls.Should().Be(1);
         saveCalls.Should().Be(1);
-        fixture.LoadUseCase.VerifyAll();
+        fixture.LoadCoordinator.VerifyAll();
         fixture.AiReviewPromptService.VerifyAll();
         fixture.PreferencesService.VerifyAll();
     }
@@ -289,14 +289,19 @@ public sealed class MainViewModelTests
             repository,
             openPullRequestIds: [10, 11, 12],
             mergedPullRequestIds: [9, 8]);
-        var loadResults = new Queue<DashboardLoadResult>([
-            new DashboardLoadResult.Success(firstSnapshot),
-            new DashboardLoadResult.Success(secondSnapshot)
+        var loadResults = new Queue<DashboardLoadCoordinatorResult>([
+            new DashboardLoadCoordinatorResult.Success(firstSnapshot, ReloadSummary: null),
+            new DashboardLoadCoordinatorResult.Success(
+                secondSnapshot,
+                "Since the last reload, 2 new open PRs and 1 new merged PR were added.")
         ]);
         var fixture = CreateFixture();
-        fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
+        fixture.LoadCoordinator.Setup(instance => instance.LoadAsync(
                 new FilterPattern(string.Empty, RepositorySearchMode.StartWith),
                 1,
+                It.IsAny<bool>(),
+                It.IsAny<IReadOnlyCollection<PullRequestDetail>>(),
+                It.IsAny<IReadOnlyCollection<MergedPullRequest>>(),
                 It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 It.Is<CancellationToken>(token => token.CanBeCanceled)))
             .Returns(() => Task.FromResult(loadResults.Dequeue()));
@@ -304,13 +309,6 @@ public sealed class MainViewModelTests
             It.Is<UserPreferences>(preferences =>
                 preferences.SearchPhrase == string.Empty
                 && preferences.SearchMode == RepositorySearchMode.StartWith)));
-        fixture.DialogService.Setup(instance => instance.ConfirmReload())
-            .Returns(true);
-        fixture.ReloadSummaryService.Setup(instance => instance.CreateSummary(
-                firstSnapshot.OpenPullRequests,
-                firstSnapshot.MergedPullRequests,
-                secondSnapshot))
-            .Returns("Since the last reload, 2 new open PRs and 1 new merged PR were added.");
         fixture.DialogService.Setup(instance => instance.ShowReloadSummary(
             "Since the last reload, 2 new open PRs and 1 new merged PR were added."));
         using var viewModel = fixture.CreateViewModel();
@@ -322,11 +320,9 @@ public sealed class MainViewModelTests
         // Assert
         viewModel.OpenPullRequestsCount.Should().Be(3);
         viewModel.MergedPullRequestsCount.Should().Be(2);
-        fixture.DialogService.Verify(instance => instance.ConfirmReload(), Times.Once);
         fixture.DialogService.Verify(instance => instance.ShowReloadSummary(
             "Since the last reload, 2 new open PRs and 1 new merged PR were added."), Times.Once);
-        fixture.ReloadSummaryService.VerifyAll();
-        fixture.LoadUseCase.VerifyAll();
+        fixture.LoadCoordinator.VerifyAll();
         fixture.PreferencesService.VerifyAll();
     }
 
@@ -347,14 +343,17 @@ public sealed class MainViewModelTests
             repository,
             openPullRequestIds: [10],
             mergedPullRequestIds: [9]);
-        var loadResults = new Queue<DashboardLoadResult>([
-            new DashboardLoadResult.Success(firstSnapshot),
-            new DashboardLoadResult.Success(secondSnapshot)
+        var loadResults = new Queue<DashboardLoadCoordinatorResult>([
+            new DashboardLoadCoordinatorResult.Success(firstSnapshot, ReloadSummary: null),
+            new DashboardLoadCoordinatorResult.Success(secondSnapshot, "No new PRs.")
         ]);
         var fixture = CreateFixture();
-        fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
+        fixture.LoadCoordinator.Setup(instance => instance.LoadAsync(
                 new FilterPattern(string.Empty, RepositorySearchMode.StartWith),
                 1,
+                It.IsAny<bool>(),
+                It.IsAny<IReadOnlyCollection<PullRequestDetail>>(),
+                It.IsAny<IReadOnlyCollection<MergedPullRequest>>(),
                 It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 It.Is<CancellationToken>(token => token.CanBeCanceled)))
             .Returns(() => Task.FromResult(loadResults.Dequeue()));
@@ -362,13 +361,6 @@ public sealed class MainViewModelTests
             It.Is<UserPreferences>(preferences =>
                 preferences.SearchPhrase == string.Empty
                 && preferences.SearchMode == RepositorySearchMode.StartWith)));
-        fixture.DialogService.Setup(instance => instance.ConfirmReload())
-            .Returns(true);
-        fixture.ReloadSummaryService.Setup(instance => instance.CreateSummary(
-                firstSnapshot.OpenPullRequests,
-                firstSnapshot.MergedPullRequests,
-                secondSnapshot))
-            .Returns("No new PRs.");
         fixture.DialogService.Setup(instance => instance.ShowReloadSummary("No new PRs."));
         using var viewModel = fixture.CreateViewModel();
 
@@ -377,10 +369,8 @@ public sealed class MainViewModelTests
         await viewModel.LoadCommand.ExecuteAsync();
 
         // Assert
-        fixture.DialogService.Verify(instance => instance.ConfirmReload(), Times.Once);
         fixture.DialogService.Verify(instance => instance.ShowReloadSummary("No new PRs."), Times.Once);
-        fixture.ReloadSummaryService.VerifyAll();
-        fixture.LoadUseCase.VerifyAll();
+        fixture.LoadCoordinator.VerifyAll();
         fixture.PreferencesService.VerifyAll();
     }
 
@@ -391,12 +381,15 @@ public sealed class MainViewModelTests
         // Arrange
         var fixture = CreateFixture();
         var dialogCalls = 0;
-        fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
+        fixture.LoadCoordinator.Setup(instance => instance.LoadAsync(
                 new FilterPattern(string.Empty, RepositorySearchMode.StartWith),
                 1,
+                false,
+                It.Is<IReadOnlyCollection<PullRequestDetail>>(items => items.Count == 0),
+                It.Is<IReadOnlyCollection<MergedPullRequest>>(items => items.Count == 0),
                 It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 It.Is<CancellationToken>(token => token.CanBeCanceled)))
-            .ReturnsAsync(new DashboardLoadResult.Failure("Could not load"));
+            .ReturnsAsync(new DashboardLoadCoordinatorResult.Failure("Could not load"));
         fixture.PreferencesService.Setup(instance => instance.Save(
             It.Is<UserPreferences>(preferences =>
                 preferences.SearchPhrase == string.Empty
@@ -421,12 +414,15 @@ public sealed class MainViewModelTests
     {
         // Arrange
         var fixture = CreateFixture();
-        fixture.LoadUseCase.Setup(instance => instance.LoadAsync(
+        fixture.LoadCoordinator.Setup(instance => instance.LoadAsync(
                 new FilterPattern(string.Empty, RepositorySearchMode.StartWith),
                 1,
+                false,
+                It.Is<IReadOnlyCollection<PullRequestDetail>>(items => items.Count == 0),
+                It.Is<IReadOnlyCollection<MergedPullRequest>>(items => items.Count == 0),
                 It.IsAny<IProgress<PullRequestLoadProgress>?>(),
                 It.Is<CancellationToken>(token => token.CanBeCanceled)))
-            .ReturnsAsync(new DashboardLoadResult.Cancelled());
+            .ReturnsAsync(new DashboardLoadCoordinatorResult.Cancelled());
         fixture.PreferencesService.Setup(instance => instance.Save(
             It.Is<UserPreferences>(preferences =>
                 preferences.SearchPhrase == string.Empty
@@ -439,7 +435,7 @@ public sealed class MainViewModelTests
         // Assert
         viewModel.Status.Should().Be("Cancelled");
         viewModel.IsLoading.Should().BeFalse();
-        fixture.LoadUseCase.VerifyAll();
+        fixture.LoadCoordinator.VerifyAll();
     }
 
     [Fact(DisplayName = "UI commands update preferences, filters and external URL")]
@@ -495,7 +491,7 @@ public sealed class MainViewModelTests
     private static MainViewModelFixture CreateFixture(UserPreferences? preferences = null)
     {
         var emptyTelemetry = new BitbucketTelemetrySnapshot(false, 0, []);
-        var loadUseCase = new Mock<IDashboardLoadUseCase>(MockBehavior.Strict);
+        var loadCoordinator = new Mock<IDashboardLoadCoordinator>(MockBehavior.Strict);
         var telemetryService = new Mock<IBitbucketTelemetryService>(MockBehavior.Strict);
         telemetryService.Setup(instance => instance.GetSnapshot()).Returns(emptyTelemetry);
         var cache = new Mock<IPullRequestDetailsCache>(MockBehavior.Strict);
@@ -504,17 +500,15 @@ public sealed class MainViewModelTests
         var dialogService = new Mock<IDialogService>(MockBehavior.Strict);
         var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict);
         var aiReviewPromptService = new Mock<IAiReviewPromptService>(MockBehavior.Strict);
-        var reloadSummaryService = new Mock<IDashboardReloadSummaryService>(MockBehavior.Strict);
         var preferencesService = new Mock<IUserPreferencesService>(MockBehavior.Strict);
         preferencesService.Setup(instance => instance.Load())
             .Returns(preferences ?? new UserPreferences());
 
         return new MainViewModelFixture(
-            loadUseCase,
+            loadCoordinator,
             telemetryService,
             cache,
             telemetryDebouncer,
-            reloadSummaryService,
             dialogService,
             externalUrlLauncher,
             aiReviewPromptService,
@@ -565,11 +559,10 @@ public sealed class MainViewModelTests
             new BitbucketTelemetrySnapshot(true, 3, [new BitbucketApiRequestStatistic("user", 3)]));
 
     private sealed record MainViewModelFixture(
-        Mock<IDashboardLoadUseCase> LoadUseCase,
+        Mock<IDashboardLoadCoordinator> LoadCoordinator,
         Mock<IBitbucketTelemetryService> TelemetryService,
         Mock<IPullRequestDetailsCache> Cache,
         Mock<IDebouncer> TelemetryDebouncer,
-        Mock<IDashboardReloadSummaryService> ReloadSummaryService,
         Mock<IDialogService> DialogService,
         Mock<IExternalUrlLauncher> ExternalUrlLauncher,
         Mock<IAiReviewPromptService> AiReviewPromptService,
@@ -577,10 +570,9 @@ public sealed class MainViewModelTests
     {
         public MainViewModel CreateViewModel() =>
             new(
-                LoadUseCase.Object,
+                LoadCoordinator.Object,
                 new TelemetryViewModel(TelemetryService.Object, Cache.Object, DialogService.Object, TelemetryDebouncer.Object),
                 CreateRowMapper(),
-                ReloadSummaryService.Object,
                 DialogService.Object,
                 ExternalUrlLauncher.Object,
                 AiReviewPromptService.Object,

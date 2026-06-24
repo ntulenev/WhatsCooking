@@ -40,6 +40,7 @@ public partial class App : Application
                 _ = services.AddTransient<IDebouncer, TimerDebouncer>();
                 _ = services.AddTransient<IPullRequestDashboardLoader, PullRequestDashboardLoader>();
                 _ = services.AddTransient<IDashboardLoadUseCase, DashboardLoadUseCase>();
+                _ = services.AddTransient<IDashboardLoadCoordinator, DashboardLoadCoordinator>();
                 _ = services.AddTransient<IDashboardReloadSummaryService, DashboardReloadSummaryService>();
                 _ = services.AddSingleton<TelemetryViewModel>();
                 _ = services.AddSingleton<PullRequestRowMapper>();

@@ -18,35 +18,31 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Initializes a new instance of the <see cref="MainViewModel"/> class.
     /// </summary>
-    /// <param name="loadUseCase">Dashboard loading use case.</param>
+    /// <param name="loadCoordinator">Dashboard load coordinator.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
     /// <param name="rowMapper">Pull request row mapper.</param>
-    /// <param name="reloadSummaryService">Reload summary service.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
     /// <param name="aiReviewPromptService">AI review prompt clipboard service.</param>
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
-        IDashboardLoadUseCase loadUseCase,
+        IDashboardLoadCoordinator loadCoordinator,
         TelemetryViewModel telemetryDashboard,
         PullRequestRowMapper rowMapper,
-        IDashboardReloadSummaryService reloadSummaryService,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
         IAiReviewPromptService aiReviewPromptService,
         IUserPreferencesService preferencesService)
     {
-        ArgumentNullException.ThrowIfNull(loadUseCase, nameof(loadUseCase));
+        ArgumentNullException.ThrowIfNull(loadCoordinator, nameof(loadCoordinator));
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
         ArgumentNullException.ThrowIfNull(rowMapper, nameof(rowMapper));
-        ArgumentNullException.ThrowIfNull(reloadSummaryService, nameof(reloadSummaryService));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
         ArgumentNullException.ThrowIfNull(aiReviewPromptService, nameof(aiReviewPromptService));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
-        _loadUseCase = loadUseCase;
+        _loadCoordinator = loadCoordinator;
         _rowMapper = rowMapper;
-        _reloadSummaryService = reloadSummaryService;
         _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
         _aiReviewPromptService = aiReviewPromptService;
@@ -433,12 +429,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             return;
         }
 
-        var isReload = HasLoadedPullRequests();
-        if (isReload && !_dialogService.ConfirmReload())
-        {
-            return;
-        }
-
         IsLoading = true;
         Status = "Starting";
         try
@@ -446,36 +436,40 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             SaveLoadPreferences();
 
             var filterPattern = new FilterPattern(SearchPhrase, SelectedSearchMode);
+            var isReload = HasLoadedPullRequests();
             var progress = new Progress<PullRequestLoadProgress>(value =>
             {
                 Status = PullRequestLoadProgressFormatter.Format(value);
                 _ = TelemetryDashboard.RefreshTelemetry();
             });
-            var result = await _loadUseCase
-                .LoadAsync(filterPattern, MergedPullRequestsDays, progress, cancellationToken)
+            var result = await _loadCoordinator
+                .LoadAsync(
+                    filterPattern,
+                    MergedPullRequestsDays,
+                    isReload,
+                    _dashboardState.LoadedOpenPullRequests,
+                    _dashboardState.LoadedMergedPullRequests,
+                    progress,
+                    cancellationToken)
                 .ConfigureAwait(true);
 
             switch (result)
             {
-                case DashboardLoadResult.Success success:
-                    var reloadSummary = isReload
-                        ? _reloadSummaryService.CreateSummary(
-                            _dashboardState.LoadedOpenPullRequests,
-                            _dashboardState.LoadedMergedPullRequests,
-                            success.Snapshot)
-                        : null;
+                case DashboardLoadCoordinatorResult.Success success:
                     ApplyDashboardSnapshot(success.Snapshot);
                     Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
-                    if (reloadSummary is not null)
+                    if (success.ReloadSummary is not null)
                     {
-                        _dialogService.ShowReloadSummary(reloadSummary);
+                        _dialogService.ShowReloadSummary(success.ReloadSummary);
                     }
                     break;
-                case DashboardLoadResult.Cancelled:
+                case DashboardLoadCoordinatorResult.Cancelled:
                     Status = "Cancelled";
                     break;
-                case DashboardLoadResult.Failure failure:
+                case DashboardLoadCoordinatorResult.Failure failure:
                     ShowLoadError(failure.UserMessage);
+                    break;
+                case DashboardLoadCoordinatorResult.Skipped:
                     break;
                 default:
                     throw new InvalidOperationException($"Unsupported dashboard load result: {result.GetType().Name}.");
@@ -655,11 +649,9 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private const double UI_SCALE_STEP = 0.05;
 
-    private readonly IDashboardLoadUseCase _loadUseCase;
+    private readonly IDashboardLoadCoordinator _loadCoordinator;
 
     private readonly PullRequestRowMapper _rowMapper;
-
-    private readonly IDashboardReloadSummaryService _reloadSummaryService;
 
     private readonly IDialogService _dialogService;
 
