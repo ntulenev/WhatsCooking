@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Windows.Input;
 
-using BBRepoList.Abstractions;
 using BBRepoList.Models;
 
 using WhatsCooking.Services;
@@ -22,7 +21,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <param name="loadUseCase">Dashboard loading use case.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
     /// <param name="rowMapper">Pull request row mapper.</param>
-    /// <param name="pullRequestDiffService">Pull request diff service.</param>
+    /// <param name="reloadSummaryService">Reload summary service.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
     /// <param name="aiReviewPromptService">AI review prompt clipboard service.</param>
@@ -31,7 +30,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         IDashboardLoadUseCase loadUseCase,
         TelemetryViewModel telemetryDashboard,
         PullRequestRowMapper rowMapper,
-        IPullRequestDiffService pullRequestDiffService,
+        IDashboardReloadSummaryService reloadSummaryService,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
         IAiReviewPromptService aiReviewPromptService,
@@ -40,14 +39,14 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ArgumentNullException.ThrowIfNull(loadUseCase, nameof(loadUseCase));
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
         ArgumentNullException.ThrowIfNull(rowMapper, nameof(rowMapper));
-        ArgumentNullException.ThrowIfNull(pullRequestDiffService, nameof(pullRequestDiffService));
+        ArgumentNullException.ThrowIfNull(reloadSummaryService, nameof(reloadSummaryService));
         ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
         ArgumentNullException.ThrowIfNull(aiReviewPromptService, nameof(aiReviewPromptService));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _loadUseCase = loadUseCase;
         _rowMapper = rowMapper;
-        _pullRequestDiffService = pullRequestDiffService;
+        _reloadSummaryService = reloadSummaryService;
         _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
         _aiReviewPromptService = aiReviewPromptService;
@@ -460,11 +459,10 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             {
                 case DashboardLoadResult.Success success:
                     var reloadSummary = isReload
-                        ? PullRequestReloadSummaryFormatter.Format(_pullRequestDiffService.Compare(
+                        ? _reloadSummaryService.CreateSummary(
                             _dashboardState.LoadedOpenPullRequests,
                             _dashboardState.LoadedMergedPullRequests,
-                            success.Snapshot.OpenPullRequests,
-                            success.Snapshot.MergedPullRequests))
+                            success.Snapshot)
                         : null;
                     ApplyDashboardSnapshot(success.Snapshot);
                     Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
@@ -661,7 +659,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly PullRequestRowMapper _rowMapper;
 
-    private readonly IPullRequestDiffService _pullRequestDiffService;
+    private readonly IDashboardReloadSummaryService _reloadSummaryService;
 
     private readonly IDialogService _dialogService;
 

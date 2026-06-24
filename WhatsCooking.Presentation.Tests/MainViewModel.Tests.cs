@@ -38,7 +38,7 @@ public sealed class MainViewModelTests
             Mock.Of<IDialogService>(),
             new Mock<IDebouncer>(MockBehavior.Strict).Object);
         var rowMapper = CreateRowMapper();
-        var pullRequestDiffService = new Mock<IPullRequestDiffService>(MockBehavior.Strict).Object;
+        var reloadSummaryService = new Mock<IDashboardReloadSummaryService>(MockBehavior.Strict).Object;
         var dialogService = new Mock<IDialogService>(MockBehavior.Strict).Object;
         var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict).Object;
         var aiReviewPromptService = new Mock<IAiReviewPromptService>(MockBehavior.Strict).Object;
@@ -49,7 +49,7 @@ public sealed class MainViewModelTests
             dependencyIndex == 0 ? null! : loadUseCase,
             dependencyIndex == 1 ? null! : telemetryViewModel,
             dependencyIndex == 2 ? null! : rowMapper,
-            dependencyIndex == 3 ? null! : pullRequestDiffService,
+            dependencyIndex == 3 ? null! : reloadSummaryService,
             dependencyIndex == 4 ? null! : dialogService,
             dependencyIndex == 5 ? null! : externalUrlLauncher,
             dependencyIndex == 6 ? null! : aiReviewPromptService,
@@ -306,12 +306,11 @@ public sealed class MainViewModelTests
                 && preferences.SearchMode == RepositorySearchMode.StartWith)));
         fixture.DialogService.Setup(instance => instance.ConfirmReload())
             .Returns(true);
-        fixture.PullRequestDiffService.Setup(instance => instance.Compare(
+        fixture.ReloadSummaryService.Setup(instance => instance.CreateSummary(
                 firstSnapshot.OpenPullRequests,
                 firstSnapshot.MergedPullRequests,
-                secondSnapshot.OpenPullRequests,
-                secondSnapshot.MergedPullRequests))
-            .Returns(new PullRequestDiffSummary(2, 1));
+                secondSnapshot))
+            .Returns("Since the last reload, 2 new open PRs and 1 new merged PR were added.");
         fixture.DialogService.Setup(instance => instance.ShowReloadSummary(
             "Since the last reload, 2 new open PRs and 1 new merged PR were added."));
         using var viewModel = fixture.CreateViewModel();
@@ -326,7 +325,7 @@ public sealed class MainViewModelTests
         fixture.DialogService.Verify(instance => instance.ConfirmReload(), Times.Once);
         fixture.DialogService.Verify(instance => instance.ShowReloadSummary(
             "Since the last reload, 2 new open PRs and 1 new merged PR were added."), Times.Once);
-        fixture.PullRequestDiffService.VerifyAll();
+        fixture.ReloadSummaryService.VerifyAll();
         fixture.LoadUseCase.VerifyAll();
         fixture.PreferencesService.VerifyAll();
     }
@@ -365,12 +364,11 @@ public sealed class MainViewModelTests
                 && preferences.SearchMode == RepositorySearchMode.StartWith)));
         fixture.DialogService.Setup(instance => instance.ConfirmReload())
             .Returns(true);
-        fixture.PullRequestDiffService.Setup(instance => instance.Compare(
+        fixture.ReloadSummaryService.Setup(instance => instance.CreateSummary(
                 firstSnapshot.OpenPullRequests,
                 firstSnapshot.MergedPullRequests,
-                secondSnapshot.OpenPullRequests,
-                secondSnapshot.MergedPullRequests))
-            .Returns(new PullRequestDiffSummary(0, 0));
+                secondSnapshot))
+            .Returns("No new PRs.");
         fixture.DialogService.Setup(instance => instance.ShowReloadSummary("No new PRs."));
         using var viewModel = fixture.CreateViewModel();
 
@@ -381,7 +379,7 @@ public sealed class MainViewModelTests
         // Assert
         fixture.DialogService.Verify(instance => instance.ConfirmReload(), Times.Once);
         fixture.DialogService.Verify(instance => instance.ShowReloadSummary("No new PRs."), Times.Once);
-        fixture.PullRequestDiffService.VerifyAll();
+        fixture.ReloadSummaryService.VerifyAll();
         fixture.LoadUseCase.VerifyAll();
         fixture.PreferencesService.VerifyAll();
     }
@@ -506,7 +504,7 @@ public sealed class MainViewModelTests
         var dialogService = new Mock<IDialogService>(MockBehavior.Strict);
         var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict);
         var aiReviewPromptService = new Mock<IAiReviewPromptService>(MockBehavior.Strict);
-        var pullRequestDiffService = new Mock<IPullRequestDiffService>(MockBehavior.Strict);
+        var reloadSummaryService = new Mock<IDashboardReloadSummaryService>(MockBehavior.Strict);
         var preferencesService = new Mock<IUserPreferencesService>(MockBehavior.Strict);
         preferencesService.Setup(instance => instance.Load())
             .Returns(preferences ?? new UserPreferences());
@@ -516,7 +514,7 @@ public sealed class MainViewModelTests
             telemetryService,
             cache,
             telemetryDebouncer,
-            pullRequestDiffService,
+            reloadSummaryService,
             dialogService,
             externalUrlLauncher,
             aiReviewPromptService,
@@ -571,7 +569,7 @@ public sealed class MainViewModelTests
         Mock<IBitbucketTelemetryService> TelemetryService,
         Mock<IPullRequestDetailsCache> Cache,
         Mock<IDebouncer> TelemetryDebouncer,
-        Mock<IPullRequestDiffService> PullRequestDiffService,
+        Mock<IDashboardReloadSummaryService> ReloadSummaryService,
         Mock<IDialogService> DialogService,
         Mock<IExternalUrlLauncher> ExternalUrlLauncher,
         Mock<IAiReviewPromptService> AiReviewPromptService,
@@ -582,7 +580,7 @@ public sealed class MainViewModelTests
                 LoadUseCase.Object,
                 new TelemetryViewModel(TelemetryService.Object, Cache.Object, DialogService.Object, TelemetryDebouncer.Object),
                 CreateRowMapper(),
-                PullRequestDiffService.Object,
+                ReloadSummaryService.Object,
                 DialogService.Object,
                 ExternalUrlLauncher.Object,
                 AiReviewPromptService.Object,
