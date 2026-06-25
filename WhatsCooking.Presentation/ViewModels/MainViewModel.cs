@@ -41,9 +41,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
         ArgumentNullException.ThrowIfNull(aiReviewPromptService, nameof(aiReviewPromptService));
         ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
-        _loadCoordinator = loadCoordinator;
-        _rowMapper = rowMapper;
-        _dialogService = dialogService;
         _externalUrlLauncher = externalUrlLauncher;
         _aiReviewPromptService = aiReviewPromptService;
         TelemetryDashboard = telemetryDashboard;
@@ -55,6 +52,13 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _mergedPullRequestsDays = 1;
         _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
         _dashboardState = new PullRequestDashboardViewState(() => GlobalSearch);
+        _dashboardLoader = new DashboardLoadCommandHandler(
+            loadCoordinator,
+            rowMapper,
+            dialogService,
+            _preferences,
+            _dashboardState,
+            TelemetryDashboard);
         OpenPullRequestFilters = _dashboardState.OpenPullRequests.Filters;
         MergedPullRequestFilters = _dashboardState.MergedPullRequests.Filters;
         OpenPullRequestFilters.PropertyChanged += OnOpenPullRequestFilterPropertyChanged;
@@ -345,47 +349,16 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         Status = "Starting";
         try
         {
-            SaveLoadPreferences();
-
-            var filterPattern = new FilterPattern(SearchPhrase, SelectedSearchMode);
-            var isReload = HasLoadedPullRequests();
-            var progress = new Progress<PullRequestLoadProgress>(value =>
-            {
-                Status = PullRequestLoadProgressFormatter.Format(value);
-                _ = TelemetryDashboard.RefreshTelemetry();
-            });
-            var result = await _loadCoordinator
+            var result = await _dashboardLoader
                 .LoadAsync(
-                    filterPattern,
+                    SelectedSearchMode,
+                    SearchPhrase,
                     MergedPullRequestsDays,
-                    isReload,
-                    _dashboardState.LoadedOpenPullRequests,
-                    _dashboardState.LoadedMergedPullRequests,
-                    progress,
+                    new Progress<string>(value => Status = value),
                     cancellationToken)
                 .ConfigureAwait(true);
 
-            switch (result)
-            {
-                case DashboardLoadCoordinatorResult.Success success:
-                    ApplyDashboardSnapshot(success.Snapshot);
-                    Status = $"Loaded {OpenPullRequestsCount} open PRs and {MergedPullRequestsCount} merged PRs";
-                    if (success.ReloadSummary is not null)
-                    {
-                        _dialogService.ShowReloadSummary(success.ReloadSummary);
-                    }
-                    break;
-                case DashboardLoadCoordinatorResult.Cancelled:
-                    Status = "Cancelled";
-                    break;
-                case DashboardLoadCoordinatorResult.Failure failure:
-                    ShowLoadError(failure.UserMessage);
-                    break;
-                case DashboardLoadCoordinatorResult.Skipped:
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unsupported dashboard load result: {result.GetType().Name}.");
-            }
+            ApplyLoadResult(result);
         }
         finally
         {
@@ -393,31 +366,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         }
     }
 
-    private void ApplyDashboardSnapshot(PullRequestDashboardSnapshot snapshot)
-    {
-        ArgumentNullException.ThrowIfNull(snapshot);
-
-        _dashboardState.ApplySnapshot(snapshot, _rowMapper);
-
-        RepositoriesCount = snapshot.Repositories.Count;
-        OpenPullRequestsCount = snapshot.OpenPullRequests.Count;
-        MergedPullRequestsCount = snapshot.MergedPullRequests.Count;
-        LoadedAt = $"Loaded: {snapshot.AsOf.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)}";
-        TelemetryDashboard.LoadTelemetry(snapshot.Telemetry);
-    }
-
     private void IncreaseUiScale() => UiScale += UI_SCALE_STEP;
 
     private void DecreaseUiScale() => UiScale -= UI_SCALE_STEP;
 
-    private void SaveLoadPreferences()
-    {
-        _preferences.SaveLoadPreferences(SelectedSearchMode, SearchPhrase);
-    }
-
     private bool CanLoad() => !IsLoading && !HasErrors;
-
-    private bool HasLoadedPullRequests() => _dashboardState.HasLoadedPullRequests;
 
     private void OpenUrl(object? parameter)
     {
@@ -439,10 +392,32 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         Status = $"Copied AI review prompt for {pullRequest.RepositoryName} #{pullRequest.PullRequestId}";
     }
 
-    private void ShowLoadError(string message)
+    private void ApplyLoadResult(DashboardLoadCommandResult result)
     {
-        Status = message;
-        _dialogService.ShowLoadError(message);
+        if (!string.IsNullOrEmpty(result.Status))
+        {
+            Status = result.Status;
+        }
+
+        if (result.RepositoriesCount.HasValue)
+        {
+            RepositoriesCount = result.RepositoriesCount.Value;
+        }
+
+        if (result.OpenPullRequestsCount.HasValue)
+        {
+            OpenPullRequestsCount = result.OpenPullRequestsCount.Value;
+        }
+
+        if (result.MergedPullRequestsCount.HasValue)
+        {
+            MergedPullRequestsCount = result.MergedPullRequestsCount.Value;
+        }
+
+        if (result.LoadedAt is not null)
+        {
+            LoadedAt = result.LoadedAt;
+        }
     }
 
     private void RefreshViews()
@@ -528,7 +503,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     }
 
     private void OnLoadCommandExecutionFailed(object? sender, AsyncCommandFailedEventArgs e) =>
-        ShowLoadError(e.Exception.Message);
+        ApplyLoadResult(_dashboardLoader.ReportFailure(e.Exception.Message));
 
     /// <summary>
     /// Releases resources held by the view model.
@@ -545,12 +520,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private const double UI_SCALE_STEP = 0.05;
 
-    private readonly IDashboardLoadCoordinator _loadCoordinator;
-
-    private readonly PullRequestRowMapper _rowMapper;
-
-    private readonly IDialogService _dialogService;
-
     private readonly IExternalUrlLauncher _externalUrlLauncher;
 
     private readonly IAiReviewPromptService _aiReviewPromptService;
@@ -558,6 +527,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private readonly MainViewModelPreferences _preferences;
 
     private readonly PullRequestDashboardViewState _dashboardState;
+
+    private readonly DashboardLoadCommandHandler _dashboardLoader;
 
     private readonly ValidationErrorStore _validationErrors = new();
 
