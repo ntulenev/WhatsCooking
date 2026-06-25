@@ -205,94 +205,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     } = string.Empty;
 
     /// <summary>
-    /// Filter for the merged pull request row number column.
-    /// </summary>
-    public string MergedNumberFilter {
-        get => MergedPullRequestFilters.Number;
-        set => MergedPullRequestFilters.Number = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request repository column.
-    /// </summary>
-    public string MergedRepositoryFilter {
-        get => MergedPullRequestFilters.Repository;
-        set => MergedPullRequestFilters.Repository = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request column.
-    /// </summary>
-    public string MergedPullRequestFilter {
-        get => MergedPullRequestFilters.PullRequest;
-        set => MergedPullRequestFilters.PullRequest = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request author column.
-    /// </summary>
-    public string MergedAuthorFilter {
-        get => MergedPullRequestFilters.Author;
-        set => MergedPullRequestFilters.Author = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request description length column.
-    /// </summary>
-    public string MergedDescriptionLengthFilter {
-        get => MergedPullRequestFilters.DescriptionLength;
-        set => MergedPullRequestFilters.DescriptionLength = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request TTFR column.
-    /// </summary>
-    public string MergedTimeToFirstResponseFilter {
-        get => MergedPullRequestFilters.TimeToFirstResponse;
-        set => MergedPullRequestFilters.TimeToFirstResponse = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request merge age column.
-    /// </summary>
-    public string MergedActivityFilter {
-        get => MergedPullRequestFilters.Activity;
-        set => MergedPullRequestFilters.Activity = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request comments column.
-    /// </summary>
-    public string MergedCommentsFilter {
-        get => MergedPullRequestFilters.Comments;
-        set => MergedPullRequestFilters.Comments = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request changes column.
-    /// </summary>
-    public string MergedRequestChangesFilter {
-        get => MergedPullRequestFilters.RequestChanges;
-        set => MergedPullRequestFilters.RequestChanges = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request approvals column.
-    /// </summary>
-    public string MergedApprovalsFilter {
-        get => MergedPullRequestFilters.Approvals;
-        set => MergedPullRequestFilters.Approvals = value;
-    }
-
-    /// <summary>
-    /// Filter for the merged pull request current user activity column.
-    /// </summary>
-    public string MergedCurrentUserActivityFilter {
-        get => MergedPullRequestFilters.CurrentUserActivity;
-        set => MergedPullRequestFilters.CurrentUserActivity = value;
-    }
-
-    /// <summary>
     /// Whether pull request data is currently loading.
     /// </summary>
     public bool IsLoading {
@@ -566,23 +478,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     {
         GlobalSearch = string.Empty;
         _dashboardState.ResetFilters();
-        RaiseMergedFilterPropertiesChanged();
         TelemetryDashboard.ResetFilter();
-    }
-
-    private void RaiseMergedFilterPropertiesChanged()
-    {
-        OnPropertyChanged(nameof(MergedNumberFilter));
-        OnPropertyChanged(nameof(MergedRepositoryFilter));
-        OnPropertyChanged(nameof(MergedPullRequestFilter));
-        OnPropertyChanged(nameof(MergedAuthorFilter));
-        OnPropertyChanged(nameof(MergedDescriptionLengthFilter));
-        OnPropertyChanged(nameof(MergedTimeToFirstResponseFilter));
-        OnPropertyChanged(nameof(MergedActivityFilter));
-        OnPropertyChanged(nameof(MergedCommentsFilter));
-        OnPropertyChanged(nameof(MergedRequestChangesFilter));
-        OnPropertyChanged(nameof(MergedApprovalsFilter));
-        OnPropertyChanged(nameof(MergedCurrentUserActivityFilter));
     }
 
     private void RaiseCommandStates()

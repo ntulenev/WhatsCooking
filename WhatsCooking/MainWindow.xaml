@@ -134,10 +134,10 @@
                     <DataGrid AutomationProperties.Name="Recently merged pull requests" ItemsSource="{Binding MergedPullRequestsView}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Number}" SortMemberPath="Number" Width="64">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="#" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedNumberFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="#" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.Number, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
                             <DataGridTemplateColumn SortMemberPath="RepositoryName" Width="220">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Repository" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedRepositoryFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Repository" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.Repository, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Style="{StaticResource LinkButtonStyle}" Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding RepositoryUrl}">
@@ -147,7 +147,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn SortMemberPath="PullRequestId" Width="380">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="PR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="PR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.PullRequest, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Style="{StaticResource LinkButtonStyle}" Command="{Binding DataContext.OpenUrlCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding PullRequestUrl}">
@@ -160,28 +160,28 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Binding="{Binding Author}" SortMemberPath="Author" Width="170">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Author" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedAuthorFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Author" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.Author, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
                             <DataGridTemplateColumn CellTemplate="{StaticResource DescriptionLengthCellTemplate}" SortMemberPath="DescriptionLength" Width="96">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Desc. len" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedDescriptionLengthFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Desc. len" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.DescriptionLength, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn CellTemplate="{StaticResource TimeToFirstResponseCellTemplate}" SortMemberPath="TimeToFirstResponseMinutes" Width="110">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="TTFR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedTimeToFirstResponseFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="TTFR" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.TimeToFirstResponse, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Binding="{Binding ActivityAgeOrMerged}" SortMemberPath="ActivityAgeOrMergedMinutes" Width="110">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Merged" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedActivityFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Merged" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.Activity, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
                             <DataGridTextColumn Binding="{Binding CommentsCount}" SortMemberPath="CommentsCount" Width="96">
-                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Comments" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedCommentsFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>
+                                <DataGridTextColumn.Header><StackPanel><TextBlock Text="Comments" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.Comments, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>
                             </DataGridTextColumn>
                             <DataGridTemplateColumn CellTemplate="{StaticResource RequestChangesCellTemplate}" SortMemberPath="RequestChanges" Width="100">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="RC" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedRequestChangesFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="RC" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.RequestChanges, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn CellTemplate="{StaticResource ApprovalsCellTemplate}" SortMemberPath="Approvals" Width="100">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="AP" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedApprovalsFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="AP" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.Approvals, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
-                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedCurrentUserActivityFilter, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.CurrentUserActivity, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn Width="122" CanUserSort="False">
                                 <DataGridTemplateColumn.Header>

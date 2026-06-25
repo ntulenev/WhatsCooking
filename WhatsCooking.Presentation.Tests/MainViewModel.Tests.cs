@@ -114,26 +114,26 @@ public sealed class MainViewModelTests
         viewModel.GetErrors(null).Cast<string>().Should().BeEmpty();
     }
 
-    [Fact(DisplayName = "Merged filter properties delegate to filter state")]
+    [Fact(DisplayName = "Merged filter state stores column filters")]
     [Trait("Category", "Unit")]
-    public void MergedFilterPropertiesWhenSetDelegateToFilterState()
+    public void MergedFilterStateWhenSetStoresColumnFilters()
     {
         // Arrange
         var fixture = CreateFixture();
         using var viewModel = fixture.CreateViewModel();
 
         // Act
-        viewModel.MergedNumberFilter = "1";
-        viewModel.MergedRepositoryFilter = "repo";
-        viewModel.MergedPullRequestFilter = "title";
-        viewModel.MergedAuthorFilter = "author";
-        viewModel.MergedDescriptionLengthFilter = "10";
-        viewModel.MergedTimeToFirstResponseFilter = "1h";
-        viewModel.MergedActivityFilter = "2h";
-        viewModel.MergedCommentsFilter = "3";
-        viewModel.MergedRequestChangesFilter = "RC";
-        viewModel.MergedApprovalsFilter = "AP";
-        viewModel.MergedCurrentUserActivityFilter = "Comment";
+        viewModel.MergedPullRequestFilters.Number = "1";
+        viewModel.MergedPullRequestFilters.Repository = "repo";
+        viewModel.MergedPullRequestFilters.PullRequest = "title";
+        viewModel.MergedPullRequestFilters.Author = "author";
+        viewModel.MergedPullRequestFilters.DescriptionLength = "10";
+        viewModel.MergedPullRequestFilters.TimeToFirstResponse = "1h";
+        viewModel.MergedPullRequestFilters.Activity = "2h";
+        viewModel.MergedPullRequestFilters.Comments = "3";
+        viewModel.MergedPullRequestFilters.RequestChanges = "RC";
+        viewModel.MergedPullRequestFilters.Approvals = "AP";
+        viewModel.MergedPullRequestFilters.CurrentUserActivity = "Comment";
 
         // Assert
         viewModel.MergedPullRequestFilters.Should().BeEquivalentTo(new
@@ -462,7 +462,7 @@ public sealed class MainViewModelTests
             .Callback<Uri>(url => openedUrls.Add(url));
         using var viewModel = fixture.CreateViewModel();
         viewModel.GlobalSearch = "filter";
-        viewModel.MergedAuthorFilter = "author";
+        viewModel.MergedPullRequestFilters.Author = "author";
         viewModel.ToggleMergedReviewedFilterCommand.Execute(null);
         viewModel.MergedPullRequestFilters.HideReviewed.Should().BeTrue();
         viewModel.TelemetryDashboard.TelemetryFilter = string.Empty;
@@ -479,7 +479,7 @@ public sealed class MainViewModelTests
         // Assert
         viewModel.UiScale.Should().Be(1.05);
         viewModel.GlobalSearch.Should().BeEmpty();
-        viewModel.MergedAuthorFilter.Should().BeEmpty();
+        viewModel.MergedPullRequestFilters.Author.Should().BeEmpty();
         viewModel.MergedPullRequestFilters.HideReviewed.Should().BeFalse();
         savedThemes.Should().Equal(true);
         savedScales.Should().Equal(1.05, 1.0, 1.05);
