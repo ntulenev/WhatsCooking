@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Windows.Input;
 
 using BBRepoList.Abstractions;
 using BBRepoList.Models;
@@ -12,7 +13,7 @@ namespace WhatsCooking.ViewModels;
 /// View model for Bitbucket API telemetry table state.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "View model is created by dependency injection.")]
-internal sealed class TelemetryViewModel : ObservableObject, IDisposable
+internal sealed class TelemetryViewModel : ObservableObject, ITelemetryDashboard, IDisposable
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TelemetryViewModel"/> class.
@@ -118,7 +119,7 @@ internal sealed class TelemetryViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Command that clears persisted pull request details cache.
     /// </summary>
-    public RelayCommand ClearCacheCommand { get; }
+    public ICommand ClearCacheCommand { get; }
 
     /// <summary>
     /// Reloads telemetry from the telemetry service.

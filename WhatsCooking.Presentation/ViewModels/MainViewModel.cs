@@ -19,7 +19,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// Initializes a new instance of the <see cref="MainViewModel"/> class.
     /// </summary>
     /// <param name="loadCoordinator">Dashboard load coordinator.</param>
-    /// <param name="telemetryDashboard">Telemetry dashboard view model.</param>
+    /// <param name="telemetryDashboard">Telemetry dashboard state.</param>
     /// <param name="rowMapper">Pull request row mapper.</param>
     /// <param name="dialogService">User-facing dialog service.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
@@ -27,8 +27,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
         IDashboardLoadCoordinator loadCoordinator,
-        TelemetryViewModel telemetryDashboard,
-        PullRequestRowMapper rowMapper,
+        ITelemetryDashboard telemetryDashboard,
+        IPullRequestRowMapper rowMapper,
         IDialogService dialogService,
         IExternalUrlLauncher externalUrlLauncher,
         IAiReviewPromptService aiReviewPromptService,
@@ -291,7 +291,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Telemetry dashboard view model.
     /// </summary>
-    public TelemetryViewModel TelemetryDashboard { get; }
+    public ITelemetryDashboard TelemetryDashboard { get; }
 
     /// <summary>
     /// Command that loads pull request data from Bitbucket.

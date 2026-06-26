@@ -51,7 +51,7 @@ internal sealed class PullRequestDashboardViewState : IDisposable
     /// </summary>
     /// <param name="snapshot">Loaded dashboard data.</param>
     /// <param name="rowMapper">Maps domain pull requests to grid rows.</param>
-    public void ApplySnapshot(PullRequestDashboardSnapshot snapshot, PullRequestRowMapper rowMapper)
+    public void ApplySnapshot(PullRequestDashboardSnapshot snapshot, IPullRequestRowMapper rowMapper)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(rowMapper);

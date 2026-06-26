@@ -11,7 +11,7 @@ namespace WhatsCooking.ViewModels;
 /// Maps pull request models to dashboard rows.
 /// </summary>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Factory is created by dependency injection.")]
-internal sealed class PullRequestRowMapper
+internal sealed class PullRequestRowMapper : IPullRequestRowMapper
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="PullRequestRowMapper"/> class.

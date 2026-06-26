@@ -16,11 +16,11 @@ internal sealed class DashboardLoadCommandHandler
     /// </summary>
     public DashboardLoadCommandHandler(
         IDashboardLoadCoordinator loadCoordinator,
-        PullRequestRowMapper rowMapper,
+        IPullRequestRowMapper rowMapper,
         IDialogService dialogService,
         MainViewModelPreferences preferences,
         PullRequestDashboardViewState dashboardState,
-        TelemetryViewModel telemetryDashboard)
+        ITelemetryDashboard telemetryDashboard)
     {
         ArgumentNullException.ThrowIfNull(loadCoordinator);
         ArgumentNullException.ThrowIfNull(rowMapper);
@@ -109,7 +109,7 @@ internal sealed class DashboardLoadCommandHandler
 
     private readonly IDashboardLoadCoordinator _loadCoordinator;
 
-    private readonly PullRequestRowMapper _rowMapper;
+    private readonly IPullRequestRowMapper _rowMapper;
 
     private readonly IDialogService _dialogService;
 
@@ -117,5 +117,5 @@ internal sealed class DashboardLoadCommandHandler
 
     private readonly PullRequestDashboardViewState _dashboardState;
 
-    private readonly TelemetryViewModel _telemetryDashboard;
+    private readonly ITelemetryDashboard _telemetryDashboard;
 }
