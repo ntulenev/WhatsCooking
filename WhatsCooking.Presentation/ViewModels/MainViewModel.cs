@@ -18,47 +18,33 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// <summary>
     /// Initializes a new instance of the <see cref="MainViewModel"/> class.
     /// </summary>
-    /// <param name="loadCoordinator">Dashboard load coordinator.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard state.</param>
-    /// <param name="rowMapper">Pull request row mapper.</param>
-    /// <param name="dialogService">User-facing dialog service.</param>
+    /// <param name="dashboardContextFactory">Main dashboard context factory.</param>
     /// <param name="externalUrlLauncher">External URL launcher.</param>
     /// <param name="aiReviewPromptService">AI review prompt clipboard service.</param>
-    /// <param name="preferencesService">User preferences persistence service.</param>
     public MainViewModel(
-        IDashboardLoadCoordinator loadCoordinator,
         ITelemetryDashboard telemetryDashboard,
-        IPullRequestRowMapper rowMapper,
-        IDialogService dialogService,
+        IMainDashboardContextFactory dashboardContextFactory,
         IExternalUrlLauncher externalUrlLauncher,
-        IAiReviewPromptService aiReviewPromptService,
-        IUserPreferencesService preferencesService)
+        IAiReviewPromptService aiReviewPromptService)
     {
-        ArgumentNullException.ThrowIfNull(loadCoordinator, nameof(loadCoordinator));
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
-        ArgumentNullException.ThrowIfNull(rowMapper, nameof(rowMapper));
-        ArgumentNullException.ThrowIfNull(dialogService, nameof(dialogService));
+        ArgumentNullException.ThrowIfNull(dashboardContextFactory, nameof(dashboardContextFactory));
         ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
         ArgumentNullException.ThrowIfNull(aiReviewPromptService, nameof(aiReviewPromptService));
-        ArgumentNullException.ThrowIfNull(preferencesService, nameof(preferencesService));
         _externalUrlLauncher = externalUrlLauncher;
         _aiReviewPromptService = aiReviewPromptService;
         TelemetryDashboard = telemetryDashboard;
-        _preferences = new MainViewModelPreferences(preferencesService);
+        var dashboardContext = dashboardContextFactory.Create(() => GlobalSearch, telemetryDashboard);
+        _preferences = dashboardContext.Preferences;
         _isLightTheme = _preferences.IsLightTheme;
         _uiScale = _preferences.UiScale;
         _selectedSearchMode = _preferences.SearchMode;
         _searchPhrase = _preferences.SearchPhrase;
         _mergedPullRequestsDays = 1;
         _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
-        _dashboardState = new PullRequestDashboardViewState(() => GlobalSearch);
-        _dashboardLoader = new DashboardLoadCommandHandler(
-            loadCoordinator,
-            rowMapper,
-            dialogService,
-            _preferences,
-            _dashboardState,
-            TelemetryDashboard);
+        _dashboardState = dashboardContext.DashboardState;
+        _dashboardLoader = dashboardContext.DashboardLoader;
         OpenPullRequestFilters = _dashboardState.OpenPullRequests.Filters;
         MergedPullRequestFilters = _dashboardState.MergedPullRequests.Filters;
         OpenPullRequestFilters.PropertyChanged += OnOpenPullRequestFilterPropertyChanged;

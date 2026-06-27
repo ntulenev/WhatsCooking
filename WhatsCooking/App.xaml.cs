@@ -44,6 +44,7 @@ public partial class App : Application
                 _ = services.AddTransient<IDashboardReloadSummaryService, DashboardReloadSummaryService>();
                 _ = services.AddSingleton<ITelemetryDashboard, TelemetryViewModel>();
                 _ = services.AddSingleton<IPullRequestRowMapper, PullRequestRowMapper>();
+                _ = services.AddTransient<IMainDashboardContextFactory, MainDashboardContextFactory>();
                 _ = services.AddSingleton<MainViewModel>();
                 _ = services.AddSingleton<MainWindow>();
             })

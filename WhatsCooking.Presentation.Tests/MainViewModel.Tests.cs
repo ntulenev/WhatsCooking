@@ -24,33 +24,24 @@ public sealed class MainViewModelTests
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
-    [InlineData(4)]
-    [InlineData(5)]
-    [InlineData(6)]
     public void ConstructorWhenRequiredDependencyIsNullThrowsArgumentNullException(int dependencyIndex)
     {
         // Arrange
-        var loadCoordinator = new Mock<IDashboardLoadCoordinator>(MockBehavior.Strict).Object;
         var telemetryViewModel = new TelemetryViewModel(
             new Mock<IBitbucketTelemetryService>(MockBehavior.Strict).Object,
             Mock.Of<IPullRequestDetailsCache>(instance => instance.GetSizeInBytes() == 0),
             Mock.Of<IDialogService>(),
             new Mock<IDebouncer>(MockBehavior.Strict).Object);
-        var rowMapper = CreateRowMapper();
-        var dialogService = new Mock<IDialogService>(MockBehavior.Strict).Object;
+        var dashboardContextFactory = new Mock<IMainDashboardContextFactory>(MockBehavior.Strict).Object;
         var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict).Object;
         var aiReviewPromptService = new Mock<IAiReviewPromptService>(MockBehavior.Strict).Object;
-        var preferencesService = new Mock<IUserPreferencesService>(MockBehavior.Strict).Object;
 
         // Act
         Action act = () => _ = new MainViewModel(
-            dependencyIndex == 0 ? null! : loadCoordinator,
-            dependencyIndex == 1 ? null! : telemetryViewModel,
-            dependencyIndex == 2 ? null! : rowMapper,
-            dependencyIndex == 3 ? null! : dialogService,
-            dependencyIndex == 4 ? null! : externalUrlLauncher,
-            dependencyIndex == 5 ? null! : aiReviewPromptService,
-            dependencyIndex == 6 ? null! : preferencesService);
+            dependencyIndex == 0 ? null! : telemetryViewModel,
+            dependencyIndex == 1 ? null! : dashboardContextFactory,
+            dependencyIndex == 2 ? null! : externalUrlLauncher,
+            dependencyIndex == 3 ? null! : aiReviewPromptService);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -570,12 +561,9 @@ public sealed class MainViewModelTests
     {
         public MainViewModel CreateViewModel() =>
             new(
-                LoadCoordinator.Object,
                 new TelemetryViewModel(TelemetryService.Object, Cache.Object, DialogService.Object, TelemetryDebouncer.Object),
-                CreateRowMapper(),
-                DialogService.Object,
+                new MainDashboardContextFactory(LoadCoordinator.Object, CreateRowMapper(), DialogService.Object, PreferencesService.Object),
                 ExternalUrlLauncher.Object,
-                AiReviewPromptService.Object,
-                PreferencesService.Object);
+                AiReviewPromptService.Object);
     }
 }
