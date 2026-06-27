@@ -23,7 +23,6 @@ public sealed class MainViewModelTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]
-    [InlineData(3)]
     public void ConstructorWhenRequiredDependencyIsNullThrowsArgumentNullException(int dependencyIndex)
     {
         // Arrange
@@ -33,15 +32,13 @@ public sealed class MainViewModelTests
             Mock.Of<IDialogService>(),
             new Mock<IDebouncer>(MockBehavior.Strict).Object);
         var dashboardContextFactory = new Mock<IMainDashboardContextFactory>(MockBehavior.Strict).Object;
-        var externalUrlLauncher = new Mock<IExternalUrlLauncher>(MockBehavior.Strict).Object;
-        var aiReviewPromptService = new Mock<IAiReviewPromptService>(MockBehavior.Strict).Object;
+        var userActions = new Mock<IDashboardUserActions>(MockBehavior.Strict).Object;
 
         // Act
         Action act = () => _ = new MainViewModel(
             dependencyIndex == 0 ? null! : telemetryViewModel,
             dependencyIndex == 1 ? null! : dashboardContextFactory,
-            dependencyIndex == 2 ? null! : externalUrlLauncher,
-            dependencyIndex == 3 ? null! : aiReviewPromptService);
+            dependencyIndex == 2 ? null! : userActions);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -563,7 +560,6 @@ public sealed class MainViewModelTests
             new(
                 new TelemetryViewModel(TelemetryService.Object, Cache.Object, DialogService.Object, TelemetryDebouncer.Object),
                 new MainDashboardContextFactory(LoadCoordinator.Object, CreateRowMapper(), DialogService.Object, PreferencesService.Object),
-                ExternalUrlLauncher.Object,
-                AiReviewPromptService.Object);
+                new DashboardUserActions(ExternalUrlLauncher.Object, AiReviewPromptService.Object));
     }
 }

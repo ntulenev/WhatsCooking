@@ -5,8 +5,6 @@ using System.Windows.Input;
 
 using BBRepoList.Models;
 
-using WhatsCooking.Services;
-
 namespace WhatsCooking.ViewModels;
 
 /// <summary>
@@ -20,20 +18,16 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// </summary>
     /// <param name="telemetryDashboard">Telemetry dashboard state.</param>
     /// <param name="dashboardContextFactory">Main dashboard context factory.</param>
-    /// <param name="externalUrlLauncher">External URL launcher.</param>
-    /// <param name="aiReviewPromptService">AI review prompt clipboard service.</param>
+    /// <param name="userActions">User-triggered dashboard actions.</param>
     public MainViewModel(
         ITelemetryDashboard telemetryDashboard,
         IMainDashboardContextFactory dashboardContextFactory,
-        IExternalUrlLauncher externalUrlLauncher,
-        IAiReviewPromptService aiReviewPromptService)
+        IDashboardUserActions userActions)
     {
         ArgumentNullException.ThrowIfNull(telemetryDashboard, nameof(telemetryDashboard));
         ArgumentNullException.ThrowIfNull(dashboardContextFactory, nameof(dashboardContextFactory));
-        ArgumentNullException.ThrowIfNull(externalUrlLauncher, nameof(externalUrlLauncher));
-        ArgumentNullException.ThrowIfNull(aiReviewPromptService, nameof(aiReviewPromptService));
-        _externalUrlLauncher = externalUrlLauncher;
-        _aiReviewPromptService = aiReviewPromptService;
+        ArgumentNullException.ThrowIfNull(userActions, nameof(userActions));
+        _userActions = userActions;
         TelemetryDashboard = telemetryDashboard;
         var dashboardContext = dashboardContextFactory.Create(() => GlobalSearch, telemetryDashboard);
         _preferences = dashboardContext.Preferences;
@@ -364,7 +358,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         {
             return;
         }
-        _externalUrlLauncher.Open(url);
+        _userActions.OpenUrl(url);
     }
 
     private void CopyForAi(object? parameter)
@@ -374,8 +368,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
             return;
         }
 
-        _aiReviewPromptService.CopyPrompt(pullRequest);
-        Status = $"Copied AI review prompt for {pullRequest.RepositoryName} #{pullRequest.PullRequestId}";
+        Status = _userActions.CopyAiReviewPrompt(pullRequest);
     }
 
     private void ApplyLoadResult(DashboardLoadCommandResult result)
@@ -506,9 +499,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private const double UI_SCALE_STEP = 0.05;
 
-    private readonly IExternalUrlLauncher _externalUrlLauncher;
-
-    private readonly IAiReviewPromptService _aiReviewPromptService;
+    private readonly IDashboardUserActions _userActions;
 
     private readonly MainViewModelPreferences _preferences;
 
