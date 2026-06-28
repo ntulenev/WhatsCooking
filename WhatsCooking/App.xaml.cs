@@ -44,6 +44,28 @@ public partial class App : Application
                 _ = services.AddTransient<IDashboardReloadSummaryService, DashboardReloadSummaryService>();
                 _ = services.AddSingleton<ITelemetryDashboard, TelemetryViewModel>();
                 _ = services.AddSingleton<IPullRequestRowMapper, PullRequestRowMapper>();
+                _ = services.AddTransient<MainDashboardContextFactoryDelegate>(serviceProvider =>
+                {
+                    var loadCoordinator = serviceProvider.GetRequiredService<IDashboardLoadCoordinator>();
+                    var rowMapper = serviceProvider.GetRequiredService<IPullRequestRowMapper>();
+                    var dialogService = serviceProvider.GetRequiredService<IDialogService>();
+                    var preferencesService = serviceProvider.GetRequiredService<IUserPreferencesService>();
+
+                    return (getGlobalSearch, telemetryDashboard) =>
+                    {
+                        var preferences = new MainViewModelPreferences(preferencesService);
+                        var dashboardState = new PullRequestDashboardViewState(getGlobalSearch);
+                        var dashboardLoader = new DashboardLoadCommandHandler(
+                            loadCoordinator,
+                            rowMapper,
+                            dialogService,
+                            preferences,
+                            dashboardState,
+                            telemetryDashboard);
+
+                        return new MainDashboardContext(preferences, dashboardState, dashboardLoader);
+                    };
+                });
                 _ = services.AddTransient<IMainDashboardContextFactory, MainDashboardContextFactory>();
                 _ = services.AddSingleton<IDashboardUserActions, DashboardUserActions>();
                 _ = services.AddSingleton<MainViewModel>();

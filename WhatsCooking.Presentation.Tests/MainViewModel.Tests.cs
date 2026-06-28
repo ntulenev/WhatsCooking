@@ -559,7 +559,20 @@ public sealed class MainViewModelTests
         public MainViewModel CreateViewModel() =>
             new(
                 new TelemetryViewModel(TelemetryService.Object, Cache.Object, DialogService.Object, TelemetryDebouncer.Object),
-                new MainDashboardContextFactory(LoadCoordinator.Object, CreateRowMapper(), DialogService.Object, PreferencesService.Object),
+                new MainDashboardContextFactory((getGlobalSearch, telemetryDashboard) =>
+                {
+                    var preferences = new MainViewModelPreferences(PreferencesService.Object);
+                    var dashboardState = new PullRequestDashboardViewState(getGlobalSearch);
+                    var dashboardLoader = new DashboardLoadCommandHandler(
+                        LoadCoordinator.Object,
+                        CreateRowMapper(),
+                        DialogService.Object,
+                        preferences,
+                        dashboardState,
+                        telemetryDashboard);
+
+                    return new MainDashboardContext(preferences, dashboardState, dashboardLoader);
+                }),
                 new DashboardUserActions(ExternalUrlLauncher.Object, AiReviewPromptService.Object));
     }
 }
