@@ -20,7 +20,7 @@ internal sealed class MainDashboardContextFactory : IMainDashboardContextFactory
     }
 
     /// <inheritdoc />
-    public MainDashboardContext Create(Func<string> getGlobalSearch, ITelemetryDashboard telemetryDashboard)
+    public IMainDashboardContext Create(Func<string> getGlobalSearch, ITelemetryDashboard telemetryDashboard)
     {
         ArgumentNullException.ThrowIfNull(getGlobalSearch);
         ArgumentNullException.ThrowIfNull(telemetryDashboard);

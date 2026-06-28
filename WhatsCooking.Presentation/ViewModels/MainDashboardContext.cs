@@ -9,4 +9,4 @@ namespace WhatsCooking.ViewModels;
 internal sealed record MainDashboardContext(
     MainViewModelPreferences Preferences,
     PullRequestDashboardViewState DashboardState,
-    DashboardLoadCommandHandler DashboardLoader);
+    DashboardLoadCommandHandler DashboardLoader) : IMainDashboardContext;

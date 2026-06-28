@@ -6,6 +6,6 @@ namespace WhatsCooking.ViewModels;
 /// <param name="getGlobalSearch">Returns the current global search text.</param>
 /// <param name="telemetryDashboard">Telemetry dashboard state.</param>
 /// <returns>Created dashboard context.</returns>
-internal delegate MainDashboardContext MainDashboardContextFactoryDelegate(
+internal delegate IMainDashboardContext MainDashboardContextFactoryDelegate(
     Func<string> getGlobalSearch,
     ITelemetryDashboard telemetryDashboard);

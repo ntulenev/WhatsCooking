@@ -11,5 +11,5 @@ internal interface IMainDashboardContextFactory
     /// <param name="getGlobalSearch">Returns the current global search text.</param>
     /// <param name="telemetryDashboard">Telemetry dashboard state.</param>
     /// <returns>Created dashboard context.</returns>
-    MainDashboardContext Create(Func<string> getGlobalSearch, ITelemetryDashboard telemetryDashboard);
+    IMainDashboardContext Create(Func<string> getGlobalSearch, ITelemetryDashboard telemetryDashboard);
 }
