@@ -93,6 +93,10 @@ public static class ApplicationServiceCollectionExtensions
         _ = services.AddTransient<IBitbucketJsonParser, BitbucketJsonParser>();
         _ = services.AddTransient<IBitbucketPullRequestUrlBuilder, BitbucketPullRequestUrlBuilder>();
         _ = services.AddTransient<IBitbucketPullRequestPageReader, BitbucketPullRequestPageReader>();
+        _ = services.AddTransient<IPullRequestActivitySummaryProvider, PullRequestActivitySummaryProvider>();
+        _ = services.AddTransient<IPullRequestDomainFactory, PullRequestDomainFactory>();
+        _ = services.AddTransient<IBitbucketOpenPullRequestService, BitbucketOpenPullRequestService>();
+        _ = services.AddTransient<IBitbucketMergedPullRequestService, BitbucketMergedPullRequestService>();
         _ = services.AddTransient<IBitbucketPRApiClient, BitbucketPRApiClient>();
         return services;
     }

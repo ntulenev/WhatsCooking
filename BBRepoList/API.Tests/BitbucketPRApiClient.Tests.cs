@@ -13,24 +13,17 @@ namespace BBRepoList.API.Tests;
 
 public sealed class BitbucketPRApiClientTests
 {
-    [Fact(DisplayName = "Constructor throws when transport is null")]
+    [Fact(DisplayName = "Constructor throws when open pull request service is null")]
     [Trait("Category", "Unit")]
-    public void ConstructorWhenTransportIsNullThrowsArgumentNullException()
+    public void ConstructorWhenOpenPullRequestServiceIsNullThrowsArgumentNullException()
     {
         // Arrange
-        IBitbucketTransport transport = null!;
+        IBitbucketOpenPullRequestService openPullRequests = null!;
 
         // Act
         Action act = () => _ = new BitbucketPRApiClient(
-            transport,
-            Mock.Of<IBitbucketPullRequestUrlBuilder>(),
-            Mock.Of<IBitbucketPullRequestPageReader>(),
-            Mock.Of<IPullRequestActivityAnalyzer>(),
-            Mock.Of<IBitbucketPullRequestActivityLoader>(),
-            Mock.Of<IPullRequestSnapshotMapper>(),
-            Mock.Of<IPullRequestDetailsCacheService>(),
-            Mock.Of<IBitbucketTelemetryService>(),
-            CreateOptions());
+            openPullRequests,
+            Mock.Of<IBitbucketMergedPullRequestService>());
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -624,17 +617,36 @@ public sealed class BitbucketPRApiClientTests
         Mock<IBitbucketTelemetryService>? telemetry = null)
     {
         var resolvedTransport = transport ?? new Mock<IBitbucketTransport>();
-
-        return new BitbucketPRApiClient(
-            resolvedTransport.Object,
-            new BitbucketPullRequestUrlBuilder(CreateOptions()),
-            new BitbucketPullRequestPageReader(resolvedTransport.Object),
+        var resolvedCache = cache ?? new Mock<IPullRequestDetailsCacheService>();
+        var urlBuilder = new BitbucketPullRequestUrlBuilder(CreateOptions());
+        var pageReader = new BitbucketPullRequestPageReader(resolvedTransport.Object);
+        var activitySummaryProvider = new PullRequestActivitySummaryProvider(
             (analyzer ?? new Mock<IPullRequestActivityAnalyzer>()).Object,
             (activityLoader ?? new Mock<IBitbucketPullRequestActivityLoader>()).Object,
+            resolvedCache.Object,
+            (telemetry ?? new Mock<IBitbucketTelemetryService>()).Object);
+        var domainFactory = new PullRequestDomainFactory();
+        var openPullRequests = new BitbucketOpenPullRequestService(
+            resolvedTransport.Object,
+            urlBuilder,
+            pageReader,
             (mapper ?? new Mock<IPullRequestSnapshotMapper>()).Object,
-            (cache ?? new Mock<IPullRequestDetailsCacheService>()).Object,
-            (telemetry ?? new Mock<IBitbucketTelemetryService>()).Object,
+            resolvedCache.Object,
+            activitySummaryProvider,
+            domainFactory,
             CreateOptions());
+        var mergedPullRequests = new BitbucketMergedPullRequestService(
+            urlBuilder,
+            pageReader,
+            (mapper ?? new Mock<IPullRequestSnapshotMapper>()).Object,
+            resolvedCache.Object,
+            activitySummaryProvider,
+            domainFactory,
+            CreateOptions());
+
+        return new BitbucketPRApiClient(
+            openPullRequests,
+            mergedPullRequests);
     }
 
     private static Repository CreateRepository() =>
