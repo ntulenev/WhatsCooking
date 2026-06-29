@@ -155,6 +155,8 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         AssertRegistration<IBitbucketAuthApiClient, BitbucketAuthApiClient>(services, ServiceLifetime.Transient);
         AssertRegistration<IBitbucketRepoApiClient, BitbucketRepoApiClient>(services, ServiceLifetime.Transient);
         AssertRegistration<IBitbucketJsonParser, BitbucketJsonParser>(services, ServiceLifetime.Transient);
+        AssertRegistration<IBitbucketPullRequestUrlBuilder, BitbucketPullRequestUrlBuilder>(services, ServiceLifetime.Transient);
+        AssertRegistration<IBitbucketPullRequestPageReader, BitbucketPullRequestPageReader>(services, ServiceLifetime.Transient);
         AssertRegistration<IBitbucketPRApiClient, BitbucketPRApiClient>(services, ServiceLifetime.Transient);
         AssertRegistration<IPullRequestActivityAnalyzer, PullRequestActivityAnalyzer>(services, ServiceLifetime.Transient);
         AssertRegistration<IBitbucketPullRequestActivityLoader, BitbucketPullRequestActivityLoader>(services, ServiceLifetime.Transient);

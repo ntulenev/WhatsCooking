@@ -91,6 +91,8 @@ public static class ApplicationServiceCollectionExtensions
         _ = services.AddTransient<IBitbucketAuthApiClient, BitbucketAuthApiClient>();
         _ = services.AddTransient<IBitbucketRepoApiClient, BitbucketRepoApiClient>();
         _ = services.AddTransient<IBitbucketJsonParser, BitbucketJsonParser>();
+        _ = services.AddTransient<IBitbucketPullRequestUrlBuilder, BitbucketPullRequestUrlBuilder>();
+        _ = services.AddTransient<IBitbucketPullRequestPageReader, BitbucketPullRequestPageReader>();
         _ = services.AddTransient<IBitbucketPRApiClient, BitbucketPRApiClient>();
         return services;
     }

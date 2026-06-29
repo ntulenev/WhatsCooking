@@ -23,6 +23,8 @@ public sealed class BitbucketPRApiClientTests
         // Act
         Action act = () => _ = new BitbucketPRApiClient(
             transport,
+            Mock.Of<IBitbucketPullRequestUrlBuilder>(),
+            Mock.Of<IBitbucketPullRequestPageReader>(),
             Mock.Of<IPullRequestActivityAnalyzer>(),
             Mock.Of<IBitbucketPullRequestActivityLoader>(),
             Mock.Of<IPullRequestSnapshotMapper>(),
@@ -619,15 +621,21 @@ public sealed class BitbucketPRApiClientTests
         Mock<IBitbucketPullRequestActivityLoader>? activityLoader = null,
         Mock<IPullRequestSnapshotMapper>? mapper = null,
         Mock<IPullRequestDetailsCacheService>? cache = null,
-        Mock<IBitbucketTelemetryService>? telemetry = null) =>
-        new(
-            (transport ?? new Mock<IBitbucketTransport>()).Object,
+        Mock<IBitbucketTelemetryService>? telemetry = null)
+    {
+        var resolvedTransport = transport ?? new Mock<IBitbucketTransport>();
+
+        return new BitbucketPRApiClient(
+            resolvedTransport.Object,
+            new BitbucketPullRequestUrlBuilder(CreateOptions()),
+            new BitbucketPullRequestPageReader(resolvedTransport.Object),
             (analyzer ?? new Mock<IPullRequestActivityAnalyzer>()).Object,
             (activityLoader ?? new Mock<IBitbucketPullRequestActivityLoader>()).Object,
             (mapper ?? new Mock<IPullRequestSnapshotMapper>()).Object,
             (cache ?? new Mock<IPullRequestDetailsCacheService>()).Object,
             (telemetry ?? new Mock<IBitbucketTelemetryService>()).Object,
             CreateOptions());
+    }
 
     private static Repository CreateRepository() =>
         new("Repository", slug: new RepositorySlug("repo slug"));

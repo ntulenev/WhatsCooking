@@ -16,6 +16,8 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
     /// Initializes a new instance of the <see cref="BitbucketPRApiClient"/> class.
     /// </summary>
     /// <param name="transport">Bitbucket transport instance.</param>
+    /// <param name="urlBuilder">Bitbucket pull request URL builder.</param>
+    /// <param name="pageReader">Bitbucket pull request page reader.</param>
     /// <param name="activityAnalyzer">Pull request activity analyzer.</param>
     /// <param name="activityLoader">Pull request activity loader.</param>
     /// <param name="snapshotMapper">Pull request snapshot mapper.</param>
@@ -24,6 +26,8 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
     /// <param name="options">Bitbucket configuration options.</param>
     public BitbucketPRApiClient(
         IBitbucketTransport transport,
+        IBitbucketPullRequestUrlBuilder urlBuilder,
+        IBitbucketPullRequestPageReader pageReader,
         IPullRequestActivityAnalyzer activityAnalyzer,
         IBitbucketPullRequestActivityLoader activityLoader,
         IPullRequestSnapshotMapper snapshotMapper,
@@ -32,6 +36,8 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         IOptions<BitbucketOptions> options)
     {
         ArgumentNullException.ThrowIfNull(transport);
+        ArgumentNullException.ThrowIfNull(urlBuilder);
+        ArgumentNullException.ThrowIfNull(pageReader);
         ArgumentNullException.ThrowIfNull(activityAnalyzer);
         ArgumentNullException.ThrowIfNull(activityLoader);
         ArgumentNullException.ThrowIfNull(snapshotMapper);
@@ -40,6 +46,8 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         ArgumentNullException.ThrowIfNull(options);
 
         _transport = transport;
+        _urlBuilder = urlBuilder;
+        _pageReader = pageReader;
         _activityAnalyzer = activityAnalyzer;
         _activityLoader = activityLoader;
         _snapshotMapper = snapshotMapper;
@@ -62,7 +70,7 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
 
         try
         {
-            var url = CreateOpenPullRequestCountUrl(repositorySlug);
+            var url = _urlBuilder.CreateOpenPullRequestCountUrl(repositorySlug);
             var summary = await _transport.GetAsync<PullRequestPageSummaryDto>(url, cancellationToken).ConfigureAwait(false);
             repository.UpdateOpenPullRequestsCount(summary?.Size ?? 0);
         }
@@ -196,9 +204,9 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
                     cancellationToken)
                 .ConfigureAwait(false);
             var updatedCacheEntries = new List<PullRequestDetailsCacheEntry>();
-            var url = CreateMergedPullRequestsUrl(repositorySlug);
+            var url = _urlBuilder.CreateMergedPullRequestsUrl(repositorySlug);
 
-            await ForEachPullRequestDtoAsync(
+            await _pageReader.ForEachAsync(
                 url,
                 async (pullRequestDto, token) =>
                 {
@@ -267,10 +275,10 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
         BitbucketId currentUserId,
         CancellationToken cancellationToken)
     {
-        var url = CreateOpenPullRequestSnapshotsUrl(repositorySlug);
+        var url = _urlBuilder.CreateOpenPullRequestSnapshotsUrl(repositorySlug);
         var pullRequests = new List<PullRequestSnapshot>();
 
-        await ForEachPullRequestDtoAsync(
+        await _pageReader.ForEachAsync(
             url,
             (pullRequestDto, _) =>
             {
@@ -286,55 +294,6 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
 
         return pullRequests;
     }
-
-    private async Task ForEachPullRequestDtoAsync(
-        Uri initialUrl,
-        Func<PullRequestDto, CancellationToken, ValueTask<bool>> handlePullRequest,
-        CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(initialUrl);
-        ArgumentNullException.ThrowIfNull(handlePullRequest);
-
-        var url = initialUrl;
-
-        while (url is not null)
-        {
-            var page = await _transport.GetAsync<PullRequestPageDto>(url, cancellationToken).ConfigureAwait(false);
-            if (page is null)
-            {
-                break;
-            }
-
-            foreach (var pullRequestDto in page.Values ?? [])
-            {
-                if (!await handlePullRequest(pullRequestDto, cancellationToken).ConfigureAwait(false))
-                {
-                    return;
-                }
-            }
-
-            url = page.Next;
-        }
-    }
-
-    private Uri CreateOpenPullRequestCountUrl(RepositorySlug repositorySlug) =>
-        new(
-            $"repositories/{_options.Workspace}/{EscapeRepositorySlug(repositorySlug)}/pullrequests?state=OPEN&pagelen=1&fields=size",
-            UriKind.Relative);
-
-    private Uri CreateMergedPullRequestsUrl(RepositorySlug repositorySlug) =>
-        new(
-            $"repositories/{_options.Workspace}/{EscapeRepositorySlug(repositorySlug)}/pullrequests?state=MERGED&pagelen={_options.PageLen}&sort=-updated_on&fields={EscapeFields(MERGED_PULL_REQUEST_FIELDS)}",
-            UriKind.Relative);
-
-    private Uri CreateOpenPullRequestSnapshotsUrl(RepositorySlug repositorySlug) =>
-        new(
-            $"repositories/{_options.Workspace}/{EscapeRepositorySlug(repositorySlug)}/pullrequests?state=OPEN&pagelen={_options.PageLen}&fields={EscapeFields(OPEN_PULL_REQUEST_SNAPSHOT_FIELDS)}",
-            UriKind.Relative);
-
-    private static string EscapeRepositorySlug(RepositorySlug repositorySlug) => Uri.EscapeDataString(repositorySlug.Value);
-
-    private static string EscapeFields(string fields) => Uri.EscapeDataString(fields);
 
     private static PullRequestDetail CreatePullRequestDetail(
         Repository repository,
@@ -403,43 +362,12 @@ public sealed class BitbucketPRApiClient : IBitbucketPRApiClient
     }
 
     private readonly IBitbucketTransport _transport;
+    private readonly IBitbucketPullRequestUrlBuilder _urlBuilder;
+    private readonly IBitbucketPullRequestPageReader _pageReader;
     private readonly IPullRequestActivityAnalyzer _activityAnalyzer;
     private readonly IBitbucketPullRequestActivityLoader _activityLoader;
     private readonly IPullRequestSnapshotMapper _snapshotMapper;
     private readonly IPullRequestDetailsCacheService _cacheService;
     private readonly IBitbucketTelemetryService _telemetryService;
     private readonly BitbucketOptions _options;
-
-    private const string MERGED_PULL_REQUEST_FIELDS =
-        "values.id," +
-        "values.title," +
-        "values.created_on," +
-        "values.updated_on," +
-        "values.description," +
-        "values.summary.raw," +
-        "values.author.uuid," +
-        "values.author.display_name," +
-        "values.participants.user.uuid," +
-        "values.participants.state," +
-        "values.participants.approved," +
-        "next";
-
-    private const string OPEN_PULL_REQUEST_SNAPSHOT_FIELDS =
-        "values.id," +
-        "values.title," +
-        "values.created_on," +
-        "values.updated_on," +
-        "values.state," +
-        "values.description," +
-        "values.summary.raw," +
-        "values.author.uuid," +
-        "values.author.display_name," +
-        "values.source.commit.hash," +
-        "values.comment_count," +
-        "values.task_count," +
-        "values.participants.user.uuid," +
-        "values.participants.state," +
-        "values.participants.approved," +
-        "next";
-
 }
