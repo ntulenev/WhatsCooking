@@ -14,16 +14,16 @@ namespace BBRepoList.Logic.Tests;
 
 public sealed class RepositoryServiceTests
 {
-    [Fact(DisplayName = "Constructor throws when repository API is null")]
+    [Fact(DisplayName = "Constructor throws when repository query service is null")]
     [Trait("Category", "Unit")]
-    public void ConstructorWhenRepositoryApiIsNullThrowsArgumentNullException()
+    public void ConstructorWhenRepositoryQueryServiceIsNullThrowsArgumentNullException()
     {
         // Arrange
-        IBitbucketRepoApiClient api = null!;
+        IRepositoryQueryService repositoryQuery = null!;
 
         // Act
         Action act = () => _ = new RepositoryService(
-            api,
+            repositoryQuery,
             Mock.Of<IBitbucketPRApiClient>(),
             Mock.Of<IPullRequestRepositoryBatchLoader>(),
             Mock.Of<IPullRequestResultSorter>(),
@@ -42,7 +42,7 @@ public sealed class RepositoryServiceTests
 
         // Act
         Action act = () => _ = new RepositoryService(
-            Mock.Of<IBitbucketRepoApiClient>(),
+            Mock.Of<IRepositoryQueryService>(),
             prApi,
             Mock.Of<IPullRequestRepositoryBatchLoader>(),
             Mock.Of<IPullRequestResultSorter>(),
@@ -61,7 +61,7 @@ public sealed class RepositoryServiceTests
 
         // Act
         Action act = () => _ = new RepositoryService(
-            Mock.Of<IBitbucketRepoApiClient>(),
+            Mock.Of<IRepositoryQueryService>(),
             Mock.Of<IBitbucketPRApiClient>(),
             Mock.Of<IPullRequestRepositoryBatchLoader>(),
             Mock.Of<IPullRequestResultSorter>(),
@@ -301,7 +301,7 @@ public sealed class RepositoryServiceTests
         IBitbucketRepoApiClient? api = null,
         IBitbucketPRApiClient? prApi = null) =>
         new(
-            api ?? new Mock<IBitbucketRepoApiClient>(MockBehavior.Strict).Object,
+            new RepositoryQueryService(api ?? new Mock<IBitbucketRepoApiClient>(MockBehavior.Strict).Object),
             prApi ?? new Mock<IBitbucketPRApiClient>(MockBehavior.Strict).Object,
             new PullRequestRepositoryBatchLoader(),
             new PullRequestResultSorter(),

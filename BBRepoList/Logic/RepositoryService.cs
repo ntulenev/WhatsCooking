@@ -14,25 +14,25 @@ public sealed class RepositoryService : IRepoService
     /// <summary>
     /// Initializes a new instance of the <see cref="RepositoryService"/> class.
     /// </summary>
-    /// <param name="api">Bitbucket API client.</param>
+    /// <param name="repositoryQuery">Repository query service.</param>
     /// <param name="prApi">Bitbucket pull request API client.</param>
     /// <param name="batchLoader">Pull request batch loader.</param>
     /// <param name="resultSorter">Pull request result sorter.</param>
     /// <param name="options">Bitbucket configuration options.</param>
     public RepositoryService(
-        IBitbucketRepoApiClient api,
+        IRepositoryQueryService repositoryQuery,
         IBitbucketPRApiClient prApi,
         IPullRequestRepositoryBatchLoader batchLoader,
         IPullRequestResultSorter resultSorter,
         IOptions<BitbucketOptions> options)
     {
-        ArgumentNullException.ThrowIfNull(api);
+        ArgumentNullException.ThrowIfNull(repositoryQuery);
         ArgumentNullException.ThrowIfNull(prApi);
         ArgumentNullException.ThrowIfNull(batchLoader);
         ArgumentNullException.ThrowIfNull(resultSorter);
         ArgumentNullException.ThrowIfNull(options);
 
-        _api = api;
+        _repositoryQuery = repositoryQuery;
         _prApi = prApi;
         _batchLoader = batchLoader;
         _resultSorter = resultSorter;
@@ -41,31 +41,11 @@ public sealed class RepositoryService : IRepoService
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<Repository>> GetRepositoriesAsync(
+    public Task<IReadOnlyList<Repository>> GetRepositoriesAsync(
         FilterPattern filterPattern,
         IProgress<RepoLoadProgress>? progress,
-        CancellationToken cancellationToken)
-    {
-        var matchedRepositories = new List<Repository>();
-
-        var seen = 0;
-        var matched = 0;
-
-        await foreach (var repository in _api.GetRepositoriesAsync(filterPattern, cancellationToken).ConfigureAwait(false))
-        {
-            seen++;
-
-            if (filterPattern.Filter(repository))
-            {
-                matched++;
-                matchedRepositories.Add(repository);
-            }
-
-            progress?.Report(new RepoLoadProgress(seen, matched));
-        }
-
-        return matchedRepositories;
-    }
+        CancellationToken cancellationToken) =>
+        _repositoryQuery.GetRepositoriesAsync(filterPattern, progress, cancellationToken);
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<PullRequestDetail>> GetOpenPullRequestDetailsAsync(
@@ -118,7 +98,7 @@ public sealed class RepositoryService : IRepoService
         return _resultSorter.SortMerged(mergedPullRequests);
     }
 
-    private readonly IBitbucketRepoApiClient _api;
+    private readonly IRepositoryQueryService _repositoryQuery;
     private readonly IBitbucketPRApiClient _prApi;
     private readonly IPullRequestRepositoryBatchLoader _batchLoader;
     private readonly IPullRequestResultSorter _resultSorter;

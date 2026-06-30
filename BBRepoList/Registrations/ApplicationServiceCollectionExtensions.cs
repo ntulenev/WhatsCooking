@@ -63,6 +63,7 @@ public static class ApplicationServiceCollectionExtensions
 
     private static IServiceCollection AddApplicationWorkflow(this IServiceCollection services)
     {
+        _ = services.AddTransient<IRepositoryQueryService, RepositoryQueryService>();
         _ = services.AddTransient<IPullRequestRepositoryBatchLoader, PullRequestRepositoryBatchLoader>();
         _ = services.AddSingleton<IPullRequestResultSorter, PullRequestResultSorter>();
         _ = services.AddTransient<IRepoService, RepositoryService>();
