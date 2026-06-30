@@ -16,15 +16,22 @@ public sealed class RepositoryService : IRepoService
     /// </summary>
     /// <param name="api">Bitbucket API client.</param>
     /// <param name="prApi">Bitbucket pull request API client.</param>
+    /// <param name="batchLoader">Pull request batch loader.</param>
     /// <param name="options">Bitbucket configuration options.</param>
-    public RepositoryService(IBitbucketRepoApiClient api, IBitbucketPRApiClient prApi, IOptions<BitbucketOptions> options)
+    public RepositoryService(
+        IBitbucketRepoApiClient api,
+        IBitbucketPRApiClient prApi,
+        IPullRequestRepositoryBatchLoader batchLoader,
+        IOptions<BitbucketOptions> options)
     {
         ArgumentNullException.ThrowIfNull(api);
         ArgumentNullException.ThrowIfNull(prApi);
+        ArgumentNullException.ThrowIfNull(batchLoader);
         ArgumentNullException.ThrowIfNull(options);
 
         _api = api;
         _prApi = prApi;
+        _batchLoader = batchLoader;
         _pullRequestDetailsLoadThreshold = options.Value.PullRequestDetails.LoadThreshold;
         _mergedPullRequestsLoadThreshold = options.Value.MergedPullRequests.LoadThreshold;
     }
@@ -70,13 +77,11 @@ public sealed class RepositoryService : IRepoService
             return [];
         }
 
-        var pullRequestDetails = await LoadPullRequestsByRepositoryAsync(
+        var pullRequestDetails = await _batchLoader.LoadAsync(
             repositories,
             _pullRequestDetailsLoadThreshold,
-            static (service, repository, userId, _, token) =>
-                service._prApi.GetOpenPullRequestDetailsAsync(repository, userId, token),
-            currentUserId,
-            boundary: null,
+            (repository, token) =>
+                _prApi.GetOpenPullRequestDetailsAsync(repository, currentUserId, token),
             progress,
             cancellationToken).ConfigureAwait(false);
 
@@ -104,13 +109,11 @@ public sealed class RepositoryService : IRepoService
             return [];
         }
 
-        var mergedPullRequests = await LoadPullRequestsByRepositoryAsync(
+        var mergedPullRequests = await _batchLoader.LoadAsync(
             repositories,
             _mergedPullRequestsLoadThreshold,
-            static (service, repository, userId, boundary, token) =>
-                service._prApi.GetMergedPullRequestsAsync(repository, boundary!.Value, userId, token),
-            currentUserId,
-            mergedSince,
+            (repository, token) =>
+                _prApi.GetMergedPullRequestsAsync(repository, mergedSince, currentUserId, token),
             progress,
             cancellationToken).ConfigureAwait(false);
 
@@ -123,84 +126,9 @@ public sealed class RepositoryService : IRepoService
         ];
     }
 
-    private async Task<IReadOnlyList<TPullRequest>> LoadPullRequestsByRepositoryAsync<TPullRequest>(
-        IReadOnlyList<Repository> repositories,
-        int maxDegreeOfParallelism,
-        Func<RepositoryService, Repository, BitbucketId, DateTimeOffset?, CancellationToken, Task<IReadOnlyList<TPullRequest>>> loadPullRequests,
-        BitbucketId currentUserId,
-        DateTimeOffset? boundary,
-        IProgress<PullRequestRepositoryLoadProgress>? progress,
-        CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(repositories);
-        ArgumentNullException.ThrowIfNull(loadPullRequests);
-
-        var repositoriesToInspect = repositories
-            .Where(static repository => repository.CanLoadPullRequests)
-            .ToList();
-
-        if (repositoriesToInspect.Count == 0)
-        {
-            return [];
-        }
-
-        var pullRequestsByRepository = new IReadOnlyList<TPullRequest>?[repositoriesToInspect.Count];
-        var loadedRepositories = 0;
-
-        progress?.Report(new PullRequestRepositoryLoadProgress(0, repositoriesToInspect.Count));
-
-        await ForEachIndexAsync(
-            repositoriesToInspect.Count,
-            maxDegreeOfParallelism,
-            async (index, token) =>
-            {
-                token.ThrowIfCancellationRequested();
-
-                var repository = repositoriesToInspect[index];
-                var pullRequests = await loadPullRequests(this, repository, currentUserId, boundary, token)
-                    .ConfigureAwait(false);
-
-                pullRequestsByRepository[index] = pullRequests;
-
-                var currentLoaded = Interlocked.Increment(ref loadedRepositories);
-                progress?.Report(new PullRequestRepositoryLoadProgress(currentLoaded, repositoriesToInspect.Count));
-            },
-            cancellationToken).ConfigureAwait(false);
-
-        var pullRequestsByAllRepositories = new List<TPullRequest>();
-        for (var index = 0; index < pullRequestsByRepository.Length; index++)
-        {
-            if (pullRequestsByRepository[index] is { } pullRequests)
-            {
-                pullRequestsByAllRepositories.AddRange(pullRequests);
-            }
-        }
-
-        return pullRequestsByAllRepositories;
-    }
-
-    private static Task ForEachIndexAsync(
-        int count,
-        int maxDegreeOfParallelism,
-        Func<int, CancellationToken, ValueTask> body,
-        CancellationToken cancellationToken)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(count);
-        ArgumentOutOfRangeException.ThrowIfLessThan(maxDegreeOfParallelism, 1);
-        ArgumentNullException.ThrowIfNull(body);
-
-        return Parallel.ForEachAsync(
-            Enumerable.Range(0, count),
-            new ParallelOptions
-            {
-                MaxDegreeOfParallelism = maxDegreeOfParallelism,
-                CancellationToken = cancellationToken
-            },
-            body);
-    }
-
     private readonly IBitbucketRepoApiClient _api;
     private readonly IBitbucketPRApiClient _prApi;
+    private readonly IPullRequestRepositoryBatchLoader _batchLoader;
     private readonly int _pullRequestDetailsLoadThreshold;
     private readonly int _mergedPullRequestsLoadThreshold;
 }

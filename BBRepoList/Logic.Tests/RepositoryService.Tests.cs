@@ -25,6 +25,7 @@ public sealed class RepositoryServiceTests
         Action act = () => _ = new RepositoryService(
             api,
             Mock.Of<IBitbucketPRApiClient>(),
+            Mock.Of<IPullRequestRepositoryBatchLoader>(),
             CreateOptions());
 
         // Assert
@@ -42,6 +43,7 @@ public sealed class RepositoryServiceTests
         Action act = () => _ = new RepositoryService(
             Mock.Of<IBitbucketRepoApiClient>(),
             prApi,
+            Mock.Of<IPullRequestRepositoryBatchLoader>(),
             CreateOptions());
 
         // Assert
@@ -59,6 +61,7 @@ public sealed class RepositoryServiceTests
         Action act = () => _ = new RepositoryService(
             Mock.Of<IBitbucketRepoApiClient>(),
             Mock.Of<IBitbucketPRApiClient>(),
+            Mock.Of<IPullRequestRepositoryBatchLoader>(),
             options);
 
         // Assert
@@ -297,6 +300,7 @@ public sealed class RepositoryServiceTests
         new(
             api ?? new Mock<IBitbucketRepoApiClient>(MockBehavior.Strict).Object,
             prApi ?? new Mock<IBitbucketPRApiClient>(MockBehavior.Strict).Object,
+            new PullRequestRepositoryBatchLoader(),
             CreateOptions());
 
     private static IOptions<BitbucketOptions> CreateOptions() =>

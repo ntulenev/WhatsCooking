@@ -166,6 +166,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         AssertRegistration<IBitbucketPullRequestActivityLoader, BitbucketPullRequestActivityLoader>(services, ServiceLifetime.Transient);
         AssertRegistration<IPullRequestFingerprintBuilder, PullRequestFingerprintBuilder>(services, ServiceLifetime.Transient);
         AssertRegistration<IPullRequestSnapshotMapper, PullRequestSnapshotMapper>(services, ServiceLifetime.Transient);
+        AssertRegistration<IPullRequestRepositoryBatchLoader, PullRequestRepositoryBatchLoader>(services, ServiceLifetime.Transient);
         AssertRegistration<IRepoService, RepositoryService>(services, ServiceLifetime.Transient);
         AssertRegistration<IPullRequestDiffService, PullRequestDiffService>(services, ServiceLifetime.Singleton);
     }
