@@ -167,6 +167,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         AssertRegistration<IPullRequestFingerprintBuilder, PullRequestFingerprintBuilder>(services, ServiceLifetime.Transient);
         AssertRegistration<IPullRequestSnapshotMapper, PullRequestSnapshotMapper>(services, ServiceLifetime.Transient);
         AssertRegistration<IPullRequestRepositoryBatchLoader, PullRequestRepositoryBatchLoader>(services, ServiceLifetime.Transient);
+        AssertRegistration<IPullRequestResultSorter, PullRequestResultSorter>(services, ServiceLifetime.Singleton);
         AssertRegistration<IRepoService, RepositoryService>(services, ServiceLifetime.Transient);
         AssertRegistration<IPullRequestDiffService, PullRequestDiffService>(services, ServiceLifetime.Singleton);
     }

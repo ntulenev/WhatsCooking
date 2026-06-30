@@ -17,21 +17,25 @@ public sealed class RepositoryService : IRepoService
     /// <param name="api">Bitbucket API client.</param>
     /// <param name="prApi">Bitbucket pull request API client.</param>
     /// <param name="batchLoader">Pull request batch loader.</param>
+    /// <param name="resultSorter">Pull request result sorter.</param>
     /// <param name="options">Bitbucket configuration options.</param>
     public RepositoryService(
         IBitbucketRepoApiClient api,
         IBitbucketPRApiClient prApi,
         IPullRequestRepositoryBatchLoader batchLoader,
+        IPullRequestResultSorter resultSorter,
         IOptions<BitbucketOptions> options)
     {
         ArgumentNullException.ThrowIfNull(api);
         ArgumentNullException.ThrowIfNull(prApi);
         ArgumentNullException.ThrowIfNull(batchLoader);
+        ArgumentNullException.ThrowIfNull(resultSorter);
         ArgumentNullException.ThrowIfNull(options);
 
         _api = api;
         _prApi = prApi;
         _batchLoader = batchLoader;
+        _resultSorter = resultSorter;
         _pullRequestDetailsLoadThreshold = options.Value.PullRequestDetails.LoadThreshold;
         _mergedPullRequestsLoadThreshold = options.Value.MergedPullRequests.LoadThreshold;
     }
@@ -85,13 +89,7 @@ public sealed class RepositoryService : IRepoService
             progress,
             cancellationToken).ConfigureAwait(false);
 
-        return
-        [
-            .. pullRequestDetails
-                .OrderByDescending(static detail => detail.OpenedOn)
-                .ThenBy(static detail => detail.RepositoryName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(static detail => detail.PullRequestId.Value)
-        ];
+        return _resultSorter.SortOpen(pullRequestDetails);
     }
 
     /// <inheritdoc />
@@ -117,18 +115,13 @@ public sealed class RepositoryService : IRepoService
             progress,
             cancellationToken).ConfigureAwait(false);
 
-        return
-        [
-            .. mergedPullRequests
-                .OrderByDescending(static pullRequest => pullRequest.MergedOn)
-                .ThenBy(static pullRequest => pullRequest.RepositoryName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(static pullRequest => pullRequest.PullRequestId.Value)
-        ];
+        return _resultSorter.SortMerged(mergedPullRequests);
     }
 
     private readonly IBitbucketRepoApiClient _api;
     private readonly IBitbucketPRApiClient _prApi;
     private readonly IPullRequestRepositoryBatchLoader _batchLoader;
+    private readonly IPullRequestResultSorter _resultSorter;
     private readonly int _pullRequestDetailsLoadThreshold;
     private readonly int _mergedPullRequestsLoadThreshold;
 }
