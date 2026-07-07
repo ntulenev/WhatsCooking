@@ -24,7 +24,7 @@
         <TabControl x:Name="DashboardTabs" Grid.Row="1" Margin="10,8,10,10">
             <TabItem Header="Open PR details">
                 <Border Background="{DynamicResource PanelBrush}" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="12" Padding="0">
-                    <DataGrid AutomationProperties.Name="Open pull requests" ItemsSource="{Binding OpenPullRequestsView}">
+                    <DataGrid AutomationProperties.Name="Open pull requests" ItemsSource="{Binding OpenPullRequestsView}" PreviewMouseWheel="OnDataGridPreviewMouseWheel">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Number}" SortMemberPath="Number" Width="64">
                                 <DataGridTextColumn.Header>
@@ -131,7 +131,7 @@
 
             <TabItem Header="Recently merged pull requests">
                 <Border Background="{DynamicResource PanelBrush}" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="12" Padding="0">
-                    <DataGrid AutomationProperties.Name="Recently merged pull requests" ItemsSource="{Binding MergedPullRequestsView}">
+                    <DataGrid AutomationProperties.Name="Recently merged pull requests" ItemsSource="{Binding MergedPullRequestsView}" PreviewMouseWheel="OnDataGridPreviewMouseWheel">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Number}" SortMemberPath="Number" Width="64">
                                 <DataGridTextColumn.Header><StackPanel><TextBlock Text="#" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.Number, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTextColumn.Header>

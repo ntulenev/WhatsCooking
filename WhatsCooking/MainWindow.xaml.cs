@@ -1,11 +1,14 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Input;
 using System.Windows.Media;
+
+using Microsoft.Extensions.Configuration;
 
 using WhatsCooking.ViewModels;
 
@@ -21,9 +24,12 @@ internal sealed partial class MainWindow : Window
     /// Initializes a new instance of the <see cref="MainWindow"/> class.
     /// </summary>
     /// <param name="viewModel">Main dashboard view model.</param>
-    public MainWindow(MainViewModel viewModel)
+    /// <param name="configuration">Application configuration.</param>
+    public MainWindow(MainViewModel viewModel, IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
         _viewModel = viewModel;
+        _horizontalScrollWheelMultiplier = ReadHorizontalScrollWheelMultiplier(configuration);
         InitializeComponent();
         DataContext = viewModel;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -259,6 +265,43 @@ internal sealed partial class MainWindow : Window
         }
     }
 
+    private void OnDataGridPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+            || sender is not DependencyObject source)
+        {
+            return;
+        }
+
+        var scrollViewer = FindDescendant<ScrollViewer>(source);
+        if (scrollViewer is null
+            || scrollViewer.ScrollableWidth <= 0)
+        {
+            return;
+        }
+
+        scrollViewer.ScrollToHorizontalOffset(
+            scrollViewer.HorizontalOffset - (e.Delta * _horizontalScrollWheelMultiplier));
+        e.Handled = true;
+    }
+
+    private static double ReadHorizontalScrollWheelMultiplier(IConfiguration configuration)
+    {
+        var configuredValue = configuration["Ui:HorizontalScrollWheelMultiplier"];
+        if (double.TryParse(
+                configuredValue,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out var multiplier)
+            && double.IsFinite(multiplier)
+            && multiplier > 0)
+        {
+            return multiplier;
+        }
+
+        return DEFAULT_HORIZONTAL_SCROLL_WHEEL_MULTIPLIER;
+    }
+
     private void HideDialogOverlay()
     {
         if (_dialogOverlayScopes <= 0)
@@ -390,9 +433,11 @@ internal sealed partial class MainWindow : Window
         ref int attributeValue,
         int attributeSize);
 
+    private const double DEFAULT_HORIZONTAL_SCROLL_WHEEL_MULTIPLIER = 1.0;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
     private readonly MainViewModel _viewModel;
+    private readonly double _horizontalScrollWheelMultiplier;
 
     private int _dialogOverlayScopes;
 }

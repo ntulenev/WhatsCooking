@@ -53,7 +53,7 @@ Runtime settings are stored in:
 WhatsCooking/appsettings.json
 ```
 
-Only infrastructure and loading behavior are configured in `appsettings.json`. Repository filter mode, filter phrase, merged PR period, table filters, UI theme, and UI scale are controlled from the UI.
+Infrastructure, loading behavior, and advanced UI tuning are configured in `appsettings.json`. Repository filter mode, filter phrase, merged PR period, table filters, UI theme, and UI scale are controlled from the UI.
 
 The selected UI theme, UI scale, repository search mode, and repository search phrase are stored per user in:
 
@@ -86,6 +86,12 @@ Telemetry counters are reset every time `Load` starts, so the tab describes the 
 `Activity cached` is the number of PR activity summaries reused from the local cache. `Activity API loads` is the number of PRs for which the `/activity` endpoint had to be loaded. `Activity cache rate` is calculated from those two values. The application still requests lightweight PR metadata to discover pull requests and validate cached fingerprints; a cache hit avoids loading the more expensive activity history, not all Bitbucket API calls.
 
 The telemetry tab also shows the current pull request details cache size. Use `Clear cache` to delete the persisted cache after confirming the action in the popup dialog.
+
+### UI
+
+| Setting | Description |
+| --- | --- |
+| `Ui:HorizontalScrollWheelMultiplier` | Multiplier for horizontal table scrolling with `Shift` + mouse wheel. Values below `1.0` make scrolling less sensitive; values above `1.0` make it faster. |
 
 ### Pull Request Activity Cache
 
