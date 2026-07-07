@@ -33,9 +33,12 @@ public sealed class DemoProvidersTests
 
         // Assert
         result.Repositories.Should().HaveCount(10);
-        result.OpenPullRequests.Should().HaveCount(10);
-        result.MergedPullRequests.Should().HaveCount(10);
+        result.OpenPullRequests.Should().HaveCount(40);
+        result.MergedPullRequests.Should().HaveCount(40);
         result.Repositories.Should().OnlyContain(repository => repository.Slug != null);
+        result.Repositories.Sum(static repository => repository.OpenPullRequestsCount)
+            .Should()
+            .Be(result.OpenPullRequests.Count);
         result.OpenPullRequests.Should().OnlyContain(pullRequest =>
             pullRequest.OpenedOn < asOf
             && result.Repositories.Contains(pullRequest.Repository));

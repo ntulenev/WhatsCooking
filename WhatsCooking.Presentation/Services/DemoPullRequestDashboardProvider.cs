@@ -55,6 +55,7 @@ internal sealed class DemoPullRequestDashboardProvider : IDemoPullRequestDashboa
             CreateOpenDemoPullRequest(repositories[9], 1206, "Support split authorization for partial refunds", asOf.AddDays(-3.2), "Nina Patel", asOf.AddDays(-3).AddHours(8), asOf.AddHours(-17), true, DEMO_DESCRIPTION_LONG, 15, 2, true, 2, false),
             CreateOpenDemoPullRequest(repositories[7], 408, "Validate imported column mappings before preview", asOf.AddDays(-4.1), "Oliver Reed", null, asOf.AddDays(-2.8), false, "Draft.", 1, 0, false, 0, false)
         ];
+        AddOpenDemoPullRequestVariants(openPullRequests);
 
         List<MergedPullRequest> mergedPullRequests =
         [
@@ -69,6 +70,8 @@ internal sealed class DemoPullRequestDashboardProvider : IDemoPullRequestDashboa
             CreateMergedDemoPullRequest(repositories[9], 1198, "Record gateway reference IDs for dispute lookup", asOf.AddDays(-9.3), "Ava Martin", asOf.AddDays(-9), asOf.AddDays(-2.2), true, asOf.AddDays(-2), DEMO_DESCRIPTION_LONG, 11, 0, false, 2, false),
             CreateMergedDemoPullRequest(repositories[7], 402, "Improve CSV preview error grouping", asOf.AddDays(-10.5), "Oliver Reed", asOf.AddDays(-10.2), asOf.AddDays(-3), false, asOf.AddDays(-2.6), DEMO_DESCRIPTION_LONG, 3, 0, false, 1, false)
         ];
+        AddMergedDemoPullRequestVariants(mergedPullRequests);
+        UpdateDemoRepositoryOpenPullRequestCounts(repositories, openPullRequests);
 
         return new PullRequestLoadResult(repositories, openPullRequests, mergedPullRequests);
     }
@@ -116,6 +119,83 @@ internal sealed class DemoPullRequestDashboardProvider : IDemoPullRequestDashboa
             approvalsCount,
             hasCurrentUserApproval);
 
+    private static void AddOpenDemoPullRequestVariants(List<PullRequestDetail> pullRequests)
+    {
+        var seedPullRequests = pullRequests.ToArray();
+        for (var batch = 1; batch < DEMO_PULL_REQUEST_BATCHES; batch++)
+        {
+            for (var index = 0; index < seedPullRequests.Length; index++)
+            {
+                var source = seedPullRequests[index];
+                var offset = CreateDemoVariantOffset(batch, index);
+                pullRequests.Add(new PullRequestDetail(
+                    source.Repository,
+                    new PullRequestId(source.PullRequestId.Value + (batch * DEMO_PULL_REQUEST_ID_OFFSET)),
+                    $"{source.Title} ({batch + 1})",
+                    source.OpenedOn - offset,
+                    source.AuthorId,
+                    source.AuthorDisplayName,
+                    source.FirstNonAuthorActivityOn - offset,
+                    source.LastActivityOn - offset,
+                    source.HasCurrentUserDiscussion,
+                    source.DescriptionText,
+                    source.CommentsCount + (index % 4),
+                    source.RequestChangesCount,
+                    source.HasCurrentUserRequestChanges,
+                    source.ApprovalsCount,
+                    source.HasCurrentUserApproval));
+            }
+        }
+    }
+
+    private static void AddMergedDemoPullRequestVariants(List<MergedPullRequest> pullRequests)
+    {
+        var seedPullRequests = pullRequests.ToArray();
+        for (var batch = 1; batch < DEMO_PULL_REQUEST_BATCHES; batch++)
+        {
+            for (var index = 0; index < seedPullRequests.Length; index++)
+            {
+                var source = seedPullRequests[index];
+                var offset = CreateDemoVariantOffset(batch, index);
+                pullRequests.Add(new MergedPullRequest(
+                    source.Repository,
+                    new PullRequestId(source.PullRequestId.Value + (batch * DEMO_PULL_REQUEST_ID_OFFSET)),
+                    $"{source.Title} ({batch + 1})",
+                    source.OpenedOn - offset,
+                    source.AuthorId,
+                    source.AuthorDisplayName,
+                    source.FirstNonAuthorActivityOn - offset,
+                    source.LastActivityOn - offset,
+                    source.HasCurrentUserDiscussion,
+                    source.MergedOn - offset,
+                    source.DescriptionText,
+                    source.CommentsCount + (index % 4),
+                    source.RequestChangesCount,
+                    source.HasCurrentUserRequestChanges,
+                    source.ApprovalsCount,
+                    source.HasCurrentUserApproval));
+            }
+        }
+    }
+
+    private static TimeSpan CreateDemoVariantOffset(int batch, int index) =>
+        TimeSpan.FromDays((batch * 4) + (index * 0.2));
+
+    private static void UpdateDemoRepositoryOpenPullRequestCounts(
+        IEnumerable<Repository> repositories,
+        IEnumerable<PullRequestDetail> openPullRequests)
+    {
+        var openCounts = openPullRequests
+            .GroupBy(static pullRequest => pullRequest.Repository)
+            .ToDictionary(static group => group.Key, static group => group.Count());
+
+        foreach (var repository in repositories)
+        {
+            repository.UpdateOpenPullRequestsCount(
+                openCounts.GetValueOrDefault(repository));
+        }
+    }
+
     private static MergedPullRequest CreateMergedDemoPullRequest(
         Repository repository,
         int pullRequestId,
@@ -152,6 +232,8 @@ internal sealed class DemoPullRequestDashboardProvider : IDemoPullRequestDashboa
 
     private static string NormalizeDemoId(string value) => value.Replace(' ', '-').ToUpperInvariant();
 
+    private const int DEMO_PULL_REQUEST_BATCHES = 4;
+    private const int DEMO_PULL_REQUEST_ID_OFFSET = 10000;
     private const string DEMO_DESCRIPTION_LONG = "Synthetic demo pull request with realistic review data for presenting the dashboard without Bitbucket credentials.";
 
     private readonly TimeProvider _timeProvider;
