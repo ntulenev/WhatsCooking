@@ -92,6 +92,7 @@ The telemetry tab also shows the current pull request details cache size. Use `C
 | Setting | Description |
 | --- | --- |
 | `Ui:HorizontalScrollWheelMultiplier` | Multiplier for horizontal table scrolling with `Shift` + mouse wheel. Values below `1.0` make scrolling less sensitive; values above `1.0` make it faster. |
+| `Ui:VerticalScrollWheelMultiplier` | Multiplier for vertical table scrolling with the mouse wheel. Values below `1.0` make scrolling less sensitive; values above `1.0` make it faster. |
 
 ### Pull Request Activity Cache
 

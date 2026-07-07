@@ -29,7 +29,14 @@ internal sealed partial class MainWindow : Window
     {
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
         _viewModel = viewModel;
-        _horizontalScrollWheelMultiplier = ReadHorizontalScrollWheelMultiplier(configuration);
+        _horizontalScrollWheelMultiplier = ReadScrollWheelMultiplier(
+            configuration,
+            "Ui:HorizontalScrollWheelMultiplier",
+            DEFAULT_SCROLL_WHEEL_MULTIPLIER);
+        _verticalScrollWheelMultiplier = ReadScrollWheelMultiplier(
+            configuration,
+            "Ui:VerticalScrollWheelMultiplier",
+            DEFAULT_SCROLL_WHEEL_MULTIPLIER);
         InitializeComponent();
         DataContext = viewModel;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -267,15 +274,29 @@ internal sealed partial class MainWindow : Window
 
     private void OnDataGridPreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
-            || sender is not DependencyObject source)
+        if (sender is not DependencyObject source)
         {
             return;
         }
 
         var scrollViewer = FindDescendant<ScrollViewer>(source);
-        if (scrollViewer is null
-            || scrollViewer.ScrollableWidth <= 0)
+        if (scrollViewer is null)
+        {
+            return;
+        }
+
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            ScrollHorizontally(scrollViewer, e);
+            return;
+        }
+
+        ScrollVertically(scrollViewer, e);
+    }
+
+    private void ScrollHorizontally(ScrollViewer scrollViewer, MouseWheelEventArgs e)
+    {
+        if (scrollViewer.ScrollableWidth <= 0)
         {
             return;
         }
@@ -285,9 +306,30 @@ internal sealed partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private static double ReadHorizontalScrollWheelMultiplier(IConfiguration configuration)
+    private void ScrollVertically(ScrollViewer scrollViewer, MouseWheelEventArgs e)
     {
-        var configuredValue = configuration["Ui:HorizontalScrollWheelMultiplier"];
+        if (scrollViewer.ScrollableHeight <= 0)
+        {
+            return;
+        }
+
+        var wheelScrollLines = SystemParameters.WheelScrollLines > 0
+            ? SystemParameters.WheelScrollLines
+            : DEFAULT_MOUSE_WHEEL_SCROLL_LINES;
+        var scrollDelta = e.Delta / (double)Mouse.MouseWheelDeltaForOneLine
+            * wheelScrollLines
+            * _verticalScrollWheelMultiplier;
+
+        scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - scrollDelta);
+        e.Handled = true;
+    }
+
+    private static double ReadScrollWheelMultiplier(
+        IConfiguration configuration,
+        string key,
+        double defaultMultiplier)
+    {
+        var configuredValue = configuration[key];
         if (double.TryParse(
                 configuredValue,
                 NumberStyles.Float,
@@ -299,7 +341,7 @@ internal sealed partial class MainWindow : Window
             return multiplier;
         }
 
-        return DEFAULT_HORIZONTAL_SCROLL_WHEEL_MULTIPLIER;
+        return defaultMultiplier;
     }
 
     private void HideDialogOverlay()
@@ -433,11 +475,13 @@ internal sealed partial class MainWindow : Window
         ref int attributeValue,
         int attributeSize);
 
-    private const double DEFAULT_HORIZONTAL_SCROLL_WHEEL_MULTIPLIER = 1.0;
+    private const double DEFAULT_SCROLL_WHEEL_MULTIPLIER = 1.0;
+    private const int DEFAULT_MOUSE_WHEEL_SCROLL_LINES = 3;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
     private readonly MainViewModel _viewModel;
     private readonly double _horizontalScrollWheelMultiplier;
+    private readonly double _verticalScrollWheelMultiplier;
 
     private int _dialogOverlayScopes;
 }
