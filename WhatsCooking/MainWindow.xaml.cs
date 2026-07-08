@@ -113,9 +113,9 @@ internal sealed partial class MainWindow : Window
 
     private void ApplyPalette(ThemePalette palette)
     {
-        SetBrushColor("BgBrush", palette.Bg);
+        SetGradientBrush("BgBrush", palette.Bg, Blend(palette.Bg, palette.Accent, 0.14));
         SetBrushColor("PanelBrush", palette.Panel);
-        SetBrushColor("PanelAltBrush", palette.PanelAlt);
+        SetGradientBrush("PanelAltBrush", palette.PanelAlt, Blend(palette.PanelAlt, palette.Accent, 0.12));
         SetBrushColor("BorderBrushDark", palette.Border);
         SetBrushColor("TextBrush", palette.Text);
         SetBrushColor("MutedBrush", palette.Muted);
@@ -126,7 +126,7 @@ internal sealed partial class MainWindow : Window
         SetBrushColor("ControlHoverBrush", palette.Hover);
         SetBrushColor("ControlPressedBrush", palette.Pressed);
         SetBrushColor("InputBrush", palette.Input);
-        SetBrushColor("HeaderPanelBrush", palette.Header);
+        SetGradientBrush("HeaderPanelBrush", palette.Header, Blend(palette.Header, palette.Accent, 0.24));
         SetBrushColor("SubtleBorderBrush", palette.SubtleBorder);
         SetBrushColor("DataGridAltRowBrush", palette.DataGridAltRow);
         SetBrushColor("DataGridHorizontalLineBrush", palette.DataGridHorizontalLine);
@@ -147,6 +147,25 @@ internal sealed partial class MainWindow : Window
         SetBrushColor("ActivityBadgeBackgroundBrush", palette.ActivityBadgeBackground);
         SetBrushColor("ActivityBadgeBorderBrush", palette.ActivityBadgeBorder);
         SetBrushColor("ActivityBadgeTextBrush", palette.ActivityBadgeText);
+    }
+
+    private void SetGradientBrush(string resourceKey, Color startColor, Color endColor)
+    {
+        Resources[resourceKey] = new LinearGradientBrush(
+            startColor,
+            endColor,
+            new Point(0, 0),
+            new Point(1, 1));
+    }
+
+    private static Color Blend(Color baseColor, Color tintColor, double amount)
+    {
+        var inverse = 1 - amount;
+        return Color.FromArgb(
+            baseColor.A,
+            (byte)((baseColor.R * inverse) + (tintColor.R * amount)),
+            (byte)((baseColor.G * inverse) + (tintColor.G * amount)),
+            (byte)((baseColor.B * inverse) + (tintColor.B * amount)));
     }
 
     private static AppThemeMode ResolveThemeMode(AppThemeMode themeMode) =>
@@ -180,45 +199,62 @@ internal sealed partial class MainWindow : Window
         AppThemeMode.Light => _lightPalette,
         AppThemeMode.Glass => _darkPalette with
         {
-            Bg = Color.FromRgb(0x12, 0x18, 0x24),
-            Panel = Color.FromArgb(0xD8, 0x17, 0x21, 0x31),
-            PanelAlt = Color.FromArgb(0xEE, 0x20, 0x2B, 0x3E),
-            Header = Color.FromArgb(0xCC, 0x18, 0x24, 0x35),
-            SubtleBorder = Color.FromArgb(0x38, 0xCF, 0xDD, 0xFF),
+            Bg = Color.FromRgb(0x0C, 0x15, 0x24),
+            Panel = Color.FromArgb(0xD8, 0x14, 0x22, 0x38),
+            PanelAlt = Color.FromArgb(0xEE, 0x1B, 0x2F, 0x4E),
+            Header = Color.FromArgb(0xCC, 0x12, 0x25, 0x3E),
+            Border = Color.FromRgb(0x45, 0x62, 0x86),
+            SubtleBorder = Color.FromArgb(0x52, 0xCF, 0xDD, 0xFF),
             Accent = Color.FromRgb(0x8B, 0xC7, 0xFF),
-            Link = Color.FromRgb(0x9E, 0xD8, 0xFF)
+            Link = Color.FromRgb(0xB9, 0xE6, 0xFF),
+            DataGridHeaderSelected = Color.FromRgb(0x1D, 0x47, 0x70),
+            ActivityBadgeBackground = Color.FromRgb(0x20, 0x32, 0x52),
+            ActivityBadgeBorder = Color.FromRgb(0x4B, 0x74, 0xA7)
         },
         AppThemeMode.Forest => _darkPalette with
         {
-            Bg = Color.FromRgb(0x15, 0x1B, 0x16),
-            Panel = Color.FromRgb(0x1B, 0x24, 0x1D),
-            PanelAlt = Color.FromRgb(0x24, 0x31, 0x26),
-            Header = Color.FromArgb(0xE6, 0x1A, 0x21, 0x1C),
-            Accent = Color.FromRgb(0x7D, 0xC7, 0x8B),
-            Link = Color.FromRgb(0xA0, 0xD9, 0xAA),
-            Success = Color.FromRgb(0x8B, 0xD3, 0x82),
-            DataGridHeaderSelected = Color.FromRgb(0x22, 0x4A, 0x2D)
+            Bg = Color.FromRgb(0x0F, 0x19, 0x12),
+            Panel = Color.FromRgb(0x18, 0x27, 0x1B),
+            PanelAlt = Color.FromRgb(0x22, 0x37, 0x26),
+            Header = Color.FromArgb(0xE6, 0x17, 0x26, 0x1B),
+            Border = Color.FromRgb(0x38, 0x54, 0x3D),
+            Accent = Color.FromRgb(0x92, 0xD9, 0x83),
+            Link = Color.FromRgb(0xB7, 0xEA, 0x9D),
+            Success = Color.FromRgb(0xA8, 0xE6, 0x8E),
+            DataGridHeaderSelected = Color.FromRgb(0x22, 0x55, 0x31),
+            ApprovalBadgeBackground = Color.FromRgb(0x1F, 0x42, 0x24),
+            ActivityBadgeBackground = Color.FromRgb(0x1B, 0x35, 0x2D),
+            ActivityBadgeText = Color.FromRgb(0xB8, 0xF2, 0xD0)
         },
         AppThemeMode.Autumn => _darkPalette with
         {
-            Bg = Color.FromRgb(0x23, 0x19, 0x13),
-            Panel = Color.FromRgb(0x2B, 0x20, 0x18),
-            PanelAlt = Color.FromRgb(0x38, 0x28, 0x1C),
-            Header = Color.FromArgb(0xE6, 0x2E, 0x20, 0x17),
-            Accent = Color.FromRgb(0xE8, 0x9C, 0x5B),
-            Link = Color.FromRgb(0xFF, 0xBA, 0x75),
-            Danger = Color.FromRgb(0xFF, 0x8A, 0x65),
-            DataGridHeaderSelected = Color.FromRgb(0x5A, 0x34, 0x1E)
+            Bg = Color.FromRgb(0x27, 0x16, 0x0E),
+            Panel = Color.FromRgb(0x31, 0x20, 0x16),
+            PanelAlt = Color.FromRgb(0x44, 0x2A, 0x19),
+            Header = Color.FromArgb(0xE6, 0x36, 0x20, 0x13),
+            Border = Color.FromRgb(0x64, 0x3F, 0x28),
+            Accent = Color.FromRgb(0xFF, 0xA6, 0x4D),
+            Link = Color.FromRgb(0xFF, 0xCC, 0x7A),
+            Danger = Color.FromRgb(0xFF, 0x74, 0x5D),
+            Success = Color.FromRgb(0xC9, 0xD8, 0x72),
+            DataGridHeaderSelected = Color.FromRgb(0x67, 0x3A, 0x20),
+            RequestChangesBadgeBackground = Color.FromRgb(0x4D, 0x25, 0x18),
+            ApprovalBadgeBackground = Color.FromRgb(0x37, 0x3F, 0x1F)
         },
         AppThemeMode.DarkPink => _darkPalette with
         {
-            Bg = Color.FromRgb(0x22, 0x15, 0x20),
-            Panel = Color.FromRgb(0x2D, 0x1B, 0x2A),
-            PanelAlt = Color.FromRgb(0x3A, 0x22, 0x35),
-            Header = Color.FromArgb(0xE6, 0x2A, 0x19, 0x27),
-            Accent = Color.FromRgb(0xFF, 0x7A, 0xB7),
-            Link = Color.FromRgb(0xFF, 0xA4, 0xCD),
-            DataGridHeaderSelected = Color.FromRgb(0x5B, 0x25, 0x42),
+            Bg = Color.FromRgb(0x27, 0x11, 0x25),
+            Panel = Color.FromRgb(0x35, 0x19, 0x32),
+            PanelAlt = Color.FromRgb(0x47, 0x21, 0x41),
+            Header = Color.FromArgb(0xE6, 0x33, 0x15, 0x30),
+            Border = Color.FromRgb(0x61, 0x34, 0x58),
+            Accent = Color.FromRgb(0xFF, 0x72, 0xC3),
+            Link = Color.FromRgb(0xFF, 0xB6, 0xD9),
+            Danger = Color.FromRgb(0xFF, 0x6F, 0x91),
+            DataGridHeaderSelected = Color.FromRgb(0x68, 0x25, 0x4D),
+            RequestChangesBadgeBackground = Color.FromRgb(0x4D, 0x1F, 0x2F),
+            ActivityBadgeBackground = Color.FromRgb(0x3D, 0x22, 0x48),
+            ActivityBadgeBorder = Color.FromRgb(0x7D, 0x48, 0x91),
             ActivityBadgeText = Color.FromRgb(0xFF, 0xC1, 0xDE)
         },
         AppThemeMode.Matrix => _darkPalette with
@@ -231,41 +267,74 @@ internal sealed partial class MainWindow : Window
             Muted = Color.FromRgb(0x70, 0xA8, 0x78),
             Accent = Color.FromRgb(0x39, 0xFF, 0x74),
             Link = Color.FromRgb(0x77, 0xFF, 0x9E),
-            DataGridHeaderSelected = Color.FromRgb(0x0F, 0x3B, 0x1A)
+            Danger = Color.FromRgb(0xA8, 0xFF, 0x39),
+            Border = Color.FromRgb(0x1A, 0x52, 0x27),
+            DataGridHeaderSelected = Color.FromRgb(0x0F, 0x3B, 0x1A),
+            ApprovalBadgeBackground = Color.FromRgb(0x0F, 0x34, 0x15),
+            ActivityBadgeBackground = Color.FromRgb(0x0A, 0x2A, 0x18),
+            ActivityBadgeText = Color.FromRgb(0x6C, 0xFF, 0x9A)
         },
-        AppThemeMode.Code => _darkPalette,
+        AppThemeMode.Code => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x16, 0x18, 0x22),
+            Panel = Color.FromRgb(0x1E, 0x22, 0x2E),
+            PanelAlt = Color.FromRgb(0x27, 0x2C, 0x3A),
+            Header = Color.FromArgb(0xE6, 0x20, 0x25, 0x34),
+            Accent = Color.FromRgb(0x4F, 0xC1, 0xFF),
+            Link = Color.FromRgb(0x8C, 0xE3, 0xFF),
+            Success = Color.FromRgb(0xB5, 0xCE, 0xA8),
+            Danger = Color.FromRgb(0xCE, 0x91, 0x78),
+            DataGridHeaderSelected = Color.FromRgb(0x26, 0x3E, 0x5C),
+            ActivityBadgeBackground = Color.FromRgb(0x2A, 0x2F, 0x46),
+            ActivityBadgeText = Color.FromRgb(0xD7, 0xBA, 0xFF)
+        },
         AppThemeMode.Cyberpunk => _darkPalette with
         {
-            Bg = Color.FromRgb(0x16, 0x10, 0x27),
-            Panel = Color.FromRgb(0x20, 0x18, 0x35),
-            PanelAlt = Color.FromRgb(0x2B, 0x1D, 0x44),
-            Header = Color.FromArgb(0xE6, 0x1D, 0x16, 0x32),
+            Bg = Color.FromRgb(0x18, 0x0B, 0x2E),
+            Panel = Color.FromRgb(0x25, 0x16, 0x3F),
+            PanelAlt = Color.FromRgb(0x34, 0x1D, 0x58),
+            Header = Color.FromArgb(0xE6, 0x25, 0x13, 0x42),
+            Border = Color.FromRgb(0x59, 0x35, 0x84),
             Accent = Color.FromRgb(0xFF, 0x4F, 0xD8),
             Link = Color.FromRgb(0x5E, 0xF7, 0xFF),
             Danger = Color.FromRgb(0xFF, 0x74, 0x9D),
-            DataGridHeaderSelected = Color.FromRgb(0x42, 0x1D, 0x60)
+            Success = Color.FromRgb(0x79, 0xFF, 0xB8),
+            DataGridHeaderSelected = Color.FromRgb(0x48, 0x1D, 0x72),
+            ActivityBadgeBackground = Color.FromRgb(0x31, 0x27, 0x5A),
+            ActivityBadgeBorder = Color.FromRgb(0x6C, 0x4A, 0xB4),
+            ActivityBadgeText = Color.FromRgb(0xF2, 0xD1, 0xFF)
         },
         AppThemeMode.DeepSea => _darkPalette with
         {
-            Bg = Color.FromRgb(0x05, 0x18, 0x21),
-            Panel = Color.FromRgb(0x0B, 0x24, 0x30),
-            PanelAlt = Color.FromRgb(0x10, 0x31, 0x40),
-            Header = Color.FromArgb(0xE6, 0x0B, 0x24, 0x30),
+            Bg = Color.FromRgb(0x03, 0x18, 0x25),
+            Panel = Color.FromRgb(0x08, 0x28, 0x39),
+            PanelAlt = Color.FromRgb(0x0D, 0x3B, 0x4F),
+            Header = Color.FromArgb(0xE6, 0x08, 0x2F, 0x42),
+            Border = Color.FromRgb(0x24, 0x5E, 0x70),
             Accent = Color.FromRgb(0x54, 0xD6, 0xC8),
-            Link = Color.FromRgb(0x80, 0xE8, 0xFF),
+            Link = Color.FromRgb(0x96, 0xF0, 0xFF),
+            Danger = Color.FromRgb(0xF0, 0x94, 0x76),
             Success = Color.FromRgb(0x8E, 0xD6, 0xB2),
-            DataGridHeaderSelected = Color.FromRgb(0x16, 0x4B, 0x5A)
+            DataGridHeaderSelected = Color.FromRgb(0x14, 0x55, 0x67),
+            ApprovalBadgeBackground = Color.FromRgb(0x16, 0x3D, 0x34),
+            ActivityBadgeBackground = Color.FromRgb(0x13, 0x36, 0x56),
+            ActivityBadgeText = Color.FromRgb(0xB9, 0xE6, 0xFF)
         },
         AppThemeMode.AlpineDawn => _darkPalette with
         {
-            Bg = Color.FromRgb(0x16, 0x1A, 0x2A),
-            Panel = Color.FromRgb(0x1E, 0x24, 0x36),
-            PanelAlt = Color.FromRgb(0x2A, 0x31, 0x46),
-            Header = Color.FromArgb(0xE6, 0x1B, 0x22, 0x34),
-            Accent = Color.FromRgb(0xF5, 0x91, 0x8B),
-            Link = Color.FromRgb(0xB9, 0xC8, 0xFF),
+            Bg = Color.FromRgb(0x14, 0x19, 0x2B),
+            Panel = Color.FromRgb(0x1D, 0x25, 0x3A),
+            PanelAlt = Color.FromRgb(0x2A, 0x35, 0x52),
+            Header = Color.FromArgb(0xE6, 0x1C, 0x26, 0x3D),
+            Border = Color.FromRgb(0x4B, 0x58, 0x78),
+            Accent = Color.FromRgb(0xFF, 0x97, 0x8E),
+            Link = Color.FromRgb(0xC7, 0xD4, 0xFF),
             Danger = Color.FromRgb(0xFF, 0x9A, 0x8B),
-            DataGridHeaderSelected = Color.FromRgb(0x3D, 0x3D, 0x62)
+            Success = Color.FromRgb(0xB5, 0xDE, 0xC9),
+            DataGridHeaderSelected = Color.FromRgb(0x42, 0x48, 0x72),
+            RequestChangesBadgeBackground = Color.FromRgb(0x43, 0x2B, 0x35),
+            ActivityBadgeBackground = Color.FromRgb(0x31, 0x35, 0x5A),
+            ActivityBadgeBorder = Color.FromRgb(0x68, 0x70, 0xA6)
         },
         AppThemeMode.Dark => _darkPalette,
         _ => _darkPalette
