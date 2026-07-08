@@ -556,12 +556,26 @@ internal sealed partial class MainWindow : Window
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control) || DataContext is not MainViewModel viewModel)
+        if (DataContext is not MainViewModel viewModel)
         {
             return;
         }
 
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control)
+            && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+            && key == Key.T)
+        {
+            viewModel.SelectNextThemeCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            return;
+        }
+
         if (key is Key.OemPlus or Key.Add)
         {
             viewModel.IncreaseUiScaleCommand.Execute(null);

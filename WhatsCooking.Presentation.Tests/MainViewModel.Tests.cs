@@ -476,6 +476,30 @@ public sealed class MainViewModelTests
         fixture.ExternalUrlLauncher.VerifyAll();
     }
 
+    [Fact(DisplayName = "Select next theme command cycles through configured themes")]
+    [Trait("Category", "Unit")]
+    public void SelectNextThemeCommandWhenExecutedCyclesThroughThemeOptions()
+    {
+        // Arrange
+        var fixture = CreateFixture(new UserPreferences { ThemeMode = AppThemeMode.AlpineDawn });
+        var savedThemes = new List<AppThemeMode?>();
+        fixture.PreferencesService.Setup(instance => instance.Save(
+                It.Is<UserPreferences>(preferences =>
+                    preferences.ThemeMode == AppThemeMode.Os
+                    || preferences.ThemeMode == AppThemeMode.Light)))
+            .Callback<UserPreferences>(preferences => savedThemes.Add(preferences.ThemeMode));
+        using var viewModel = fixture.CreateViewModel();
+
+        // Act
+        viewModel.SelectNextThemeCommand.Execute(null);
+        viewModel.SelectNextThemeCommand.Execute(null);
+
+        // Assert
+        viewModel.ThemeMode.Should().Be(AppThemeMode.Light);
+        savedThemes.Should().Equal(AppThemeMode.Os, AppThemeMode.Light);
+        fixture.PreferencesService.VerifyAll();
+    }
+
     private static MainViewModelFixture CreateFixture(UserPreferences? preferences = null)
     {
         var emptyTelemetry = new BitbucketTelemetrySnapshot(false, 0, []);

@@ -57,6 +57,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         ToggleMergedReviewedFilterCommand = new RelayCommand(ToggleMergedReviewedFilter);
         IncreaseUiScaleCommand = new RelayCommand(IncreaseUiScale);
         DecreaseUiScaleCommand = new RelayCommand(DecreaseUiScale);
+        SelectNextThemeCommand = new RelayCommand(SelectNextTheme);
         _ = TelemetryDashboard.RefreshTelemetry();
     }
 
@@ -336,6 +337,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// </summary>
     public ICommand DecreaseUiScaleCommand { get; }
 
+    /// <summary>
+    /// Command that selects the next UI theme.
+    /// </summary>
+    public ICommand SelectNextThemeCommand { get; }
+
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
         if (!CanLoad())
@@ -367,6 +373,26 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private void IncreaseUiScale() => UiScale += UI_SCALE_STEP;
 
     private void DecreaseUiScale() => UiScale -= UI_SCALE_STEP;
+
+    private void SelectNextTheme()
+    {
+        if (_themeOptions.Count == 0)
+        {
+            return;
+        }
+
+        var currentIndex = -1;
+        for (var index = 0; index < _themeOptions.Count; index++)
+        {
+            if (_themeOptions[index].Mode == ThemeMode)
+            {
+                currentIndex = index;
+                break;
+            }
+        }
+
+        ThemeMode = _themeOptions[(currentIndex + 1) % _themeOptions.Count].Mode;
+    }
 
     private bool CanLoad() => !IsLoading && !HasErrors;
 
