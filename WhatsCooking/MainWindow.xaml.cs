@@ -51,6 +51,8 @@ internal sealed partial class MainWindow : Window
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
         ApplyWindowFrameTheme(DataContext is MainViewModel { ThemeMode: AppThemeMode.Light });
+        _hwndSource = (HwndSource?)PresentationSource.FromVisual(this);
+        _hwndSource?.AddHook(OnWindowMessage);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -532,6 +534,8 @@ internal sealed partial class MainWindow : Window
 
     private void OnClosed(object? sender, EventArgs e)
     {
+        _hwndSource?.RemoveHook(OnWindowMessage);
+        _hwndSource = null;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         SourceInitialized -= OnSourceInitialized;
         SystemParameters.StaticPropertyChanged -= OnSystemParametersPropertyChanged;
@@ -612,14 +616,21 @@ internal sealed partial class MainWindow : Window
 
     private void ScrollHorizontally(ScrollViewer scrollViewer, MouseWheelEventArgs e)
     {
+        if (ScrollHorizontally(scrollViewer, -e.Delta * _horizontalScrollWheelMultiplier))
+        {
+            e.Handled = true;
+        }
+    }
+
+    private static bool ScrollHorizontally(ScrollViewer scrollViewer, double offsetDelta)
+    {
         if (scrollViewer.ScrollableWidth <= 0)
         {
-            return;
+            return false;
         }
 
-        scrollViewer.ScrollToHorizontalOffset(
-            scrollViewer.HorizontalOffset - (e.Delta * _horizontalScrollWheelMultiplier));
-        e.Handled = true;
+        scrollViewer.ScrollToHorizontalOffset(scrollViewer.HorizontalOffset + offsetDelta);
+        return true;
     }
 
     private void ScrollVertically(ScrollViewer scrollViewer, MouseWheelEventArgs e)
@@ -633,6 +644,27 @@ internal sealed partial class MainWindow : Window
 
         scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - scrollDelta);
         e.Handled = true;
+    }
+
+    private IntPtr OnWindowMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (message != WM_MOUSEHWHEEL)
+        {
+            return IntPtr.Zero;
+        }
+
+        var dataGrid = FindDataGridUnderMouse();
+        var scrollViewer = dataGrid is null
+            ? null
+            : FindDescendant<ScrollViewer>(dataGrid);
+        if (scrollViewer is null)
+        {
+            return IntPtr.Zero;
+        }
+
+        var wheelDelta = GetWheelDelta(wParam);
+        handled = ScrollHorizontally(scrollViewer, wheelDelta * _horizontalScrollWheelMultiplier);
+        return IntPtr.Zero;
     }
 
     private static double ReadScrollWheelMultiplier(
@@ -733,6 +765,35 @@ internal sealed partial class MainWindow : Window
         return Math.Max(0, dataGrid.ActualWidth - SystemParameters.VerticalScrollBarWidth - 2);
     }
 
+    private static DataGrid? FindDataGridUnderMouse()
+    {
+        if (Mouse.DirectlyOver is not DependencyObject source)
+        {
+            return null;
+        }
+
+        return FindAncestor<DataGrid>(source);
+    }
+
+    private static T? FindAncestor<T>(DependencyObject source)
+        where T : DependencyObject
+    {
+        var current = source;
+        while (true)
+        {
+            if (current is T match)
+            {
+                return match;
+            }
+
+            current = VisualTreeHelper.GetParent(current) ?? LogicalTreeHelper.GetParent(current);
+            if (current is null)
+            {
+                return null;
+            }
+        }
+    }
+
     private static T? FindDescendant<T>(DependencyObject parent)
         where T : DependencyObject
     {
@@ -754,6 +815,8 @@ internal sealed partial class MainWindow : Window
 
         return null;
     }
+
+    private static int GetWheelDelta(IntPtr wParam) => unchecked((short)((wParam.ToInt64() >> 16) & 0xFFFF));
 
     private sealed class DialogOverlayScope : IDisposable
     {
@@ -788,6 +851,7 @@ internal sealed partial class MainWindow : Window
 
     private const double DEFAULT_SCROLL_WHEEL_MULTIPLIER = 1.0;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+    private const int WM_MOUSEHWHEEL = 0x020E;
 
     private static readonly ThemePalette _lightPalette = new(
         Bg: Color.FromRgb(0xEF, 0xEF, 0xEF),
@@ -903,6 +967,8 @@ internal sealed partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly double _horizontalScrollWheelMultiplier;
     private readonly double _verticalScrollWheelMultiplier;
+
+    private HwndSource? _hwndSource;
 
     private int _dialogOverlayScopes;
 }
