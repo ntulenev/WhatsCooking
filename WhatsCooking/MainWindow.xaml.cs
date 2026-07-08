@@ -129,6 +129,7 @@ internal sealed partial class MainWindow : Window
         SetGradientBrush("HeaderPanelBrush", palette.Header, Blend(palette.Header, palette.Accent, 0.10));
         SetBrushColor("SubtleBorderBrush", palette.SubtleBorder);
         SetBrushColor("DataGridAltRowBrush", palette.DataGridAltRow);
+        SetBrushColor("DataGridHeaderBrush", palette.DataGridHeader);
         SetBrushColor("DataGridHorizontalLineBrush", palette.DataGridHorizontalLine);
         SetBrushColor("DataGridVerticalLineBrush", palette.DataGridVerticalLine);
         SetBrushColor("DataGridHeaderSelectedBrush", palette.DataGridHeaderSelected);
@@ -338,6 +339,7 @@ internal sealed partial class MainWindow : Window
             Input = Color.FromRgb(0x13, 0x15, 0x1B),
             SubtleBorder = Color.FromArgb(0x64, 0x53, 0x6C, 0x8A),
             DataGridAltRow = Color.FromRgb(0x13, 0x20, 0x33),
+            DataGridHeader = Color.FromRgb(0x16, 0x20, 0x36),
             DataGridHorizontalLine = Color.FromRgb(0x24, 0x2F, 0x43),
             DataGridVerticalLine = Color.FromRgb(0x2A, 0x35, 0x4A),
             DataGridHeaderSelected = Color.FromRgb(0x22, 0x30, 0x4A),
@@ -372,6 +374,7 @@ internal sealed partial class MainWindow : Window
         Resources["HeaderPanelBrush"] = SystemColors.ControlBrush;
         Resources["SubtleBorderBrush"] = SystemColors.WindowTextBrush;
         Resources["DataGridAltRowBrush"] = SystemColors.ControlBrush;
+        Resources["DataGridHeaderBrush"] = SystemColors.ControlBrush;
         Resources["DataGridHorizontalLineBrush"] = SystemColors.WindowTextBrush;
         Resources["DataGridVerticalLineBrush"] = SystemColors.WindowTextBrush;
         Resources["DataGridHeaderSelectedBrush"] = SystemColors.HighlightBrush;
@@ -670,6 +673,7 @@ internal sealed partial class MainWindow : Window
         Header: Color.FromRgb(0xD8, 0xD8, 0xD8),
         SubtleBorder: Color.FromRgb(0xC4, 0xC4, 0xC4),
         DataGridAltRow: Color.FromRgb(0xF0, 0xF0, 0xF0),
+        DataGridHeader: Color.FromRgb(0xDD, 0xDD, 0xDD),
         DataGridHorizontalLine: Color.FromRgb(0xD7, 0xD7, 0xD7),
         DataGridVerticalLine: Color.FromRgb(0xE1, 0xE1, 0xE1),
         DataGridHeaderSelected: Color.FromRgb(0xC9, 0xDD, 0xF2),
@@ -706,6 +710,7 @@ internal sealed partial class MainWindow : Window
         Header: Color.FromArgb(0xDD, 0x25, 0x25, 0x26),
         SubtleBorder: Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF),
         DataGridAltRow: Color.FromRgb(0x28, 0x28, 0x2B),
+        DataGridHeader: Color.FromRgb(0x2D, 0x2D, 0x30),
         DataGridHorizontalLine: Color.FromRgb(0x2D, 0x2D, 0x30),
         DataGridVerticalLine: Color.FromRgb(0x25, 0x25, 0x26),
         DataGridHeaderSelected: Color.FromRgb(0x17, 0x3B, 0x57),
@@ -742,6 +747,7 @@ internal sealed partial class MainWindow : Window
         Color Header,
         Color SubtleBorder,
         Color DataGridAltRow,
+        Color DataGridHeader,
         Color DataGridHorizontalLine,
         Color DataGridVerticalLine,
         Color DataGridHeaderSelected,

@@ -17,6 +17,7 @@
         <SolidColorBrush x:Key="HeaderPanelBrush" Color="#DD252526" />
         <SolidColorBrush x:Key="SubtleBorderBrush" Color="#22FFFFFF" />
         <SolidColorBrush x:Key="DataGridAltRowBrush" Color="#28282B" />
+        <SolidColorBrush x:Key="DataGridHeaderBrush" Color="#2D2D30" />
         <SolidColorBrush x:Key="DataGridHorizontalLineBrush" Color="#2D2D30" />
         <SolidColorBrush x:Key="DataGridVerticalLineBrush" Color="#252526" />
         <SolidColorBrush x:Key="DataGridHeaderSelectedBrush" Color="#173B57" />
@@ -634,7 +635,7 @@
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="{DynamicResource PanelAltBrush}" />
+            <Setter Property="Background" Value="{DynamicResource DataGridHeaderBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushDark}" />
             <Setter Property="BorderThickness" Value="0,0,1,1" />
