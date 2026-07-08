@@ -162,6 +162,63 @@
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
+        <Style x:Key="HeaderMenuButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="ToolTip" Value="Menu" />
+        </Style>
+
+        <Style x:Key="HeaderPopupButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource ControlHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource ControlPressedBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HeaderPopupSubButtonStyle" TargetType="Button" BasedOn="{StaticResource HeaderPopupButtonStyle}">
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontWeight" Value="Normal" />
+        </Style>
+
+        <Style x:Key="HeaderPopupIconButtonStyle" TargetType="Button" BasedOn="{StaticResource HeaderPopupButtonStyle}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource PanelBrush}" />
+        </Style>
+
         <Style x:Key="ThemeToggleSwitchStyle" TargetType="CheckBox">
             <Setter Property="Width" Value="46" />
             <Setter Property="Height" Value="24" />
