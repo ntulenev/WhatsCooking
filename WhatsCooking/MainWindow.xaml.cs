@@ -113,9 +113,9 @@ internal sealed partial class MainWindow : Window
 
     private void ApplyPalette(ThemePalette palette)
     {
-        SetGradientBrush("BgBrush", palette.Bg, Blend(palette.Bg, palette.Accent, 0.14));
+        SetGradientBrush("BgBrush", palette.Bg, Blend(palette.Bg, palette.Accent, 0.08));
         SetBrushColor("PanelBrush", palette.Panel);
-        SetGradientBrush("PanelAltBrush", palette.PanelAlt, Blend(palette.PanelAlt, palette.Accent, 0.12));
+        SetGradientBrush("PanelAltBrush", palette.PanelAlt, Blend(palette.PanelAlt, palette.Accent, 0.06));
         SetBrushColor("BorderBrushDark", palette.Border);
         SetBrushColor("TextBrush", palette.Text);
         SetBrushColor("MutedBrush", palette.Muted);
@@ -126,7 +126,7 @@ internal sealed partial class MainWindow : Window
         SetBrushColor("ControlHoverBrush", palette.Hover);
         SetBrushColor("ControlPressedBrush", palette.Pressed);
         SetBrushColor("InputBrush", palette.Input);
-        SetGradientBrush("HeaderPanelBrush", palette.Header, Blend(palette.Header, palette.Accent, 0.24));
+        SetGradientBrush("HeaderPanelBrush", palette.Header, Blend(palette.Header, palette.Accent, 0.10));
         SetBrushColor("SubtleBorderBrush", palette.SubtleBorder);
         SetBrushColor("DataGridAltRowBrush", palette.DataGridAltRow);
         SetBrushColor("DataGridHorizontalLineBrush", palette.DataGridHorizontalLine);
@@ -322,19 +322,33 @@ internal sealed partial class MainWindow : Window
         },
         AppThemeMode.AlpineDawn => _darkPalette with
         {
-            Bg = Color.FromRgb(0x14, 0x19, 0x2B),
-            Panel = Color.FromRgb(0x1D, 0x25, 0x3A),
-            PanelAlt = Color.FromRgb(0x2A, 0x35, 0x52),
-            Header = Color.FromArgb(0xE6, 0x1C, 0x26, 0x3D),
-            Border = Color.FromRgb(0x4B, 0x58, 0x78),
-            Accent = Color.FromRgb(0xFF, 0x97, 0x8E),
-            Link = Color.FromRgb(0xC7, 0xD4, 0xFF),
-            Danger = Color.FromRgb(0xFF, 0x9A, 0x8B),
+            Bg = Color.FromRgb(0x09, 0x17, 0x2C),
+            Panel = Color.FromRgb(0x10, 0x17, 0x27),
+            PanelAlt = Color.FromRgb(0x13, 0x1B, 0x2D),
+            Header = Color.FromArgb(0xF2, 0x11, 0x1A, 0x2C),
+            Border = Color.FromRgb(0x53, 0x6C, 0x8A),
+            Text = Color.FromRgb(0xF6, 0xF8, 0xFF),
+            Muted = Color.FromRgb(0xB2, 0xBD, 0xD3),
+            Accent = Color.FromRgb(0xF0, 0x8D, 0x83),
+            Link = Color.FromRgb(0x90, 0xB6, 0xFF),
+            Danger = Color.FromRgb(0xF0, 0x8D, 0x83),
             Success = Color.FromRgb(0xB5, 0xDE, 0xC9),
-            DataGridHeaderSelected = Color.FromRgb(0x42, 0x48, 0x72),
-            RequestChangesBadgeBackground = Color.FromRgb(0x43, 0x2B, 0x35),
-            ActivityBadgeBackground = Color.FromRgb(0x31, 0x35, 0x5A),
-            ActivityBadgeBorder = Color.FromRgb(0x68, 0x70, 0xA6)
+            Hover = Color.FromRgb(0x2A, 0x3D, 0x57),
+            Pressed = Color.FromRgb(0x34, 0x4A, 0x68),
+            Input = Color.FromRgb(0x13, 0x15, 0x1B),
+            SubtleBorder = Color.FromArgb(0x64, 0x53, 0x6C, 0x8A),
+            DataGridAltRow = Color.FromRgb(0x13, 0x20, 0x33),
+            DataGridHorizontalLine = Color.FromRgb(0x24, 0x2F, 0x43),
+            DataGridVerticalLine = Color.FromRgb(0x2A, 0x35, 0x4A),
+            DataGridHeaderSelected = Color.FromRgb(0x22, 0x30, 0x4A),
+            RequestChangesBadgeBackground = Color.FromRgb(0x36, 0x24, 0x2C),
+            RequestChangesBadgeBorder = Color.FromRgb(0x79, 0x67, 0x7E),
+            RequestChangesBadgeText = Color.FromRgb(0xF4, 0xB6, 0xA6),
+            ApprovalBadgeBackground = Color.FromRgb(0x1C, 0x33, 0x32),
+            ApprovalBadgeBorder = Color.FromRgb(0x56, 0x78, 0x76),
+            ActivityBadgeBackground = Color.FromRgb(0x22, 0x2B, 0x46),
+            ActivityBadgeBorder = Color.FromRgb(0x6F, 0x7E, 0x9E),
+            ActivityBadgeText = Color.FromRgb(0xC5, 0xD2, 0xEA)
         },
         AppThemeMode.Dark => _darkPalette,
         _ => _darkPalette
