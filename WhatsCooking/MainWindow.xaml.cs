@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Win32;
 
 using WhatsCooking.ViewModels;
 
@@ -40,7 +42,7 @@ internal sealed partial class MainWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        ApplyTheme(viewModel.IsLightTheme);
+        ApplyTheme(viewModel.ThemeMode);
         SourceInitialized += OnSourceInitialized;
         SystemParameters.StaticPropertyChanged += OnSystemParametersPropertyChanged;
         Closed += OnClosed;
@@ -48,15 +50,15 @@ internal sealed partial class MainWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        ApplyWindowFrameTheme(DataContext is MainViewModel { IsLightTheme: true });
+        ApplyWindowFrameTheme(DataContext is MainViewModel { ThemeMode: AppThemeMode.Light });
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.IsLightTheme)
+        if (e.PropertyName == nameof(MainViewModel.ThemeMode)
             && sender is MainViewModel viewModel)
         {
-            ApplyTheme(viewModel.IsLightTheme);
+            ApplyTheme(viewModel.ThemeMode);
         }
     }
 
@@ -90,8 +92,10 @@ internal sealed partial class MainWindow : Window
         FitDataGridColumns(dataGrid);
     }
 
-    private void ApplyTheme(bool isLightTheme)
+    private void ApplyTheme(AppThemeMode themeMode)
     {
+        var resolvedThemeMode = ResolveThemeMode(themeMode);
+        var isLightTheme = resolvedThemeMode == AppThemeMode.Light;
         if (SystemParameters.HighContrast)
         {
             ApplyHighContrastTheme();
@@ -99,86 +103,173 @@ internal sealed partial class MainWindow : Window
             return;
         }
 
-        if (isLightTheme)
-        {
-            SetBrushColor("BgBrush", Color.FromRgb(0xEF, 0xEF, 0xEF));
-            SetBrushColor("PanelBrush", Color.FromRgb(0xF7, 0xF7, 0xF7));
-            SetBrushColor("PanelAltBrush", Color.FromRgb(0xDD, 0xDD, 0xDD));
-            SetBrushColor("BorderBrushDark", Color.FromRgb(0xC9, 0xC9, 0xC9));
-            SetBrushColor("TextBrush", Color.FromRgb(0x00, 0x00, 0x00));
-            SetBrushColor("MutedBrush", Color.FromRgb(0x63, 0x63, 0x63));
-            SetBrushColor("AccentBrush", Color.FromRgb(0x00, 0x52, 0xCC));
-            SetBrushColor("LinkBrush", Color.FromRgb(0x00, 0x4A, 0xB8));
-            SetBrushColor("DangerBrush", Color.FromRgb(0xD0, 0x00, 0x00));
-            SetBrushColor("SuccessBrush", Color.FromRgb(0x17, 0x78, 0x00));
-            SetBrushColor("ControlHoverBrush", Color.FromRgb(0xE7, 0xE7, 0xE7));
-            SetBrushColor("ControlPressedBrush", Color.FromRgb(0xD2, 0xD2, 0xD2));
-            SetBrushColor("InputBrush", Color.FromRgb(0xFC, 0xFC, 0xFC));
-            SetBrushColor("HeaderPanelBrush", Color.FromRgb(0xD8, 0xD8, 0xD8));
-            SetBrushColor("SubtleBorderBrush", Color.FromRgb(0xC4, 0xC4, 0xC4));
-            SetBrushColor("DataGridAltRowBrush", Color.FromRgb(0xF0, 0xF0, 0xF0));
-            SetBrushColor("DataGridHorizontalLineBrush", Color.FromRgb(0xD7, 0xD7, 0xD7));
-            SetBrushColor("DataGridVerticalLineBrush", Color.FromRgb(0xE1, 0xE1, 0xE1));
-            SetBrushColor("DataGridHeaderSelectedBrush", Color.FromRgb(0xC9, 0xDD, 0xF2));
-            SetBrushColor("DisabledButtonBrush", Color.FromRgb(0xE3, 0xE3, 0xE3));
-            SetBrushColor("DisabledTextBrush", Color.FromRgb(0x88, 0x88, 0x88));
-            SetBrushColor("PrimaryButtonBrush", Color.FromRgb(0x00, 0x65, 0xB8));
-            SetBrushColor("PrimaryButtonBorderBrush", Color.FromRgb(0x00, 0x4E, 0x8C));
-            SetBrushColor("ToggleTrackBrush", Color.FromRgb(0xBC, 0xBC, 0xBC));
-            SetBrushColor("ToggleThumbBrush", Color.FromRgb(0xFF, 0xFF, 0xFF));
-            SetBrushColor("ToggleCheckedTrackBrush", Color.FromRgb(0x00, 0x65, 0xB8));
-            SetBrushColor("RequestChangesBadgeBackgroundBrush", Color.FromRgb(0xFF, 0xE8, 0xE3));
-            SetBrushColor("RequestChangesBadgeBorderBrush", Color.FromRgb(0xE6, 0xA0, 0x91));
-            SetBrushColor("RequestChangesBadgeTextBrush", Color.FromRgb(0x9A, 0x2F, 0x18));
-            SetBrushColor("ApprovalBadgeBackgroundBrush", Color.FromRgb(0xE4, 0xF4, 0xE7));
-            SetBrushColor("ApprovalBadgeBorderBrush", Color.FromRgb(0x91, 0xC9, 0x9B));
-            SetBrushColor("ActivityBadgeBackgroundBrush", Color.FromRgb(0xF0, 0xE8, 0xFA));
-            SetBrushColor("ActivityBadgeBorderBrush", Color.FromRgb(0xBA, 0xA2, 0xD4));
-            SetBrushColor("ActivityBadgeTextBrush", Color.FromRgb(0x63, 0x3C, 0x85));
-        }
-        else
-        {
-            SetBrushColor("BgBrush", Color.FromRgb(0x1E, 0x1E, 0x1E));
-            SetBrushColor("PanelBrush", Color.FromRgb(0x25, 0x25, 0x26));
-            SetBrushColor("PanelAltBrush", Color.FromRgb(0x2D, 0x2D, 0x30));
-            SetBrushColor("BorderBrushDark", Color.FromRgb(0x3C, 0x3C, 0x3C));
-            SetBrushColor("TextBrush", Color.FromRgb(0xCC, 0xCC, 0xCC));
-            SetBrushColor("MutedBrush", Color.FromRgb(0x8B, 0x8B, 0x8B));
-            SetBrushColor("AccentBrush", Color.FromRgb(0x37, 0x94, 0xFF));
-            SetBrushColor("LinkBrush", Color.FromRgb(0x4F, 0xC1, 0xFF));
-            SetBrushColor("DangerBrush", Color.FromRgb(0xF4, 0x87, 0x71));
-            SetBrushColor("SuccessBrush", Color.FromRgb(0x89, 0xD1, 0x85));
-            SetBrushColor("ControlHoverBrush", Color.FromRgb(0x34, 0x34, 0x38));
-            SetBrushColor("ControlPressedBrush", Color.FromRgb(0x3F, 0x3F, 0x46));
-            SetBrushColor("InputBrush", Color.FromRgb(0x1F, 0x1F, 0x1F));
-            SetBrushColor("HeaderPanelBrush", Color.FromArgb(0xDD, 0x25, 0x25, 0x26));
-            SetBrushColor("SubtleBorderBrush", Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
-            SetBrushColor("DataGridAltRowBrush", Color.FromRgb(0x28, 0x28, 0x2B));
-            SetBrushColor("DataGridHorizontalLineBrush", Color.FromRgb(0x2D, 0x2D, 0x30));
-            SetBrushColor("DataGridVerticalLineBrush", Color.FromRgb(0x25, 0x25, 0x26));
-            SetBrushColor("DataGridHeaderSelectedBrush", Color.FromRgb(0x17, 0x3B, 0x57));
-            SetBrushColor("DisabledButtonBrush", Color.FromRgb(0x20, 0x20, 0x24));
-            SetBrushColor("DisabledTextBrush", Color.FromRgb(0x77, 0x77, 0x77));
-            SetBrushColor("PrimaryButtonBrush", Color.FromRgb(0x0E, 0x63, 0x9C));
-            SetBrushColor("PrimaryButtonBorderBrush", Color.FromRgb(0x11, 0x77, 0xBB));
-            SetBrushColor("ToggleTrackBrush", Color.FromRgb(0x3C, 0x3C, 0x3C));
-            SetBrushColor("ToggleThumbBrush", Color.FromRgb(0xCC, 0xCC, 0xCC));
-            SetBrushColor("ToggleCheckedTrackBrush", Color.FromRgb(0x37, 0x94, 0xFF));
-            SetBrushColor("RequestChangesBadgeBackgroundBrush", Color.FromRgb(0x32, 0x22, 0x1F));
-            SetBrushColor("RequestChangesBadgeBorderBrush", Color.FromRgb(0x5A, 0x2D, 0x26));
-            SetBrushColor("RequestChangesBadgeTextBrush", Color.FromRgb(0xFF, 0x8A, 0x65));
-            SetBrushColor("ApprovalBadgeBackgroundBrush", Color.FromRgb(0x1D, 0x33, 0x24));
-            SetBrushColor("ApprovalBadgeBorderBrush", Color.FromRgb(0x2F, 0x5F, 0x3B));
-            SetBrushColor("ActivityBadgeBackgroundBrush", Color.FromRgb(0x2A, 0x26, 0x36));
-            SetBrushColor("ActivityBadgeBorderBrush", Color.FromRgb(0x4F, 0x45, 0x68));
-            SetBrushColor("ActivityBadgeTextBrush", Color.FromRgb(0xD7, 0xBA, 0xFF));
-        }
+        ApplyPalette(ResolvePalette(resolvedThemeMode));
 
         Background = (Brush)FindResource("BgBrush");
         ApplyWindowFrameTheme(isLightTheme);
     }
 
     private void SetBrushColor(string resourceKey, Color color) => Resources[resourceKey] = new SolidColorBrush(color);
+
+    private void ApplyPalette(ThemePalette palette)
+    {
+        SetBrushColor("BgBrush", palette.Bg);
+        SetBrushColor("PanelBrush", palette.Panel);
+        SetBrushColor("PanelAltBrush", palette.PanelAlt);
+        SetBrushColor("BorderBrushDark", palette.Border);
+        SetBrushColor("TextBrush", palette.Text);
+        SetBrushColor("MutedBrush", palette.Muted);
+        SetBrushColor("AccentBrush", palette.Accent);
+        SetBrushColor("LinkBrush", palette.Link);
+        SetBrushColor("DangerBrush", palette.Danger);
+        SetBrushColor("SuccessBrush", palette.Success);
+        SetBrushColor("ControlHoverBrush", palette.Hover);
+        SetBrushColor("ControlPressedBrush", palette.Pressed);
+        SetBrushColor("InputBrush", palette.Input);
+        SetBrushColor("HeaderPanelBrush", palette.Header);
+        SetBrushColor("SubtleBorderBrush", palette.SubtleBorder);
+        SetBrushColor("DataGridAltRowBrush", palette.DataGridAltRow);
+        SetBrushColor("DataGridHorizontalLineBrush", palette.DataGridHorizontalLine);
+        SetBrushColor("DataGridVerticalLineBrush", palette.DataGridVerticalLine);
+        SetBrushColor("DataGridHeaderSelectedBrush", palette.DataGridHeaderSelected);
+        SetBrushColor("DisabledButtonBrush", palette.DisabledButton);
+        SetBrushColor("DisabledTextBrush", palette.DisabledText);
+        SetBrushColor("PrimaryButtonBrush", palette.PrimaryButton);
+        SetBrushColor("PrimaryButtonBorderBrush", palette.PrimaryButtonBorder);
+        SetBrushColor("ToggleTrackBrush", palette.ToggleTrack);
+        SetBrushColor("ToggleThumbBrush", palette.ToggleThumb);
+        SetBrushColor("ToggleCheckedTrackBrush", palette.ToggleCheckedTrack);
+        SetBrushColor("RequestChangesBadgeBackgroundBrush", palette.RequestChangesBadgeBackground);
+        SetBrushColor("RequestChangesBadgeBorderBrush", palette.RequestChangesBadgeBorder);
+        SetBrushColor("RequestChangesBadgeTextBrush", palette.RequestChangesBadgeText);
+        SetBrushColor("ApprovalBadgeBackgroundBrush", palette.ApprovalBadgeBackground);
+        SetBrushColor("ApprovalBadgeBorderBrush", palette.ApprovalBadgeBorder);
+        SetBrushColor("ActivityBadgeBackgroundBrush", palette.ActivityBadgeBackground);
+        SetBrushColor("ActivityBadgeBorderBrush", palette.ActivityBadgeBorder);
+        SetBrushColor("ActivityBadgeTextBrush", palette.ActivityBadgeText);
+    }
+
+    private static AppThemeMode ResolveThemeMode(AppThemeMode themeMode) =>
+        themeMode == AppThemeMode.Os ? DetectOsThemeMode() : themeMode;
+
+    private static AppThemeMode DetectOsThemeMode()
+    {
+        try
+        {
+            var value = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+                "AppsUseLightTheme",
+                0);
+            return value is int appsUseLightTheme && appsUseLightTheme > 0
+                ? AppThemeMode.Light
+                : AppThemeMode.Dark;
+        }
+        catch (IOException)
+        {
+            return AppThemeMode.Dark;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return AppThemeMode.Dark;
+        }
+    }
+
+    private static ThemePalette ResolvePalette(AppThemeMode themeMode) => themeMode switch
+    {
+        AppThemeMode.Os => _darkPalette,
+        AppThemeMode.Light => _lightPalette,
+        AppThemeMode.Glass => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x12, 0x18, 0x24),
+            Panel = Color.FromArgb(0xD8, 0x17, 0x21, 0x31),
+            PanelAlt = Color.FromArgb(0xEE, 0x20, 0x2B, 0x3E),
+            Header = Color.FromArgb(0xCC, 0x18, 0x24, 0x35),
+            SubtleBorder = Color.FromArgb(0x38, 0xCF, 0xDD, 0xFF),
+            Accent = Color.FromRgb(0x8B, 0xC7, 0xFF),
+            Link = Color.FromRgb(0x9E, 0xD8, 0xFF)
+        },
+        AppThemeMode.Forest => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x15, 0x1B, 0x16),
+            Panel = Color.FromRgb(0x1B, 0x24, 0x1D),
+            PanelAlt = Color.FromRgb(0x24, 0x31, 0x26),
+            Header = Color.FromArgb(0xE6, 0x1A, 0x21, 0x1C),
+            Accent = Color.FromRgb(0x7D, 0xC7, 0x8B),
+            Link = Color.FromRgb(0xA0, 0xD9, 0xAA),
+            Success = Color.FromRgb(0x8B, 0xD3, 0x82),
+            DataGridHeaderSelected = Color.FromRgb(0x22, 0x4A, 0x2D)
+        },
+        AppThemeMode.Autumn => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x23, 0x19, 0x13),
+            Panel = Color.FromRgb(0x2B, 0x20, 0x18),
+            PanelAlt = Color.FromRgb(0x38, 0x28, 0x1C),
+            Header = Color.FromArgb(0xE6, 0x2E, 0x20, 0x17),
+            Accent = Color.FromRgb(0xE8, 0x9C, 0x5B),
+            Link = Color.FromRgb(0xFF, 0xBA, 0x75),
+            Danger = Color.FromRgb(0xFF, 0x8A, 0x65),
+            DataGridHeaderSelected = Color.FromRgb(0x5A, 0x34, 0x1E)
+        },
+        AppThemeMode.DarkPink => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x22, 0x15, 0x20),
+            Panel = Color.FromRgb(0x2D, 0x1B, 0x2A),
+            PanelAlt = Color.FromRgb(0x3A, 0x22, 0x35),
+            Header = Color.FromArgb(0xE6, 0x2A, 0x19, 0x27),
+            Accent = Color.FromRgb(0xFF, 0x7A, 0xB7),
+            Link = Color.FromRgb(0xFF, 0xA4, 0xCD),
+            DataGridHeaderSelected = Color.FromRgb(0x5B, 0x25, 0x42),
+            ActivityBadgeText = Color.FromRgb(0xFF, 0xC1, 0xDE)
+        },
+        AppThemeMode.Matrix => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x03, 0x07, 0x04),
+            Panel = Color.FromRgb(0x07, 0x12, 0x09),
+            PanelAlt = Color.FromRgb(0x0D, 0x1E, 0x10),
+            Header = Color.FromArgb(0xE6, 0x03, 0x0A, 0x05),
+            Text = Color.FromRgb(0xB9, 0xF5, 0xC3),
+            Muted = Color.FromRgb(0x70, 0xA8, 0x78),
+            Accent = Color.FromRgb(0x39, 0xFF, 0x74),
+            Link = Color.FromRgb(0x77, 0xFF, 0x9E),
+            DataGridHeaderSelected = Color.FromRgb(0x0F, 0x3B, 0x1A)
+        },
+        AppThemeMode.Code => _darkPalette,
+        AppThemeMode.Cyberpunk => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x16, 0x10, 0x27),
+            Panel = Color.FromRgb(0x20, 0x18, 0x35),
+            PanelAlt = Color.FromRgb(0x2B, 0x1D, 0x44),
+            Header = Color.FromArgb(0xE6, 0x1D, 0x16, 0x32),
+            Accent = Color.FromRgb(0xFF, 0x4F, 0xD8),
+            Link = Color.FromRgb(0x5E, 0xF7, 0xFF),
+            Danger = Color.FromRgb(0xFF, 0x74, 0x9D),
+            DataGridHeaderSelected = Color.FromRgb(0x42, 0x1D, 0x60)
+        },
+        AppThemeMode.DeepSea => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x05, 0x18, 0x21),
+            Panel = Color.FromRgb(0x0B, 0x24, 0x30),
+            PanelAlt = Color.FromRgb(0x10, 0x31, 0x40),
+            Header = Color.FromArgb(0xE6, 0x0B, 0x24, 0x30),
+            Accent = Color.FromRgb(0x54, 0xD6, 0xC8),
+            Link = Color.FromRgb(0x80, 0xE8, 0xFF),
+            Success = Color.FromRgb(0x8E, 0xD6, 0xB2),
+            DataGridHeaderSelected = Color.FromRgb(0x16, 0x4B, 0x5A)
+        },
+        AppThemeMode.AlpineDawn => _darkPalette with
+        {
+            Bg = Color.FromRgb(0x16, 0x1A, 0x2A),
+            Panel = Color.FromRgb(0x1E, 0x24, 0x36),
+            PanelAlt = Color.FromRgb(0x2A, 0x31, 0x46),
+            Header = Color.FromArgb(0xE6, 0x1B, 0x22, 0x34),
+            Accent = Color.FromRgb(0xF5, 0x91, 0x8B),
+            Link = Color.FromRgb(0xB9, 0xC8, 0xFF),
+            Danger = Color.FromRgb(0xFF, 0x9A, 0x8B),
+            DataGridHeaderSelected = Color.FromRgb(0x3D, 0x3D, 0x62)
+        },
+        AppThemeMode.Dark => _darkPalette,
+        _ => _darkPalette
+    };
 
     private void ApplyHighContrastTheme()
     {
@@ -224,7 +315,7 @@ internal sealed partial class MainWindow : Window
         if (e.PropertyName == nameof(SystemParameters.HighContrast)
             && DataContext is MainViewModel viewModel)
         {
-            ApplyTheme(viewModel.IsLightTheme);
+            ApplyTheme(viewModel.ThemeMode);
         }
     }
 
@@ -478,6 +569,114 @@ internal sealed partial class MainWindow : Window
     private const double DEFAULT_SCROLL_WHEEL_MULTIPLIER = 1.0;
     private const int DEFAULT_MOUSE_WHEEL_SCROLL_LINES = 3;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+    private static readonly ThemePalette _lightPalette = new(
+        Bg: Color.FromRgb(0xEF, 0xEF, 0xEF),
+        Panel: Color.FromRgb(0xF7, 0xF7, 0xF7),
+        PanelAlt: Color.FromRgb(0xDD, 0xDD, 0xDD),
+        Border: Color.FromRgb(0xC9, 0xC9, 0xC9),
+        Text: Color.FromRgb(0x00, 0x00, 0x00),
+        Muted: Color.FromRgb(0x63, 0x63, 0x63),
+        Accent: Color.FromRgb(0x00, 0x52, 0xCC),
+        Link: Color.FromRgb(0x00, 0x4A, 0xB8),
+        Danger: Color.FromRgb(0xD0, 0x00, 0x00),
+        Success: Color.FromRgb(0x17, 0x78, 0x00),
+        Hover: Color.FromRgb(0xE7, 0xE7, 0xE7),
+        Pressed: Color.FromRgb(0xD2, 0xD2, 0xD2),
+        Input: Color.FromRgb(0xFC, 0xFC, 0xFC),
+        Header: Color.FromRgb(0xD8, 0xD8, 0xD8),
+        SubtleBorder: Color.FromRgb(0xC4, 0xC4, 0xC4),
+        DataGridAltRow: Color.FromRgb(0xF0, 0xF0, 0xF0),
+        DataGridHorizontalLine: Color.FromRgb(0xD7, 0xD7, 0xD7),
+        DataGridVerticalLine: Color.FromRgb(0xE1, 0xE1, 0xE1),
+        DataGridHeaderSelected: Color.FromRgb(0xC9, 0xDD, 0xF2),
+        DisabledButton: Color.FromRgb(0xE3, 0xE3, 0xE3),
+        DisabledText: Color.FromRgb(0x88, 0x88, 0x88),
+        PrimaryButton: Color.FromRgb(0x00, 0x65, 0xB8),
+        PrimaryButtonBorder: Color.FromRgb(0x00, 0x4E, 0x8C),
+        ToggleTrack: Color.FromRgb(0xBC, 0xBC, 0xBC),
+        ToggleThumb: Color.FromRgb(0xFF, 0xFF, 0xFF),
+        ToggleCheckedTrack: Color.FromRgb(0x00, 0x65, 0xB8),
+        RequestChangesBadgeBackground: Color.FromRgb(0xFF, 0xE8, 0xE3),
+        RequestChangesBadgeBorder: Color.FromRgb(0xE6, 0xA0, 0x91),
+        RequestChangesBadgeText: Color.FromRgb(0x9A, 0x2F, 0x18),
+        ApprovalBadgeBackground: Color.FromRgb(0xE4, 0xF4, 0xE7),
+        ApprovalBadgeBorder: Color.FromRgb(0x91, 0xC9, 0x9B),
+        ActivityBadgeBackground: Color.FromRgb(0xF0, 0xE8, 0xFA),
+        ActivityBadgeBorder: Color.FromRgb(0xBA, 0xA2, 0xD4),
+        ActivityBadgeText: Color.FromRgb(0x63, 0x3C, 0x85));
+
+    private static readonly ThemePalette _darkPalette = new(
+        Bg: Color.FromRgb(0x1E, 0x1E, 0x1E),
+        Panel: Color.FromRgb(0x25, 0x25, 0x26),
+        PanelAlt: Color.FromRgb(0x2D, 0x2D, 0x30),
+        Border: Color.FromRgb(0x3C, 0x3C, 0x3C),
+        Text: Color.FromRgb(0xCC, 0xCC, 0xCC),
+        Muted: Color.FromRgb(0x8B, 0x8B, 0x8B),
+        Accent: Color.FromRgb(0x37, 0x94, 0xFF),
+        Link: Color.FromRgb(0x4F, 0xC1, 0xFF),
+        Danger: Color.FromRgb(0xF4, 0x87, 0x71),
+        Success: Color.FromRgb(0x89, 0xD1, 0x85),
+        Hover: Color.FromRgb(0x34, 0x34, 0x38),
+        Pressed: Color.FromRgb(0x3F, 0x3F, 0x46),
+        Input: Color.FromRgb(0x1F, 0x1F, 0x1F),
+        Header: Color.FromArgb(0xDD, 0x25, 0x25, 0x26),
+        SubtleBorder: Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF),
+        DataGridAltRow: Color.FromRgb(0x28, 0x28, 0x2B),
+        DataGridHorizontalLine: Color.FromRgb(0x2D, 0x2D, 0x30),
+        DataGridVerticalLine: Color.FromRgb(0x25, 0x25, 0x26),
+        DataGridHeaderSelected: Color.FromRgb(0x17, 0x3B, 0x57),
+        DisabledButton: Color.FromRgb(0x20, 0x20, 0x24),
+        DisabledText: Color.FromRgb(0x77, 0x77, 0x77),
+        PrimaryButton: Color.FromRgb(0x0E, 0x63, 0x9C),
+        PrimaryButtonBorder: Color.FromRgb(0x11, 0x77, 0xBB),
+        ToggleTrack: Color.FromRgb(0x3C, 0x3C, 0x3C),
+        ToggleThumb: Color.FromRgb(0xCC, 0xCC, 0xCC),
+        ToggleCheckedTrack: Color.FromRgb(0x37, 0x94, 0xFF),
+        RequestChangesBadgeBackground: Color.FromRgb(0x32, 0x22, 0x1F),
+        RequestChangesBadgeBorder: Color.FromRgb(0x5A, 0x2D, 0x26),
+        RequestChangesBadgeText: Color.FromRgb(0xFF, 0x8A, 0x65),
+        ApprovalBadgeBackground: Color.FromRgb(0x1D, 0x33, 0x24),
+        ApprovalBadgeBorder: Color.FromRgb(0x2F, 0x5F, 0x3B),
+        ActivityBadgeBackground: Color.FromRgb(0x2A, 0x26, 0x36),
+        ActivityBadgeBorder: Color.FromRgb(0x4F, 0x45, 0x68),
+        ActivityBadgeText: Color.FromRgb(0xD7, 0xBA, 0xFF));
+
+    private sealed record ThemePalette(
+        Color Bg,
+        Color Panel,
+        Color PanelAlt,
+        Color Border,
+        Color Text,
+        Color Muted,
+        Color Accent,
+        Color Link,
+        Color Danger,
+        Color Success,
+        Color Hover,
+        Color Pressed,
+        Color Input,
+        Color Header,
+        Color SubtleBorder,
+        Color DataGridAltRow,
+        Color DataGridHorizontalLine,
+        Color DataGridVerticalLine,
+        Color DataGridHeaderSelected,
+        Color DisabledButton,
+        Color DisabledText,
+        Color PrimaryButton,
+        Color PrimaryButtonBorder,
+        Color ToggleTrack,
+        Color ToggleThumb,
+        Color ToggleCheckedTrack,
+        Color RequestChangesBadgeBackground,
+        Color RequestChangesBadgeBorder,
+        Color RequestChangesBadgeText,
+        Color ApprovalBadgeBackground,
+        Color ApprovalBadgeBorder,
+        Color ActivityBadgeBackground,
+        Color ActivityBadgeBorder,
+        Color ActivityBadgeText);
 
     private readonly MainViewModel _viewModel;
     private readonly double _horizontalScrollWheelMultiplier;

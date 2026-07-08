@@ -31,7 +31,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         TelemetryDashboard = telemetryDashboard;
         var dashboardContext = dashboardContextFactory.Create(() => GlobalSearch, telemetryDashboard);
         _preferences = dashboardContext.Preferences;
-        _isLightTheme = _preferences.IsLightTheme;
+        _themeMode = _preferences.ThemeMode;
         _uiScale = _preferences.UiScale;
         _selectedSearchMode = _preferences.SearchMode;
         _searchPhrase = _preferences.SearchPhrase;
@@ -39,6 +39,7 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         _mergedPullRequestsDaysInput = _mergedPullRequestsDays.ToString(CultureInfo.InvariantCulture);
         _dashboardState = dashboardContext.DashboardState;
         _dashboardLoader = dashboardContext.DashboardLoader;
+        _themeOptions = AppThemeOptions.All;
         OpenPullRequestFilters = _dashboardState.OpenPullRequests.Filters;
         MergedPullRequestFilters = _dashboardState.MergedPullRequests.Filters;
         OpenPullRequestFilters.PropertyChanged += OnOpenPullRequestFilterPropertyChanged;
@@ -149,15 +150,32 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// Gets or sets a value indicating whether the light UI theme is enabled.
     /// </summary>
     public bool IsLightTheme {
-        get => _isLightTheme;
+        get => ThemeMode == AppThemeMode.Light;
         set
         {
-            if (SetProperty(ref _isLightTheme, value))
+            ThemeMode = value ? AppThemeMode.Light : AppThemeMode.Dark;
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the selected UI theme.
+    /// </summary>
+    public AppThemeMode ThemeMode {
+        get => _themeMode;
+        set
+        {
+            if (SetProperty(ref _themeMode, value))
             {
                 _preferences.SaveTheme(value);
+                OnPropertyChanged(nameof(IsLightTheme));
             }
         }
     }
+
+    /// <summary>
+    /// Theme options available in the UI.
+    /// </summary>
+    public IReadOnlyList<AppThemeOption> ThemeOptions => _themeOptions;
 
     /// <summary>
     /// UI scale multiplier.
@@ -507,13 +525,15 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
 
     private readonly DashboardLoadCommandHandler _dashboardLoader;
 
+    private readonly IReadOnlyList<AppThemeOption> _themeOptions;
+
     private readonly ValidationErrorStore _validationErrors = new();
 
     private int _mergedPullRequestsDays;
 
     private string _mergedPullRequestsDaysInput;
 
-    private bool _isLightTheme;
+    private AppThemeMode _themeMode;
 
     private double _uiScale;
 

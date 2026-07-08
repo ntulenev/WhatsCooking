@@ -1,5 +1,7 @@
 using BBRepoList.Models;
 
+using WhatsCooking.ViewModels;
+
 namespace WhatsCooking.Services;
 
 /// <summary>
@@ -11,6 +13,11 @@ internal sealed record UserPreferences
     /// Gets a value indicating whether the light UI theme is enabled.
     /// </summary>
     public bool IsLightTheme { get; init; }
+
+    /// <summary>
+    /// Gets the selected UI theme mode.
+    /// </summary>
+    public AppThemeMode? ThemeMode { get; init; }
 
     /// <summary>
     /// Gets the repository search phrase used for loading data.

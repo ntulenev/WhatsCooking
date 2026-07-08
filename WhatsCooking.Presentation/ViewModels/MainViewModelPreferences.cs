@@ -27,6 +27,12 @@ internal sealed class MainViewModelPreferences
     public bool IsLightTheme => _preferences.IsLightTheme;
 
     /// <summary>
+    /// Gets the restored theme mode.
+    /// </summary>
+    public AppThemeMode ThemeMode =>
+        _preferences.ThemeMode ?? (_preferences.IsLightTheme ? AppThemeMode.Light : AppThemeMode.Dark);
+
+    /// <summary>
     /// Gets the restored UI scale.
     /// </summary>
     public double UiScale => NormalizeUiScale(_preferences.UiScale);
@@ -48,6 +54,20 @@ internal sealed class MainViewModelPreferences
     public void SaveTheme(bool isLightTheme)
     {
         _preferences = _preferences with { IsLightTheme = isLightTheme };
+        _preferencesService.Save(_preferences);
+    }
+
+    /// <summary>
+    /// Saves the selected theme mode.
+    /// </summary>
+    /// <param name="themeMode">Theme mode to persist.</param>
+    public void SaveTheme(AppThemeMode themeMode)
+    {
+        _preferences = _preferences with
+        {
+            IsLightTheme = themeMode == AppThemeMode.Light,
+            ThemeMode = themeMode
+        };
         _preferencesService.Save(_preferences);
     }
 
