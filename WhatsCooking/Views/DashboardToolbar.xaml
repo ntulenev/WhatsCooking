@@ -122,24 +122,7 @@
                                 BorderThickness="1"
                                 CornerRadius="12">
                             <StackPanel>
-                                <Button Style="{DynamicResource HeaderPopupButtonStyle}"
-                                        Command="{Binding LoadCommand}"
-                                        Click="OnMenuActionClick">
-                                    <TextBlock Text="Refresh now" />
-                                </Button>
-
-                                <Button Style="{DynamicResource HeaderPopupButtonStyle}"
-                                        Click="OnFitColumnsFromMenuClick">
-                                    <TextBlock Text="Fit columns" />
-                                </Button>
-
-                                <Button Style="{DynamicResource HeaderPopupButtonStyle}"
-                                        Command="{Binding ResetFiltersCommand}"
-                                        Click="OnMenuActionClick">
-                                    <TextBlock Text="Reset filters" />
-                                </Button>
-
-                                <Grid Margin="0,4,0,2" MinHeight="42">
+                                <Grid Margin="0,0,0,2" MinHeight="42">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />

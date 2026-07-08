@@ -58,14 +58,6 @@ internal sealed partial class DashboardToolbar : UserControl
         CloseHeaderMenu();
     }
 
-    private void OnFitColumnsFromMenuClick(object sender, RoutedEventArgs e)
-    {
-        OnFitColumnsClick(sender, e);
-        CloseHeaderMenu();
-    }
-
-    private void OnMenuActionClick(object sender, RoutedEventArgs e) => CloseHeaderMenu();
-
     private void CloseHeaderMenu()
     {
         HeaderMenuPopup.IsOpen = false;
