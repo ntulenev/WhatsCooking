@@ -16,7 +16,8 @@ This project is a logical continuation of my CLI/reporting project [ntulenev/BBR
 - Use global search, per-column filters, column sorting, and one-click filter reset.
 - Use `Fit` to resize the current table columns once to the available window width, then adjust them manually if needed.
 - Remember the repository search mode and phrase after pressing `Load`.
-- Switch between the default dark theme and a light theme; the selected theme is remembered between launches.
+- Choose the UI theme from the dashboard menu. Available themes are `OS`, `Light`, `Glass`, `Dark`, `Forest`, `Autumn`, `Dark Pink`, `Matrix`, `Code`, `Cyberpunk`, `Deep sea`, and `Alpine dawn`; the selected theme is remembered between launches.
+- Cycle through themes quickly with `Ctrl + Shift + T`.
 - Adjust UI scale with `Ctrl +` and `Ctrl -`; the selected scale is remembered between launches.
 - Open repositories and pull requests in Bitbucket from the table.
 - Mark pull requests as reviewed to visually de-emphasize them.
