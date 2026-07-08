@@ -628,6 +628,7 @@
             <Setter Property="RowBackground" Value="{DynamicResource PanelBrush}" />
             <Setter Property="AlternatingRowBackground" Value="{DynamicResource DataGridAltRowBrush}" />
             <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+            <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Visible" />
             <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
             <Setter Property="ScrollViewer.PanningMode" Value="Both" />

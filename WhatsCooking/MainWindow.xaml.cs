@@ -629,12 +629,7 @@ internal sealed partial class MainWindow : Window
             return;
         }
 
-        var wheelScrollLines = SystemParameters.WheelScrollLines > 0
-            ? SystemParameters.WheelScrollLines
-            : DEFAULT_MOUSE_WHEEL_SCROLL_LINES;
-        var scrollDelta = e.Delta / (double)Mouse.MouseWheelDeltaForOneLine
-            * wheelScrollLines
-            * _verticalScrollWheelMultiplier;
+        var scrollDelta = e.Delta * _verticalScrollWheelMultiplier;
 
         scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - scrollDelta);
         e.Handled = true;
@@ -792,7 +787,6 @@ internal sealed partial class MainWindow : Window
         int attributeSize);
 
     private const double DEFAULT_SCROLL_WHEEL_MULTIPLIER = 1.0;
-    private const int DEFAULT_MOUSE_WHEEL_SCROLL_LINES = 3;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
     private static readonly ThemePalette _lightPalette = new(
