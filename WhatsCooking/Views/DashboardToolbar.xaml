@@ -82,7 +82,7 @@
                          Text="{Binding GlobalSearch, UpdateSourceTrigger=PropertyChanged, Delay=250}"
                          ToolTip="Global search across all columns" />
 
-                <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{DynamicResource PrimaryButtonStyle}" />
+                <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{DynamicResource LoadButtonStyle}" />
                 <Button Grid.Column="13"
                         Content="Fit"
                         Click="OnFitColumnsClick"
