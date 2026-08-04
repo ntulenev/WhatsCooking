@@ -49,6 +49,9 @@
     <Content Include="..\AI_REVIEW_PROMPT.md" Link="AI_REVIEW_PROMPT.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\AI_TEAM_OVERVIEW_PROMPT.md" Link="AI_TEAM_OVERVIEW_PROMPT.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

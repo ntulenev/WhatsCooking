@@ -88,6 +88,73 @@ public sealed class AiReviewPromptServiceTests
         result.Should().Be("(not available)|(not detected)");
     }
 
+    [Fact(DisplayName = "Build team overview prompt includes access, PR URLs, and active-work instructions")]
+    [Trait("Category", "Unit")]
+    public void BuildTeamOverviewPromptForOpenPullRequestsPopulatesCompactPrompt()
+    {
+        // Arrange
+        const string template =
+            "{{BITBUCKET_EMAIL}}|{{BITBUCKET_API_TOKEN}}|{{BITBUCKET_API_BASE_URL}}|" +
+            "{{BITBUCKET_WORKSPACE}}|{{PULL_REQUEST_SCOPE}}|{{ANALYSIS_CONTEXT}}|" +
+            "{{PULL_REQUEST_LIST}}|{{TEAM_FOCUS_INSTRUCTION}}|{{ATTENTION_INSTRUCTION}}";
+        PullRequestRow[] rows = [CreateRow("First PR", pullRequestId: 42), CreateRow("Second PR", pullRequestId: 43)];
+
+        // Act
+        var result = AiReviewPromptService.BuildTeamOverviewPrompt(
+            template,
+            rows,
+            isMerged: false,
+            CreateOptions().Value);
+
+        // Assert
+        result.Should().Contain("user@example.com|secret-token|https://api.bitbucket.org/2.0/|platform|open|");
+        result.Should().Contain("Treat them as active work.");
+        result.Should().Contain("- https://bitbucket.org/platform/payments/pull-requests/42");
+        result.Should().Contain("- https://bitbucket.org/platform/payments/pull-requests/43");
+        result.Should().Contain("summarize what the team is working on");
+        result.Should().Contain("stalled work, or review gaps");
+        result.Should().NotContain("{{");
+    }
+
+    [Fact(DisplayName = "Build team overview prompt treats merged PRs retrospectively")]
+    [Trait("Category", "Unit")]
+    public void BuildTeamOverviewPromptForMergedPullRequestsUsesRetrospectiveInstructions()
+    {
+        // Arrange
+        const string template =
+            "{{PULL_REQUEST_SCOPE}}|{{ANALYSIS_CONTEXT}}|{{TEAM_FOCUS_INSTRUCTION}}|{{ATTENTION_INSTRUCTION}}";
+
+        // Act
+        var result = AiReviewPromptService.BuildTeamOverviewPrompt(
+            template,
+            [CreateRow("Completed PR")],
+            isMerged: true,
+            CreateOptions().Value);
+
+        // Assert
+        result.Should().Contain("merged");
+        result.Should().Contain("completed work");
+        result.Should().Contain("retrospectively");
+        result.Should().Contain("summarize what the team completed");
+        result.Should().Contain("retrospective attention");
+        result.Should().Contain("follow-up needs");
+    }
+
+    [Fact(DisplayName = "Build team overview prompt rejects an empty PR list")]
+    [Trait("Category", "Unit")]
+    public void BuildTeamOverviewPromptWhenPullRequestsAreEmptyThrowsArgumentException()
+    {
+        // Act
+        Action act = () => AiReviewPromptService.BuildTeamOverviewPrompt(
+            "{{PULL_REQUEST_LIST}}",
+            [],
+            isMerged: false,
+            CreateOptions().Value);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
     [Theory(DisplayName = "Build prompt rejects an invalid template")]
     [Trait("Category", "Unit")]
     [InlineData(null)]
@@ -155,12 +222,13 @@ public sealed class AiReviewPromptServiceTests
     private static PullRequestRow CreateRow(
         string title,
         string? descriptionText = "Description",
-        DateTimeOffset? openedOn = null)
+        DateTimeOffset? openedOn = null,
+        int pullRequestId = 42)
     {
         var opened = openedOn ?? new DateTimeOffset(2026, 6, 12, 10, 30, 0, TimeSpan.Zero);
         var detail = new PullRequestDetail(
             new Repository("Payments", slug: new RepositorySlug("payments")),
-            new PullRequestId(42),
+            new PullRequestId(pullRequestId),
             title,
             opened,
             authorId: null,

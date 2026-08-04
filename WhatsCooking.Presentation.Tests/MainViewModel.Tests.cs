@@ -140,6 +140,63 @@ public sealed class MainViewModelTests
         });
     }
 
+    [Fact(DisplayName = "Team overview copy is available only on pull request tabs")]
+    [Trait("Category", "Unit")]
+    public void SelectedDashboardTabIndexWhenChangedControlsTeamOverviewCopyAvailability()
+    {
+        // Arrange
+        var fixture = CreateFixture();
+        using var viewModel = fixture.CreateViewModel();
+
+        // Act
+        var canCopyOpenPullRequests = viewModel.CanCopyPullRequestOverview;
+        viewModel.SelectedDashboardTabIndex = 1;
+        var canCopyMergedPullRequests = viewModel.CanCopyPullRequestOverview;
+        viewModel.SelectedDashboardTabIndex = 2;
+
+        // Assert
+        canCopyOpenPullRequests.Should().BeTrue();
+        canCopyMergedPullRequests.Should().BeTrue();
+        viewModel.CanCopyPullRequestOverview.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Team overview command copies the supplied pull requests")]
+    [Trait("Category", "Unit")]
+    public void CopyTeamOverviewForAiCommandWhenRowsExistCopiesPromptAndUpdatesStatus()
+    {
+        // Arrange
+        var asOf = new DateTimeOffset(2026, 6, 12, 12, 0, 0, TimeSpan.Zero);
+        var detail = new PullRequestDetail(
+            new Repository("Payments", slug: new RepositorySlug("payments")),
+            new PullRequestId(42),
+            "Improve retries",
+            asOf.AddHours(-2),
+            authorId: null,
+            authorDisplayName: "Nikita",
+            firstNonAuthorActivityOn: null,
+            lastActivityOn: null,
+            hasCurrentUserDiscussion: false);
+        var row = CreateRowMapper().MapOpen(1, detail, asOf);
+        var request = new PullRequestOverviewCopyRequest([row], IsMerged: false);
+        var fixture = CreateFixture();
+        fixture.AiReviewPromptService.Setup(instance => instance.CopyTeamOverviewPrompt(
+            It.Is<IReadOnlyCollection<PullRequestRow>>(rows => rows.Single() == row),
+            false));
+        using var viewModel = fixture.CreateViewModel();
+
+        // Act
+        var canExecute = viewModel.CopyTeamOverviewForAiCommand.CanExecute(request);
+        viewModel.CopyTeamOverviewForAiCommand.Execute(request);
+        viewModel.SelectedDashboardTabIndex = 2;
+        var canExecuteOnTelemetry = viewModel.CopyTeamOverviewForAiCommand.CanExecute(request);
+
+        // Assert
+        canExecute.Should().BeTrue();
+        canExecuteOnTelemetry.Should().BeFalse();
+        viewModel.Status.Should().Be("Copied AI team overview prompt for 1 open PR");
+        fixture.AiReviewPromptService.VerifyAll();
+    }
+
     [Fact(DisplayName = "Load command applies successful dashboard snapshot")]
     [Trait("Category", "Unit")]
     public async Task LoadCommandWhenUseCaseSucceedsAppliesDashboardSnapshot()

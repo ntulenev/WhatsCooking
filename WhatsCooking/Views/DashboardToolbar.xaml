@@ -83,14 +83,22 @@
                          ToolTip="Global search across all columns" />
 
                 <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{DynamicResource LoadButtonStyle}" />
-                <Button Grid.Column="13"
+                <Button x:Name="CopyPullRequestsButton"
+                        Grid.Column="13"
+                        Content="Copy"
+                        Click="OnCopyPullRequestsClick"
+                        IsEnabled="{Binding CanCopyPullRequestOverview}"
+                        Style="{DynamicResource ActionButtonStyle}"
+                        ToolTip="Copy selected pull requests, or all visible pull requests, for AI team analysis"
+                        AutomationProperties.Name="Copy current pull requests for AI team analysis" />
+                <Button Grid.Column="15"
                         Content="Fit"
                         Click="OnFitColumnsClick"
                         Style="{DynamicResource ActionButtonStyle}"
                         ToolTip="Fit the current grid columns to the window width" />
-                <Button Grid.Column="15" Content="Reset Filters" Command="{Binding ResetFiltersCommand}" Style="{DynamicResource ActionButtonStyle}" />
+                <Button Grid.Column="17" Content="Reset Filters" Command="{Binding ResetFiltersCommand}" Style="{DynamicResource ActionButtonStyle}" />
 
-                <Grid Grid.Column="17" Grid.ColumnSpan="3">
+                <Grid Grid.Column="19">
                     <Button x:Name="HeaderMenuButton"
                             AutomationProperties.Name="Dashboard menu"
                             Style="{DynamicResource HeaderMenuButtonStyle}"

@@ -20,6 +20,14 @@ internal sealed partial class DashboardToolbar : UserControl
         InitializeComponent();
     }
 
+    private void OnCopyPullRequestsClick(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            mainWindow.CopyCurrentPullRequestsForAi();
+        }
+    }
+
     private void OnFitColumnsClick(object sender, RoutedEventArgs e)
     {
         if (Window.GetWindow(this) is MainWindow mainWindow)

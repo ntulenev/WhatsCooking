@@ -52,6 +52,9 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         CopyForAiCommand = new RelayCommand(
             CopyForAi,
             static parameter => parameter is PullRequestRow);
+        CopyTeamOverviewForAiCommand = new RelayCommand(
+            CopyTeamOverviewForAi,
+            CanCopyTeamOverviewForAi);
         ResetFiltersCommand = new RelayCommand(ResetFilters);
         ToggleOpenReviewedFilterCommand = new RelayCommand(ToggleOpenReviewedFilter);
         ToggleMergedReviewedFilterCommand = new RelayCommand(ToggleMergedReviewedFilter);
@@ -208,6 +211,27 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     } = string.Empty;
 
     /// <summary>
+    /// Zero-based index of the selected dashboard tab.
+    /// </summary>
+    public int SelectedDashboardTabIndex {
+        get => _selectedDashboardTabIndex;
+        set
+        {
+            if (SetProperty(ref _selectedDashboardTabIndex, value))
+            {
+                OnPropertyChanged(nameof(CanCopyPullRequestOverview));
+                ((RelayCommand)CopyTeamOverviewForAiCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the selected tab contains pull requests that can be copied for AI analysis.
+    /// </summary>
+    public bool CanCopyPullRequestOverview =>
+        SelectedDashboardTabIndex is OPEN_PULL_REQUESTS_TAB_INDEX or MERGED_PULL_REQUESTS_TAB_INDEX;
+
+    /// <summary>
     /// Whether pull request data is currently loading.
     /// </summary>
     public bool IsLoading {
@@ -313,6 +337,11 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     public ICommand CopyForAiCommand { get; }
 
     /// <summary>
+    /// Command that copies an AI team overview prompt for pull requests.
+    /// </summary>
+    public ICommand CopyTeamOverviewForAiCommand { get; }
+
+    /// <summary>
     /// Command that clears all table filters.
     /// </summary>
     public ICommand ResetFiltersCommand { get; }
@@ -413,6 +442,20 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
         }
 
         Status = _userActions.CopyAiReviewPrompt(pullRequest);
+    }
+
+    private bool CanCopyTeamOverviewForAi(object? parameter) =>
+        CanCopyPullRequestOverview
+        && parameter is PullRequestOverviewCopyRequest { PullRequests.Count: > 0 };
+
+    private void CopyTeamOverviewForAi(object? parameter)
+    {
+        if (parameter is not PullRequestOverviewCopyRequest request)
+        {
+            return;
+        }
+
+        Status = _userActions.CopyAiTeamOverviewPrompt(request.PullRequests, request.IsMerged);
     }
 
     private void ApplyLoadResult(DashboardLoadCommandResult result)
@@ -542,6 +585,8 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     }
 
     private const double UI_SCALE_STEP = 0.05;
+    private const int OPEN_PULL_REQUESTS_TAB_INDEX = 0;
+    private const int MERGED_PULL_REQUESTS_TAB_INDEX = 1;
 
     private readonly IDashboardUserActions _userActions;
 
@@ -566,4 +611,6 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     private string _searchPhrase;
 
     private RepositorySearchMode _selectedSearchMode;
+
+    private int _selectedDashboardTabIndex;
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -92,6 +93,51 @@ internal sealed partial class MainWindow : Window
         }
 
         FitDataGridColumns(dataGrid);
+    }
+
+    /// <summary>
+    /// Copies the selected pull request rows, or all displayed rows, for AI team analysis.
+    /// </summary>
+    internal void CopyCurrentPullRequestsForAi()
+    {
+        if (DashboardTabs.SelectedItem is not TabItem { Content: DependencyObject tabContent })
+        {
+            return;
+        }
+
+        var dataGrid = FindDescendant<DataGrid>(tabContent);
+        if (dataGrid is null)
+        {
+            return;
+        }
+
+        var rowsToCopy = SelectDisplayedItemsForCopy<PullRequestRow>(
+            dataGrid.Items,
+            dataGrid.SelectedItems);
+        var request = new PullRequestOverviewCopyRequest(
+            rowsToCopy,
+            DashboardTabs.SelectedIndex == MERGED_PULL_REQUESTS_TAB_INDEX);
+        if (_viewModel.CopyTeamOverviewForAiCommand.CanExecute(request))
+        {
+            _viewModel.CopyTeamOverviewForAiCommand.Execute(request);
+        }
+    }
+
+    internal static IReadOnlyList<T> SelectDisplayedItemsForCopy<T>(
+        IEnumerable displayedItems,
+        IEnumerable selectedItems)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(displayedItems);
+        ArgumentNullException.ThrowIfNull(selectedItems);
+
+        var selected = selectedItems.OfType<T>().ToHashSet();
+        return
+        [
+            .. displayedItems
+                .OfType<T>()
+                .Where(item => selected.Count == 0 || selected.Contains(item))
+        ];
     }
 
     private void ApplyTheme(AppThemeMode themeMode)
@@ -850,6 +896,7 @@ internal sealed partial class MainWindow : Window
         int attributeSize);
 
     private const double DEFAULT_SCROLL_WHEEL_MULTIPLIER = 1.0;
+    private const int MERGED_PULL_REQUESTS_TAB_INDEX = 1;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
     private const int WM_MOUSEHWHEEL = 0x020E;
 

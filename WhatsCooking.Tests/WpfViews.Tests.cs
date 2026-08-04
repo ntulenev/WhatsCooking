@@ -1,3 +1,5 @@
+using System.Windows.Controls;
+
 using FluentAssertions;
 
 using WhatsCooking.Views;
@@ -17,7 +19,24 @@ public sealed class WpfViewsTests
 
             // Assert
             view.Content.Should().NotBeNull();
+            view.FindName("CopyPullRequestsButton").Should().BeOfType<Button>();
         });
+    }
+
+    [Fact(DisplayName = "PR copy selection uses displayed rows unless rows are selected")]
+    [Trait("Category", "Unit")]
+    public void SelectDisplayedItemsForCopyWhenSelectionChangesResolvesExpectedRows()
+    {
+        // Arrange
+        object[] displayedItems = ["first", "second", "third"];
+
+        // Act
+        var withoutSelection = MainWindow.SelectDisplayedItemsForCopy<string>(displayedItems, Array.Empty<object>());
+        var withSelection = MainWindow.SelectDisplayedItemsForCopy<string>(displayedItems, new object[] { "third", "first" });
+
+        // Assert
+        withoutSelection.Should().Equal("first", "second", "third");
+        withSelection.Should().Equal("first", "third");
     }
 
     [Fact(DisplayName = "Loading overlay loads XAML content")]

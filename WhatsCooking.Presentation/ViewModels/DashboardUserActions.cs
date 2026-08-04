@@ -43,6 +43,19 @@ internal sealed class DashboardUserActions : IDashboardUserActions
         return $"Copied AI review prompt for {pullRequest.RepositoryName} #{pullRequest.PullRequestId}";
     }
 
+    /// <inheritdoc />
+    public string CopyAiTeamOverviewPrompt(
+        IReadOnlyCollection<PullRequestRow> pullRequests,
+        bool isMerged)
+    {
+        ArgumentNullException.ThrowIfNull(pullRequests);
+
+        _aiReviewPromptService.CopyTeamOverviewPrompt(pullRequests, isMerged);
+        var scope = isMerged ? "merged" : "open";
+        var pullRequestLabel = pullRequests.Count == 1 ? "PR" : "PRs";
+        return $"Copied AI team overview prompt for {pullRequests.Count} {scope} {pullRequestLabel}";
+    }
+
     private readonly IExternalUrlLauncher _externalUrlLauncher;
 
     private readonly IAiReviewPromptService _aiReviewPromptService;
