@@ -96,7 +96,28 @@
                         Click="OnFitColumnsClick"
                         Style="{DynamicResource ActionButtonStyle}"
                         ToolTip="Fit the current grid columns to the window width" />
-                <Button Grid.Column="17" Content="Reset Filters" Command="{Binding ResetFiltersCommand}" Style="{DynamicResource ActionButtonStyle}" />
+                <Button x:Name="ResetFiltersButton"
+                        Grid.Column="17"
+                        AutomationProperties.Name="Reset all filters"
+                        Command="{Binding ResetFiltersCommand}"
+                        Style="{DynamicResource ActionButtonStyle}"
+                        ToolTip="Reset all filters">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Width="14"
+                              Height="14"
+                              VerticalAlignment="Center"
+                              Data="M 3,12 A 9,9 0 1 0 6,4.3 L 3,8 M 3,3 L 3,8 L 8,8"
+                              Stretch="Uniform"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round"
+                              StrokeStartLineCap="Round"
+                              StrokeThickness="1.8" />
+                        <TextBlock Margin="6,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Text="Filters" />
+                    </StackPanel>
+                </Button>
 
                 <Grid Grid.Column="19">
                     <Button x:Name="HeaderMenuButton"
