@@ -19,7 +19,8 @@ public sealed class WpfViewsTests
 
             // Assert
             view.Content.Should().NotBeNull();
-            view.FindName("CopyPullRequestsButton").Should().BeOfType<Button>();
+            view.FindName("CopyPullRequestsButton").Should().BeOfType<Button>()
+                .Which.Content.Should().BeOfType<StackPanel>();
             view.FindName("ResetFiltersButton").Should().BeOfType<Button>()
                 .Which.Content.Should().BeOfType<StackPanel>();
         });

@@ -120,14 +120,25 @@
                             <DataGridTemplateColumn Header="AI review" Width="112" CanUserSort="False">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Copy"
-                                                Style="{StaticResource ActionButtonStyle}"
+                                        <Button Style="{StaticResource ActionButtonStyle}"
                                                 Padding="8,3"
                                                 Margin="4"
                                                 ToolTip="Copy a PR review prompt with Bitbucket access credentials to the clipboard"
                                                 AutomationProperties.Name="Copy pull request review prompt for AI"
                                                 Command="{Binding DataContext.CopyForAiCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}" />
+                                                CommandParameter="{Binding}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path Width="13"
+                                                      Height="13"
+                                                      VerticalAlignment="Center"
+                                                      Data="M 8,0 C 8,4.4 11.6,8 16,8 C 11.6,8 8,11.6 8,16 C 8,11.6 4.4,8 0,8 C 4.4,8 8,4.4 8,0 Z"
+                                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      Stretch="Uniform" />
+                                                <TextBlock Margin="5,0,0,0"
+                                                           VerticalAlignment="Center"
+                                                           Text="Copy" />
+                                            </StackPanel>
+                                        </Button>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

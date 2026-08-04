@@ -85,12 +85,23 @@
                 <Button Grid.Column="11" Content="Load" Command="{Binding LoadCommand}" Style="{DynamicResource LoadButtonStyle}" />
                 <Button x:Name="CopyPullRequestsButton"
                         Grid.Column="13"
-                        Content="Copy"
                         Click="OnCopyPullRequestsClick"
                         IsEnabled="{Binding CanCopyPullRequestOverview}"
                         Style="{DynamicResource ActionButtonStyle}"
                         ToolTip="Copy selected pull requests, or all visible pull requests, for AI team analysis"
-                        AutomationProperties.Name="Copy current pull requests for AI team analysis" />
+                        AutomationProperties.Name="Copy current pull requests for AI team analysis">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Width="13"
+                              Height="13"
+                              VerticalAlignment="Center"
+                              Data="M 8,0 C 8,4.4 11.6,8 16,8 C 11.6,8 8,11.6 8,16 C 8,11.6 4.4,8 0,8 C 4.4,8 8,4.4 8,0 Z"
+                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Stretch="Uniform" />
+                        <TextBlock Margin="5,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Text="Copy" />
+                    </StackPanel>
+                </Button>
                 <Button Grid.Column="15"
                         Content="Fit"
                         Click="OnFitColumnsClick"
