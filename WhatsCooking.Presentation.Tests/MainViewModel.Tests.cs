@@ -289,13 +289,13 @@ public sealed class MainViewModelTests
 
         viewModel.ToggleOpenReviewedFilterCommand.Execute(null);
         viewModel.OpenPullRequestsView.Should().BeEmpty();
-        viewModel.OpenReviewedFilterButtonText.Should().Be("Show all");
+        viewModel.OpenReviewedFilterButtonText.Should().Be("Show");
         viewModel.IsOpenReviewedFilterActive.Should().BeTrue();
         openViewChanges.Should().ContainSingle()
             .Which.Should().Be(NotifyCollectionChangedAction.Reset);
 
         viewModel.ToggleOpenReviewedFilterCommand.Execute(null);
-        viewModel.OpenReviewedFilterButtonText.Should().Be("Hide reviewed");
+        viewModel.OpenReviewedFilterButtonText.Should().Be("Hide");
         viewModel.IsOpenReviewedFilterActive.Should().BeFalse();
         openViewChanges.Clear();
         reviewedRow.IsReviewed = false;

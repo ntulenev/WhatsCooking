@@ -293,13 +293,13 @@ internal sealed class MainViewModel : ObservableObject, INotifyDataErrorInfo, ID
     /// Text displayed by the open pull request reviewed filter button.
     /// </summary>
     public string OpenReviewedFilterButtonText =>
-        OpenPullRequestFilters.HideReviewed ? "Show all" : "Hide reviewed";
+        OpenPullRequestFilters.HideReviewed ? "Show" : "Hide";
 
     /// <summary>
     /// Text displayed by the merged pull request reviewed filter button.
     /// </summary>
     public string MergedReviewedFilterButtonText =>
-        MergedPullRequestFilters.HideReviewed ? "Show all" : "Hide reviewed";
+        MergedPullRequestFilters.HideReviewed ? "Show" : "Hide";
 
     /// <summary>
     /// Gets a value indicating whether reviewed open pull requests are hidden.

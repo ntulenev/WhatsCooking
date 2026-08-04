@@ -101,7 +101,7 @@
                             <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
                                 <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding DataContext.OpenPullRequestFilters.CurrentUserActivity, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Width="122" CanUserSort="False">
+                            <DataGridTemplateColumn Width="80" CanUserSort="False">
                                 <DataGridTemplateColumn.Header>
                                     <StackPanel>
                                         <TextBlock Text="Reviewed" />
@@ -194,7 +194,7 @@
                             <DataGridTemplateColumn CellTemplate="{StaticResource CurrentUserActivityCellTemplate}" SortMemberPath="CurrentUserActivity" Width="140">
                                 <DataGridTemplateColumn.Header><StackPanel><TextBlock Text="Me" /><TextBox Style="{StaticResource HeaderFilterTextBoxStyle}" Text="{Binding Data.MergedPullRequestFilters.CurrentUserActivity, Source={StaticResource ViewModelProxy}, UpdateSourceTrigger=PropertyChanged, Delay=250}" /></StackPanel></DataGridTemplateColumn.Header>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Width="122" CanUserSort="False">
+                            <DataGridTemplateColumn Width="80" CanUserSort="False">
                                 <DataGridTemplateColumn.Header>
                                     <StackPanel>
                                         <TextBlock Text="Reviewed" />

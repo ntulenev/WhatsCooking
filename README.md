@@ -21,7 +21,7 @@ This project is a logical continuation of my CLI/reporting project [ntulenev/BBR
 - Adjust UI scale with `Ctrl +` and `Ctrl -`; the selected scale is remembered between launches.
 - Open repositories and pull requests in Bitbucket from the table.
 - Mark pull requests as reviewed to visually de-emphasize them.
-- Use `Hide reviewed` in the `Reviewed` column to remove reviewed pull requests from the current table, then use `Show all` to display them again.
+- Use `Hide` in the `Reviewed` column to remove reviewed pull requests from the current table, then use `Show` to display them again.
 - Copy a ready-to-use AI review prompt for an open pull request, including its Bitbucket URL, metadata, description, detected Jira issue key, and API access details.
 - Copy a concise AI team overview prompt from the toolbar for selected pull requests, or for every pull request currently visible after filtering. Open PRs are analyzed as active work; merged PRs are assessed retrospectively.
 - Cache open and merged pull request activity summaries to avoid reloading unchanged `/activity` data from Bitbucket.
